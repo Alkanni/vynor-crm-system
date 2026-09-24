@@ -129,3 +129,7 @@ pnpm dev
 - **[Idempotency Policy & Replay Mechanics (docs/idempotency-policy.md)](docs/idempotency-policy.md):** Mutating command idempotency, IETF `Idempotency-Key` header, state machine, and replay rules.
 - **[Inbound Webhook Response & Security (docs/webhook-response-and-security.md)](docs/webhook-response-and-security.md):** 500ms fast-ACK rule, durable buffering before side effects, and safe error disclosure.
 - **[API Deprecation & Versioning Policy (docs/api-versioning-and-deprecation.md)](docs/api-versioning-and-deprecation.md):** URI versioning, breaking change rules, RFC 8594 deprecation/sunset headers, and expand-and-contract migrations.
+- **[Logging & Observability Standards (docs/logging-and-observability.md)](docs/logging-and-observability.md):** Pino JSON logging schema, mandatory context fields, correlation propagation, and secret redaction.
+- **[Sentry Error Boundaries (docs/sentry-error-boundaries.md)](docs/sentry-error-boundaries.md):** Web, API, and worker error boundaries, PII scrubbing, and tag taxonomy.
+- **[Immutable Audit Logging (docs/audit-logging.md)](docs/audit-logging.md):** Audit log architecture, UUIDv7 locality, action catalog, and transactional recording.
+- **[Health Checks & Probes (docs/health-checks-and-probes.md)](docs/health-checks-and-probes.md):** Liveness probes, readiness probes, and subsystem health indicators.

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';
 import { ApiEnvSchema, loadEnvFileIfPresent, validateEnv } from '@vynor/contracts';
+import { createLogger, generateCorrelationId } from '@vynor/observability';
 
 import { AppModule } from './app.module.js';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter.js';
@@ -35,3 +36,13 @@ app.enableCors({
 app.enableShutdownHooks();
 
 await app.listen(env.PORT);
+
+const logger = createLogger({
+  service: 'vynor-api',
+  environment: env.NODE_ENV,
+});
+
+logger.info(
+  { correlationId: generateCorrelationId('boot') },
+  `VYNOR API server successfully listening on port ${env.PORT} with prefix /api/v1`,
+);

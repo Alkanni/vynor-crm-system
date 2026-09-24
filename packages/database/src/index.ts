@@ -18,6 +18,7 @@ export type {
   Team,
   TeamMember,
   OutboxEvent,
+  AuditLog,
 } from '@prisma/client';
 
 // Client instantiation and singleton

@@ -14,6 +14,7 @@ export interface CleanDatabaseOptions {
  * Ordered list of CRM domain tables for safe cleanup in reverse dependency order.
  */
 export const CRM_TABLE_CLEANUP_ORDER = [
+  'audit_logs',
   'outbox_events',
   'team_members',
   'membership_roles',

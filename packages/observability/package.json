@@ -20,5 +20,10 @@
   },
   "devDependencies": {
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@vynor/contracts": "workspace:*",
+    "@vynor/shared": "workspace:*",
+    "pino": "^10.3.1"
   }
 }

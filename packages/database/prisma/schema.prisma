@@ -48,6 +48,7 @@ model Workspace {
   roles       Role[]
   teams       Team[]
   outboxEvents OutboxEvent[]
+  auditLogs   AuditLog[]
 
   @@map("workspaces")
 }
@@ -178,21 +179,53 @@ model MembershipRole {
 }
 
 model OutboxEvent {
-  id           String            @id @default(uuid())
-  workspaceId  String            @map("workspace_id")
-  eventType    String            @map("event_type") @db.VarChar(100)
-  payload      Json
-  status       OutboxEventStatus @default(PENDING)
-  retryCount   Int               @default(0) @map("retry_count")
-  lastError    String?           @map("last_error") @db.Text
-  scheduledAt  DateTime          @default(now()) @map("scheduled_at") @db.Timestamptz(6)
-  processedAt  DateTime?         @map("processed_at") @db.Timestamptz(6)
-  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id            String            @id @default(uuid())
+  workspaceId   String            @map("workspace_id")
+  eventType     String            @map("event_type") @db.VarChar(100)
+  payload       Json
+  status        OutboxEventStatus @default(PENDING)
+  correlationId String?           @map("correlation_id") @db.VarChar(128)
+  causationId   String?           @map("causation_id") @db.VarChar(128)
+  actorId       String?           @map("actor_id") @db.VarChar(64)
+  traceparent   String?           @db.VarChar(128)
+  retryCount    Int               @default(0) @map("retry_count")
+  lastError     String?           @map("last_error") @db.Text
+  scheduledAt   DateTime          @default(now()) @map("scheduled_at") @db.Timestamptz(6)
+  processedAt   DateTime?         @map("processed_at") @db.Timestamptz(6)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([status, scheduledAt], map: "idx_outbox_events_status_scheduled_at")
   @@index([workspaceId, eventType], map: "idx_outbox_events_workspace_event_type")
+  @@index([correlationId], map: "idx_outbox_events_correlation_id")
   @@map("outbox_events")
 }
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  workspaceId   String   @map("workspace_id")
+  actorId       String   @map("actor_id")
+  actorType     String   @map("actor_type") @db.VarChar(50)
+  action        String   @db.VarChar(100)
+  resourceType  String   @map("resource_type") @db.VarChar(100)
+  resourceId    String   @map("resource_id")
+  correlationId String   @map("correlation_id") @db.VarChar(128)
+  causationId   String?  @map("causation_id") @db.VarChar(128)
+  ipAddress     String?  @map("ip_address") @db.VarChar(64)
+  userAgent     String?  @map("user_agent") @db.VarChar(512)
+  beforeState   Json?    @map("before_state")
+  afterState    Json?    @map("after_state")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt], map: "idx_audit_logs_workspace_created_at")
+  @@index([workspaceId, action], map: "idx_audit_logs_workspace_action")
+  @@index([correlationId], map: "idx_audit_logs_correlation_id")
+  @@index([resourceType, resourceId], map: "idx_audit_logs_resource")
+  @@map("audit_logs")
+}
+
