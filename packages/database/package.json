@@ -23,6 +23,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:validate": "prisma validate",
+    "db:verify": "tsx src/verify-schema.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

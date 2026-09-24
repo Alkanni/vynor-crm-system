@@ -77,3 +77,10 @@ export {
   type PersistProviderEventParams,
   type PersistProviderEventResult,
 } from './provider-events.js';
+
+// Schema & Migration verification helper (FND-DB-007)
+export {
+  verifyDatabaseSchema,
+  type SchemaVerificationReport,
+  type VerificationCheck,
+} from './verify-schema.js';

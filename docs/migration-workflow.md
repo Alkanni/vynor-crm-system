@@ -74,12 +74,24 @@ generator client {
 }
 ```
 
-1. **`vector` (pgvector):**
+1. **`vector` (pgvector) (FND-023, FND-DB-006):**
    - Required for Phase 2 AI vector embeddings, semantic search, and RAG knowledge retrieval.
-   - Initialized via `CREATE EXTENSION IF NOT EXISTS "vector";`.
+   - Initialized via `CREATE EXTENSION IF NOT EXISTS "vector";` in the initial migration `20260924130000_init`.
+   - **Supabase Provider Enablement:** In managed Supabase, `vector` is pre-installed. It is activated automatically during `pnpm --filter @vynor/database db:migrate:deploy` over `DIRECT_URL`, or manually enabled in the Supabase Dashboard under **Database -> Extensions -> vector -> Enable**.
+   - **AWS RDS / Aurora Enablement:** Ensure the DB Parameter Group includes `rds.extensions = 'vector,uuid-ossp'` before running migrations.
+   - **Local Docker Setup:** Use the official `pgvector/pgvector:pg16` or Supabase Postgres image in local Docker topologies.
+   - **Verification Query:**
+     ```sql
+     SELECT extname, extversion FROM pg_extension WHERE extname IN ('vector', 'uuid-ossp');
+     ```
+   - **Automated CLI Verification:**
+     ```bash
+     pnpm --filter @vynor/database db:verify
+     ```
+
 2. **`uuid-ossp`:**
    - Provides native UUID generation functions (`uuid_generate_v4()`).
-   - Initialized via `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`.
+   - Initialized via `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";` in `20260924130000_init`.
 
 ---
 
