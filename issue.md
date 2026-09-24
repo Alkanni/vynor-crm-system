@@ -376,14 +376,22 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 6.5 Quality Assurance & Testing Suite
 
-- [ ] **FND-TST-001 [P0]** Define test pyramid, naming, fixture, and deterministic clock/ID conventions. **Depends:** FND-006.
-- [ ] **FND-TST-002 [P0]** Add unit-test configuration (Vitest/Jest) for packages, API, worker, and web utilities. **Depends:** FND-TST-001.
-- [ ] **FND-TST-003 [P0]** Add database integration test harness with real PostgreSQL. **Depends:** FND-022, FND-TST-001.
-- [ ] **FND-TST-004 [P0]** Test authentication failure and permission matrix paths. **Depends:** FND-BE-003, FND-BE-004.
-- [ ] **FND-TST-005 [P0]** Test transaction rollback leaves no orphan outbox event. **Depends:** FND-BE-005.
-- [ ] **FND-TST-006 [P0]** Test concurrent outbox claiming and repeated dispatch idempotency. **Depends:** FND-BE-005.
-- [ ] **FND-TST-007 [P0]** Test configuration validation and secret redaction. **Depends:** FND-017, FND-046.
-- [ ] **FND-TST-008 [P0]** Add a Playwright authentication smoke test. **Depends:** FND-FE-003.
+- [x] **FND-TST-001 [P0]** Define test pyramid, naming, fixture, and deterministic clock/ID conventions. **Depends:** FND-006.  
+      _Completed in `docs/testing-strategy-and-conventions.md` defining the 3-tier testing pyramid (Unit 70-75%, Integration 20-25%, E2E 5-10%), naming rules (`*.spec.ts`, `*.integration.spec.ts`, `*.smoke.spec.ts`), deterministic clock reference epoch (`2026-09-24T12:00:00.000Z`), mock ID conventions (`ws_test_01`, `usr_test_01`), and typed builder factories._
+- [x] **FND-TST-002 [P0]** Add unit-test configuration (Vitest/Jest) for packages, API, worker, and web utilities. **Depends:** FND-TST-001.  
+      _Completed in root `vitest.config.mts` and `package.json` (`pnpm test`) configuring Vitest v5 with monorepo path alias mapping (`@vynor/contracts`, `@vynor/database`, `@vynor/observability`, `@vynor/storage`, `@vynor/channel-adapters`, `@vynor/ai`, `@/*`) and Node environment isolation._
+- [x] **FND-TST-003 [P0]** Add database integration test harness with real PostgreSQL. **Depends:** FND-022, FND-TST-001.  
+      _Completed in `packages/database/src/test-utils.ts` and `packages/database/tests/database-harness.integration.spec.ts` with `cleanDatabase`, `createTestPrismaClient`, `withTestDatabaseTransaction`, test factories, and real PostgreSQL integration suite against `vynor-postgres`._
+- [x] **FND-TST-004 [P0]** Test authentication failure and permission matrix paths. **Depends:** FND-BE-003, FND-BE-004.  
+      _Completed in `apps/api/tests/auth-permission-matrix.spec.ts` testing `PolicyService`, `PermissionGuard`, and `AuthGuard` across missing token (`AUTH_TOKEN_MISSING`), invalid signature (`AUTH_TOKEN_INVALID`), deactivated user (`USER_ACCOUNT_DISABLED`), suspended membership (`MEMBERSHIP_INACTIVE`), and security audit logging (`security.permission_denied`)._
+- [x] **FND-TST-005 [P0]** Test transaction rollback leaves no orphan outbox event. **Depends:** FND-BE-005.  
+      _Completed in `packages/database/tests/database-harness.integration.spec.ts` verifying `withTransactionalOutbox` guarantees zero orphan outbox events when operations roll back or throw exceptions._
+- [x] **FND-TST-006 [P0]** Test concurrent outbox claiming and repeated dispatch idempotency. **Depends:** FND-BE-005.  
+      _Completed in `apps/worker/tests/outbox-concurrency-and-idempotency.spec.ts` and `packages/database/src/outbox.ts` verifying concurrent non-overlapping batch claims via `SELECT FOR UPDATE SKIP LOCKED`, singleton dispatch idempotency (`outbox:${id}`), and stuck worker lease recovery._
+- [x] **FND-TST-007 [P0]** Test configuration validation and secret redaction. **Depends:** FND-017, FND-046.  
+      _Completed in `packages/contracts/tests/config-and-redaction.spec.ts` validating `validateEnv` error reporting for API and worker environments, and verifying deep object redaction, header scrubbing, email masking, and phone masking._
+- [x] **FND-TST-008 [P0]** Add a Playwright authentication smoke test. **Depends:** FND-FE-003.  
+      _Completed in `apps/web/playwright.config.ts`, `apps/web/src/app/login/page.tsx`, `apps/web/tests/e2e/auth-smoke.spec.ts`, and root `package.json` (`pnpm test:e2e`) verifying unauthenticated edge redirect, login form rendering and validation, and authenticated CRM application shell session rendering._
 
 ---
 

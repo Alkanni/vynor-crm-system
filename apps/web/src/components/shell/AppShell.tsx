@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { Menu, LogOut, Radio, Building2, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useRealtime } from '@/lib/realtime/use-realtime';
@@ -11,9 +12,18 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SessionExpiryDialog } from './SessionExpiryDialog';
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { actor, signOut } = useAuth();
   const { status } = useRealtime();
   const { sidebarOpen, toggleSidebar } = useUiStore();
+
+  if (pathname === '/login') {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        {children}
+      </main>
+    );
+  }
 
   const statusIndicator = {
     connected: { color: 'bg-emerald-500', label: 'Realtime Connected' },

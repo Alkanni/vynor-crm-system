@@ -74,6 +74,32 @@ export async function withTransactionalOutbox<T>(
   );
 }
 
+function mapRawOutboxRow(row: Record<string, unknown>): OutboxEvent {
+  return {
+    id: row.id as string,
+    workspaceId: (row.workspace_id ?? row.workspaceId) as string,
+    eventType: (row.event_type ?? row.eventType) as string,
+    payload: row.payload as Prisma.JsonValue,
+    status: row.status as OutboxEvent['status'],
+    correlationId: (row.correlation_id ?? row.correlationId ?? null) as string | null,
+    causationId: (row.causation_id ?? row.causationId ?? null) as string | null,
+    actorId: (row.actor_id ?? row.actorId ?? null) as string | null,
+    traceparent: (row.traceparent ?? null) as string | null,
+    retryCount: Number(row.retry_count ?? row.retryCount ?? 0),
+    lastError: (row.last_error ?? row.lastError ?? null) as string | null,
+    claimedAt: (row.claimed_at ?? row.claimedAt ?? null) as Date | null,
+    claimLeaseExpiresAt: (row.claim_lease_expires_at ??
+      row.claimLeaseExpiresAt ??
+      null) as Date | null,
+    claimedBy: (row.claimed_by ?? row.claimedBy ?? null) as string | null,
+    dispatchedAt: (row.dispatched_at ?? row.dispatchedAt ?? null) as Date | null,
+    scheduledAt: (row.scheduled_at ?? row.scheduledAt) as Date,
+    processedAt: (row.processed_at ?? row.processedAt ?? null) as Date | null,
+    createdAt: (row.created_at ?? row.createdAt) as Date,
+    updatedAt: (row.updated_at ?? row.updatedAt) as Date,
+  };
+}
+
 /**
  * Safe concurrent outbox claiming query helper (FND-058, AD-006).
  * Claims up to `limit` pending outbox events using PostgreSQL's SELECT FOR UPDATE SKIP LOCKED.
@@ -84,7 +110,7 @@ export async function claimPendingOutboxEvents(
   limit = 50,
   leaseDurationSeconds = 60,
 ): Promise<OutboxEvent[]> {
-  const claimed = await client.$queryRaw<OutboxEvent[]>`
+  const claimed = await client.$queryRaw<Record<string, unknown>[]>`
     UPDATE outbox_events
     SET status = 'PROCESSING',
         claimed_by = ${workerId},
@@ -102,7 +128,7 @@ export async function claimPendingOutboxEvents(
     RETURNING *;
   `;
 
-  return claimed;
+  return claimed.map(mapRawOutboxRow);
 }
 
 /**
