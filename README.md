@@ -125,3 +125,7 @@ pnpm dev
 - **[Frontend Auth & Navigation (docs/frontend-auth-and-navigation.md)](docs/frontend-auth-and-navigation.md):** Next.js route protection, permission gates, and permission-aware navigation.
 - **[Development & Review Conventions (docs/review-conventions.md)](docs/review-conventions.md):** Branch naming, Conventional Commits, PR standards, and safe database migration checklists.
 - **[Code Ownership Guidance (docs/ownership-guidance.md)](docs/ownership-guidance.md):** Sensitive file classifications (security, schema, infra) and review requirements.
+- **[API & Contract Conventions (docs/api-conventions.md)](docs/api-conventions.md):** API routing (`/api/v1`), HTTP status codes, standard error envelope, and cursor pagination.
+- **[Idempotency Policy & Replay Mechanics (docs/idempotency-policy.md)](docs/idempotency-policy.md):** Mutating command idempotency, IETF `Idempotency-Key` header, state machine, and replay rules.
+- **[Inbound Webhook Response & Security (docs/webhook-response-and-security.md)](docs/webhook-response-and-security.md):** 500ms fast-ACK rule, durable buffering before side effects, and safe error disclosure.
+- **[API Deprecation & Versioning Policy (docs/api-versioning-and-deprecation.md)](docs/api-versioning-and-deprecation.md):** URI versioning, breaking change rules, RFC 8594 deprecation/sunset headers, and expand-and-contract migrations.
