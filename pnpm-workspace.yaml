@@ -3,7 +3,10 @@ packages:
   - packages/*
 
 allowBuilds:
+  '@prisma/client': true
+  prisma: true
   esbuild: true
+  '@prisma/engines': true
 
 catalog:
   typescript: 5.8.3

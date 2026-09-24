@@ -14,11 +14,30 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "db:generate": "prisma generate",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:diff": "prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code",
+    "db:migrate:status": "prisma migrate status",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:validate": "prisma validate",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
+    "@types/node": "^26.6.2",
+    "prisma": "6.4.1",
+    "tsx": "^4.23.15",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@paralleldrive/cuid2": "3.3.0",
+    "@prisma/client": "6.4.1",
+    "uuidv7": "^1.2.1"
   }
 }
