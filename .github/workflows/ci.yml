@@ -1,0 +1,123 @@
+name: CI Quality Gate & Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality (Lint, Typecheck, Build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Code Formatting Check
+        run: pnpm format:check
+
+      - name: Monorepo Linting
+        run: pnpm lint
+
+      - name: Monorepo Typechecking
+        run: pnpm typecheck
+
+      - name: Monorepo Production Build
+        run: pnpm build
+
+  migration-and-drift:
+    name: Migration Drift & Schema Invariants
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: vynor_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @vynor/database db:generate
+
+      - name: Verify Migration Drift (Prisma Schema vs Migrations)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vynor_test?schema=public
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/vynor_test?schema=public
+        run: pnpm --filter @vynor/database db:migrate:diff
+
+      - name: Verify Database Schema Rules & Constraints
+        run: pnpm --filter @vynor/database db:verify
+
+  verification-suites:
+    name: Application Verification Suites
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Backend Core Foundation
+        run: pnpm --filter @vynor/api verify
+
+      - name: Verify Frontend Foundation
+        run: pnpm --filter @vynor/web verify
+
+      - name: Verify Infrastructure & DevOps Configuration
+        run: pnpm infra:verify

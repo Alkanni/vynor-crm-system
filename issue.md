@@ -359,13 +359,20 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 6.4 Infrastructure & DevOps (`infrastructure/` & `.github/`)
 
-- [ ] **FND-INF-001 [P0]** Create Dockerfiles for web, API, and worker with non-root runtime users. **Depends:** FND-003.
-- [ ] **FND-INF-002 [P0]** Create Docker Compose topology for applications, RustFS, and support services. **Depends:** FND-INF-001.
-- [ ] **FND-INF-003 [P0]** Document connection to local or hosted Supabase PostgreSQL/Auth. **Depends:** FND-018, FND-INF-002. _(OPEN QUESTION: Local Supabase requirement)._
-- [ ] **FND-INF-004 [P0]** Configure Caddy routes, TLS assumptions, API/web reverse proxy separation, webhook path, and upload limits. **Depends:** FND-INF-001.
-- [ ] **FND-INF-005 [P0]** Add health checks and startup ordering without relying on arbitrary sleeps. **Depends:** FND-BE-007, FND-INF-002.
-- [ ] **FND-INF-006 [P0]** Draft GitHub Actions CI workflows for install, lint, typecheck, test, build, and migration validation. **Depends:** FND-006, FND-020.
-- [ ] **FND-INF-007 [P1]** Add container image build, vulnerability scan, SBOM, and provenance plan. **Depends:** FND-INF-001, FND-INF-006.
+- [x] **FND-INF-001 [P0]** Create Dockerfiles for web, API, and worker with non-root runtime users. **Depends:** FND-003.  
+      _Completed in `apps/api/Dockerfile`, `apps/worker/Dockerfile`, `apps/web/Dockerfile`, `infrastructure/docker/`, and `.dockerignore` using multi-stage builds and non-root users (`vynor:nodejs` and `nextjs:nodejs`, UID 1001)._
+- [x] **FND-INF-002 [P0]** Create Docker Compose topology for applications, RustFS, and support services. **Depends:** FND-INF-001.  
+      _Completed in `docker-compose.yml` and `infrastructure/docker/docker-compose.yml` orchestrating `api`, `worker`, `web`, `postgres` (pgvector), `rustfs` (S3 object storage), `rustfs-init` (bucket provisioning), and `caddy`._
+- [x] **FND-INF-003 [P0]** Document connection to local or hosted Supabase PostgreSQL/Auth. **Depends:** FND-018, FND-INF-002. _(OPEN QUESTION: Local Supabase requirement)._  
+      _Completed in `docs/supabase-connection-guide.md` resolving the Open Question by recommending hosted Supabase for local dev parity, Supabase CLI for air-gapped dev, and Docker Compose PostgreSQL for fast CI, documenting connection strings and JWKS/JWT verification._
+- [x] **FND-INF-004 [P0]** Configure Caddy routes, TLS assumptions, API/web reverse proxy separation, webhook path, and upload limits. **Depends:** FND-INF-001.  
+      _Completed in `infrastructure/caddy/Caddyfile` with reverse proxy path routing (`/api/*`, `/realtime/*`, `/webhooks/*`, `/health/*`, and frontend default), automated internal/ACME TLS, 50MB attachment limit, 5MB webhook limit, and hardened security headers._
+- [x] **FND-INF-005 [P0]** Add health checks and startup ordering without relying on arbitrary sleeps. **Depends:** FND-BE-007, FND-INF-002.  
+      _Completed in `docker-compose.yml` with health checks on all services and explicit `depends_on: { condition: service_healthy }` chains without arbitrary sleeps, documented in `docs/infrastructure-and-deployment.md`._
+- [x] **FND-INF-006 [P0]** Draft GitHub Actions CI workflows for install, lint, typecheck, test, build, and migration validation. **Depends:** FND-006, FND-020.  
+      _Completed in `.github/workflows/ci.yml` running pnpm install, format check, lint, typecheck, production build, PostgreSQL migration drift validation (`db:migrate:diff`), and application verification suites._
+- [x] **FND-INF-007 [P1]** Add container image build, vulnerability scan, SBOM, and provenance plan. **Depends:** FND-INF-001, FND-INF-006.  
+      _Completed in `.github/workflows/container-security.yml` and `docs/container-security-and-provenance.md` defining multi-image build matrix, Trivy vulnerability gating (CRITICAL failure rule), SPDX/CycloneDX SBOM generation via Syft, and Sigstore Cosign SLSA provenance attestation._
 
 ### 6.5 Quality Assurance & Testing Suite
 
