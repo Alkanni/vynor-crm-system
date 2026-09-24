@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { createDatabaseClient, type DatabaseClientOptions } from './client.js';
 
 export interface CleanDatabaseOptions {
@@ -83,4 +83,80 @@ export function createTestPrismaClient(options: DatabaseClientOptions = {}): Pri
   }
 
   return createDatabaseClient(clientOpts);
+}
+
+/**
+ * Signal error used to roll back an uncommitted test transaction.
+ */
+export class TestRollbackSignal extends Error {
+  constructor() {
+    super('__TEST_ROLLBACK_SIGNAL__');
+    this.name = 'TestRollbackSignal';
+  }
+}
+
+/**
+ * Executes a test function within a transaction that is guaranteed to roll back.
+ *
+ * This enables ultra-fast, zero-side-effect integration testing where database mutations
+ * are isolated and never permanently persisted to the PostgreSQL instance.
+ *
+ * @param prisma The Prisma client instance.
+ * @param testFn The callback to run within the transactional client.
+ */
+export async function withTestDatabaseTransaction<T>(
+  prisma: PrismaClient,
+  testFn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  let result: T;
+  try {
+    await prisma.$transaction(async (tx) => {
+      result = await testFn(tx);
+      // Intentionally trigger rollback
+      throw new TestRollbackSignal();
+    });
+  } catch (err) {
+    if (err instanceof TestRollbackSignal) {
+      return result!;
+    }
+    throw err;
+  }
+  return result!;
+}
+
+/**
+ * Test fixture helper: creates an isolated test workspace.
+ */
+export async function createTestWorkspace(
+  client: PrismaClient | Prisma.TransactionClient,
+  overrides?: Partial<Prisma.WorkspaceCreateInput>,
+) {
+  const slug = `ws-test-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  return client.workspace.create({
+    data: {
+      name: 'Test Workspace',
+      slug,
+      timezone: 'UTC',
+      ...overrides,
+    },
+  });
+}
+
+/**
+ * Test fixture helper: creates an isolated test user profile.
+ */
+export async function createTestUser(
+  client: PrismaClient | Prisma.TransactionClient,
+  overrides?: Partial<Prisma.UserProfileCreateInput>,
+) {
+  const rand = Math.random().toString(36).substring(2, 7);
+  return client.userProfile.create({
+    data: {
+      supabaseAuthId: `sub_test_${Date.now()}_${rand}`,
+      email: `test_${rand}@vynor.local`,
+      displayName: `Test User ${rand}`,
+      isActive: true,
+      ...overrides,
+    },
+  });
 }

@@ -55,6 +55,10 @@ export {
 export {
   cleanDatabase,
   createTestPrismaClient,
+  withTestDatabaseTransaction,
+  TestRollbackSignal,
+  createTestWorkspace,
+  createTestUser,
   CRM_TABLE_CLEANUP_ORDER,
   type CleanDatabaseOptions,
 } from './test-utils.js';
