@@ -26,6 +26,8 @@ export {
   createDatabaseClient,
   prisma,
   type DatabaseClient,
+  type TransactionClient,
+  type AnyPrismaClient,
   type DatabaseClientOptions,
 } from './client.js';
 
@@ -50,3 +52,13 @@ export {
   CRM_TABLE_CLEANUP_ORDER,
   type CleanDatabaseOptions,
 } from './test-utils.js';
+
+// Transactional Outbox pattern helpers (FND-056, FND-057, FND-058)
+export {
+  createOutboxEvent,
+  withTransactionalOutbox,
+  claimPendingOutboxEvents,
+  recoverExpiredOutboxLeases,
+  type CreateOutboxEventParams,
+  type TransactionalOutboxResult,
+} from './outbox.js';

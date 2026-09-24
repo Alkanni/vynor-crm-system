@@ -133,3 +133,5 @@ pnpm dev
 - **[Sentry Error Boundaries (docs/sentry-error-boundaries.md)](docs/sentry-error-boundaries.md):** Web, API, and worker error boundaries, PII scrubbing, and tag taxonomy.
 - **[Immutable Audit Logging (docs/audit-logging.md)](docs/audit-logging.md):** Audit log architecture, UUIDv7 locality, action catalog, and transactional recording.
 - **[Health Checks & Probes (docs/health-checks-and-probes.md)](docs/health-checks-and-probes.md):** Liveness probes, readiness probes, and subsystem health indicators.
+- **[Background Jobs & Queues (docs/background-jobs-and-queues.md)](docs/background-jobs-and-queues.md):** `pg-boss` queues, versioned job envelopes, failure classification, backoff, and DLQ operations.
+- **[Transactional Outbox Pattern (docs/transactional-outbox-and-dispatch.md)](docs/transactional-outbox-and-dispatch.md):** Atomic outbox persistence, `SKIP LOCKED` claiming, lease recovery, and idempotent dispatch.

@@ -18,6 +18,7 @@
     "@vynor/contracts": "workspace:*",
     "@vynor/database": "workspace:*",
     "@vynor/observability": "workspace:*",
+    "pg-boss": "^12.33.6",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },

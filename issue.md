@@ -228,16 +228,26 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.7 Background Jobs and Transactional Outbox
 
-- [ ] **FND-051 [P0]** Configure `pg-boss` connection and named queue conventions. **Depends:** FND-018.
-- [ ] **FND-052 [P0]** Define versioned Zod job envelopes with job ID, attempt, correlation, causation, workspace, and payload version. **Depends:** FND-039, FND-045, FND-051.
-- [ ] **FND-053 [P0]** Define retryable, terminal, throttled, and authentication failure classes. **Depends:** FND-037, FND-052.
-- [ ] **FND-054 [P0]** Define exponential backoff, jitter, max-attempt, and timeout defaults. **Depends:** FND-053.
-- [ ] **FND-055 [P0]** Define dead-letter queue (DLQ) inspection, retry, replay, and abandon operations. **Depends:** FND-053.
-- [ ] **FND-056 [P0]** Define `OutboxEvent` model, claim state, attempts, timestamps, and error fields. **Depends:** FND-019, FND-052.
-- [ ] **FND-057 [P0]** Define domain transaction helper that persists outbox events atomically with domain mutations. **Depends:** FND-024, FND-056.
-- [ ] **FND-058 [P0]** Define safe concurrent outbox claiming (`SELECT FOR UPDATE SKIP LOCKED`) and lease recovery. **Depends:** FND-056.
-- [ ] **FND-059 [P0]** Define outbox-to-pg-boss dispatch idempotency. **Depends:** FND-051, FND-058.
-- [ ] **FND-060 [P0]** Define worker shutdown, job heartbeat, and stuck-job recovery. **Depends:** FND-051, FND-054.
+- [x] **FND-051 [P0]** Configure `pg-boss` connection and named queue conventions. **Depends:** FND-018.  
+      _Completed in `packages/contracts/src/jobs/queues.ts`, `apps/worker/src/queue/pg-boss.service.ts`, and `docs/background-jobs-and-queues.md` with named queues (`outbox-dispatcher`, `channel-ingress`, `message-delivery`, `ai-inference`, `audit-archival`) and standard connection profiles._
+- [x] **FND-052 [P0]** Define versioned Zod job envelopes with job ID, attempt, correlation, causation, workspace, and payload version. **Depends:** FND-039, FND-045, FND-051.  
+      _Completed in `packages/contracts/src/jobs/envelope.ts` with `JobEnvelopeSchema` and `createJobEnvelope` carrying event context (correlation, causation, actor, workspace, and traceparent)._
+- [x] **FND-053 [P0]** Define retryable, terminal, throttled, and authentication failure classes. **Depends:** FND-037, FND-052.  
+      _Completed in `packages/contracts/src/jobs/errors.ts` defining `RetryableJobError`, `TerminalJobError`, `ThrottledJobError`, `AuthenticationJobError`, and `classifyJobError` classifier._
+- [x] **FND-054 [P0]** Define exponential backoff, jitter, max-attempt, and timeout defaults. **Depends:** FND-053.  
+      _Completed in `packages/contracts/src/jobs/retry.ts` with `DEFAULT_JOB_RETRY_POLICY` and `calculateJobRetryDelay` implementing Full Jitter exponential backoff._
+- [x] **FND-055 [P0]** Define dead-letter queue (DLQ) inspection, retry, replay, and abandon operations. **Depends:** FND-053.  
+      _Completed in `packages/contracts/src/jobs/dlq.ts` (`DeadLetterQuerySchema`, `DeadLetterActionRequestSchema`) and documented in `docs/background-jobs-and-queues.md`._
+- [x] **FND-056 [P0]** Define `OutboxEvent` model, claim state, attempts, timestamps, and error fields. **Depends:** FND-019, FND-052.  
+      _Completed in `packages/database/prisma/schema.prisma` with `claimLeaseExpiresAt`, `claimedAt`, `claimedBy`, `dispatchedAt`, and migration `20260924140000_outbox_claiming_and_leases`._
+- [x] **FND-057 [P0]** Define domain transaction helper that persists outbox events atomically with domain mutations. **Depends:** FND-024, FND-056.  
+      _Completed in `packages/database/src/outbox.ts` (`withTransactionalOutbox`, `createOutboxEvent`) and documented in `docs/transactional-outbox-and-dispatch.md`._
+- [x] **FND-058 [P0]** Define safe concurrent outbox claiming (`SELECT FOR UPDATE SKIP LOCKED`) and lease recovery. **Depends:** FND-056.  
+      _Completed in `packages/database/src/outbox.ts` (`claimPendingOutboxEvents`, `recoverExpiredOutboxLeases`) and verified with PostgreSQL locking semantics._
+- [x] **FND-059 [P0]** Define outbox-to-pg-boss dispatch idempotency. **Depends:** FND-051, FND-058.  
+      _Completed in `apps/worker/src/outbox/outbox-dispatcher.service.ts` using deterministic singleton keys (`outbox:${event.id}`) and documented in `docs/transactional-outbox-and-dispatch.md`._
+- [x] **FND-060 [P0]** Define worker shutdown, job heartbeat, and stuck-job recovery. **Depends:** FND-051, FND-054.  
+      _Completed in `apps/worker/src/queue/pg-boss.service.ts`, `apps/worker/src/outbox/outbox-dispatcher.service.ts`, and documented in `docs/background-jobs-and-queues.md`._
 
 ### 5.8 Channel, Normalized Message, and Provider Event Foundation
 
