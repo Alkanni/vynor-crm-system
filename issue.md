@@ -192,13 +192,20 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.5 API and Contract Conventions
 
-- [ ] **FND-036 [P0]** Define `/api/v1` route, resource naming, HTTP method, and status-code conventions. **Depends:** FND-003.
-- [ ] **FND-037 [P0]** Define a stable API error envelope with machine code, safe message, details, and correlation ID. **Depends:** FND-036.
-- [ ] **FND-038 [P0]** Define cursor pagination, filtering, sorting, and date-range conventions. **Depends:** FND-036.
-- [ ] **FND-039 [P0]** Define Zod request/response contract ownership and OpenAPI generation approach. **Depends:** FND-004, FND-036.
-- [ ] **FND-040 [P0]** Define idempotency-key behavior for applicable command endpoints. **Depends:** FND-036.
-- [ ] **FND-041 [P0]** Define webhook response timing and safe error disclosure rules. **Depends:** FND-037.
-- [ ] **FND-042 [P1]** Define API deprecation and contract versioning policy. **Depends:** FND-039.
+- [x] **FND-036 [P0]** Define `/api/v1` route, resource naming, HTTP method, and status-code conventions.  
+      _Completed in `docs/api-conventions.md` establishing global `/api/v1` prefix, lowercase plural collection naming, single-level sub-resource limit, and HTTP method/status standards._
+- [x] **FND-037 [P0]** Define a stable API error envelope with machine code, safe message, details, and correlation ID.  
+      _Completed in `packages/contracts/src/api/envelope.ts` and `apps/api/src/common/filters/api-exception.filter.ts` providing RFC-7807 compliant error envelope, production information masking, and correlation ID propagation._
+- [x] **FND-038 [P0]** Define cursor pagination, filtering, sorting, and date-range conventions.  
+      _Completed in `packages/contracts/src/api/pagination.ts` and `docs/api-conventions.md` providing URL-safe base64 opaque cursor pagination, sort order, and ISO 8601 UTC date-range contracts._
+- [x] **FND-039 [P0]** Define Zod request/response contract ownership and OpenAPI generation approach.  
+      _Completed in `packages/contracts/src/api/`, `apps/api/src/common/pipes/zod-validation.pipe.ts`, and `docs/api-conventions.md` conforming to AD-013 with single-source Zod schemas and OpenAPI generation architecture._
+- [x] **FND-040 [P0]** Define idempotency-key behavior for applicable command endpoints.  
+      _Completed in `packages/contracts/src/api/idempotency.ts`, `apps/api/src/common/interceptors/idempotency.interceptor.ts`, and `docs/idempotency-policy.md` implementing IETF `Idempotency-Key` header, in-flight 409 locks, and 24h replay caching (`x-idempotent-replay: true`)._
+- [x] **FND-041 [P0]** Define webhook response timing and safe error disclosure rules.  
+      _Completed in `docs/webhook-response-and-security.md` mandating <500ms fast-ACK rule, durable event journaling before side effects (AD-004, AD-005), and generic error disclosure._
+- [x] **FND-042 [P1]** Define API deprecation and contract versioning policy.  
+      _Completed in `docs/api-versioning-and-deprecation.md` defining URI versioning, breaking vs non-breaking rules, RFC 8594 `Deprecation` and `Sunset` headers, 90-day minimum notice, and expand-and-contract migrations._
 
 ### 5.6 Observability, Audit, and Health
 
