@@ -18,6 +18,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@vynor/contracts": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "catalog:"
   }

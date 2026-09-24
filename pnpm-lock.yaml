@@ -233,6 +233,10 @@ importers:
         version: 5.8.3
 
   packages/storage:
+    dependencies:
+      '@vynor/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       typescript:
         specifier: 'catalog:'
