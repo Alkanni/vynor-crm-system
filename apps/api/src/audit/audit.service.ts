@@ -1,9 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import type { AuditEventInput, AuditEventRecord } from '@vynor/contracts';
+import type { ActorContext, AuditEventInput, AuditEventRecord } from '@vynor/contracts';
 import { generateUuidV7, prisma, type AnyPrismaClient, type Prisma } from '@vynor/database';
 
 @Injectable()
 export class AuditService {
+  /**
+   * Record an immutable audit log entry scoped to an authenticated ActorContext (FND-BE-006, FND-048).
+   */
+  async recordForActor(
+    actor: ActorContext,
+    input: Omit<AuditEventInput, 'workspaceId' | 'actorId' | 'actorType'> & {
+      actorType?: AuditEventInput['actorType'];
+    },
+    client: AnyPrismaClient = prisma,
+  ): Promise<AuditEventRecord> {
+    return this.record(
+      {
+        ...input,
+        workspaceId: actor.workspace.id,
+        actorId: actor.user.id,
+        actorType: input.actorType ?? 'USER',
+      },
+      client,
+    );
+  }
+
   /**
    * Record an immutable audit log entry (FND-048).
    * Can execute within an existing database transaction or on the default client.
