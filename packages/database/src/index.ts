@@ -5,6 +5,10 @@ export {
   SystemRoleName,
   MembershipStatus,
   OutboxEventStatus,
+  ChannelType,
+  ProviderAccountStatus,
+  ProviderEventStatus,
+  MessageDeliveryStatus,
 } from '@prisma/client';
 
 export type {
@@ -19,6 +23,8 @@ export type {
   TeamMember,
   OutboxEvent,
   AuditLog,
+  ProviderAccount,
+  ProviderEvent,
 } from '@prisma/client';
 
 // Client instantiation and singleton
@@ -62,3 +68,12 @@ export {
   type CreateOutboxEventParams,
   type TransactionalOutboxResult,
 } from './outbox.js';
+
+// Provider Event journal and deduplication helpers (FND-067, FND-068, FND-069, FND-070)
+export {
+  persistProviderEvent,
+  transitionProviderEventStatus,
+  replayProviderEvent,
+  type PersistProviderEventParams,
+  type PersistProviderEventResult,
+} from './provider-events.js';

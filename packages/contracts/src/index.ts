@@ -6,3 +6,4 @@ export * from './api/index.js';
 export * from './observability/index.js';
 export * from './audit/index.js';
 export * from './jobs/index.js';
+export * from './channels/index.js';
