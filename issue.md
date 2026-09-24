@@ -274,14 +274,37 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.9 Storage and Realtime Foundation
 
-- [ ] **FND-071 [P0]** Define S3-compatible storage interface for put, get, stat, signed download, delete, and health. **Depends:** FND-011.
-- [ ] **FND-072 [P0]** Define object key convention by workspace, purpose, date, and opaque object ID. **Depends:** FND-071.
-- [ ] **FND-073 [P0]** Define attachment metadata, checksum, content-type, size, provider reference, scan state, and retention fields. **Depends:** FND-019, FND-071.
-- [ ] **FND-074 [P0]** Define maximum size, allowed media type, quarantine, and malware-scanning policy. **Depends:** FND-073. _(OPEN QUESTION: Scanning engine)._
-- [ ] **FND-075 [P0]** Define signed-URL authorization and short-expiry rules. **Depends:** FND-032, FND-071.
-- [ ] **FND-076 [P0]** Define Socket.IO authentication and workspace/actor context. **Depends:** FND-030, FND-031.
-- [ ] **FND-077 [P0]** Define room names (`workspace:{id}`, `conversation:{id}`) and versioned realtime event envelopes. **Depends:** FND-039, FND-076.
-- [ ] **FND-078 [P0]** Define reconnect and REST resynchronization behavior; realtime events must not be treated as durable truth. **Depends:** FND-077.
+- [x] **FND-071 [P0]** Define S3-compatible storage interface for put, get, stat, signed download, delete, and health. **Depends:** FND-011.
+
+  _Completed in `packages/storage/src/storage-client.ts` with abortable provider-neutral operations, typed object locations/results, byte ranges, signed downloads, and health status._
+
+- [x] **FND-072 [P0]** Define object key convention by workspace, purpose, date, and opaque object ID. **Depends:** FND-071.
+
+  _Completed in `packages/storage/src/object-key.ts` with strict builder/parser for `workspaces/{workspaceId}/{purpose}/{yyyy}/{mm}/{dd}/{opaqueObjectId}` and no customer filename leakage._
+
+- [x] **FND-073 [P0]** Define attachment metadata, checksum, content-type, size, provider reference, scan state, and retention fields. **Depends:** FND-019, FND-071.
+
+  _Completed in `packages/contracts/src/storage/attachment.ts`, Prisma `Attachment` metadata model, and migration `20260924150000_storage_and_realtime_foundation` with no binary database column._
+
+- [x] **FND-074 [P0]** Define maximum size, allowed media type, quarantine, and malware-scanning policy. **Depends:** FND-073. _(OPEN QUESTION: Scanning engine)._
+
+  _Completed in `packages/storage/src/upload-policy.ts` and `docs/storage-and-attachment-security.md`; policy is fail-closed and scanner-vendor-neutral while the scanning-engine selection remains explicitly open._
+
+- [x] **FND-075 [P0]** Define signed-URL authorization and short-expiry rules. **Depends:** FND-032, FND-071.
+
+  _Completed in `packages/storage/src/signed-download-policy.ts` with workspace/RBAC/retention/zone/scan checks, 60-second default, and 300-second hard maximum._
+
+- [x] **FND-076 [P0]** Define Socket.IO authentication and workspace/actor context. **Depends:** FND-030, FND-031.
+
+  _Completed in `packages/contracts/src/realtime/authentication.ts` and `docs/realtime-contracts-and-resynchronization.md`; client tokens are verified server-side and never retained in socket context._
+
+- [x] **FND-077 [P0]** Define room names (`workspace:{id}`, `conversation:{id}`) and versioned realtime event envelopes. **Depends:** FND-039, FND-076.
+
+  _Completed in `packages/contracts/src/realtime/rooms.ts` and `events.ts` with canonical room helpers, schema version 1, correlation/causation context, unique targets, and resource versions._
+
+- [x] **FND-078 [P0]** Define reconnect and REST resynchronization behavior; realtime events must not be treated as durable truth. **Depends:** FND-077.
+
+  _Completed in `packages/contracts/src/realtime/resynchronization.ts` and `docs/realtime-contracts-and-resynchronization.md` with mandatory REST invalidation/refetch after initial connection, reconnect, or detected gaps._
 
 ---
 
@@ -293,7 +316,10 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 - [ ] **FND-DB-002 [P0]** Add audit event table with append-only application policy. **Depends:** FND-048.
 - [ ] **FND-DB-003 [P0]** Add outbox event table and claim indexes. **Depends:** FND-056, FND-058.
 - [ ] **FND-DB-004 [P0]** Add channel account and provider event journal tables with unique deduplication constraints. **Depends:** FND-067 through FND-069.
-- [ ] **FND-DB-005 [P0]** Add attachment metadata table without binary columns. **Depends:** FND-073.
+- [x] **FND-DB-005 [P0]** Add attachment metadata table without binary columns. **Depends:** FND-073.
+
+  _Completed in Prisma schema and migration `20260924150000_storage_and_realtime_foundation` with workspace/provider relations, checksum/size constraints, scan/retention fields, and operational indexes._
+
 - [ ] **FND-DB-006 [P0]** Add `pgvector` extension migration or documented provider enablement step. **Depends:** FND-023.
 - [ ] **FND-DB-007 [P0]** Verify all workspace-scoped foreign keys and high-frequency indexes. **Depends:** FND-DB-001 through FND-DB-005.
 

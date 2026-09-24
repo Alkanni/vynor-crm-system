@@ -68,6 +68,29 @@ enum MessageDeliveryStatus {
   FAILED
 }
 
+enum AttachmentPurpose {
+  MESSAGE_INBOUND
+  MESSAGE_OUTBOUND
+  KNOWLEDGE_SOURCE
+  BULK_IMPORT
+  REPORT_EXPORT
+  AVATAR
+  AUTOMATION_ARTIFACT
+}
+
+enum AttachmentStorageZone {
+  QUARANTINE
+  PRIVATE
+}
+
+enum AttachmentScanStatus {
+  PENDING
+  SCANNING
+  CLEAN
+  INFECTED
+  FAILED
+}
+
 model Workspace {
   id        String    @id @default(cuid())
   name      String    @db.VarChar(255)
@@ -84,6 +107,7 @@ model Workspace {
   auditLogs   AuditLog[]
   providerAccounts ProviderAccount[]
   providerEvents   ProviderEvent[]
+  attachments      Attachment[]
 
   @@map("workspaces")
 }
@@ -286,6 +310,7 @@ model ProviderAccount {
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   providerEvents ProviderEvent[]
+  attachments    Attachment[]
 
   @@unique([workspaceId, channelType, accountIdentifier], map: "uq_provider_accounts_workspace_channel_identifier")
   @@index([workspaceId], map: "idx_provider_accounts_workspace_id")
@@ -324,3 +349,36 @@ model ProviderEvent {
   @@map("provider_events")
 }
 
+model Attachment {
+  id                String                @id @default(cuid())
+  workspaceId       String                @map("workspace_id")
+  providerAccountId String?               @map("provider_account_id")
+  purpose           AttachmentPurpose
+  storageZone       AttachmentStorageZone @default(QUARANTINE) @map("storage_zone")
+  storageBucket     String                @map("storage_bucket") @db.VarChar(128)
+  objectKey         String                @map("object_key") @db.VarChar(1024)
+  originalFilename  String                @map("original_filename") @db.VarChar(255)
+  contentType       String                @map("content_type") @db.VarChar(255)
+  sizeBytes         BigInt                @map("size_bytes")
+  checksumSha256    String                @map("checksum_sha256") @db.Char(64)
+  providerReference Json?                 @map("provider_reference")
+  scanStatus        AttachmentScanStatus  @default(PENDING) @map("scan_status")
+  scanEngine        String?               @map("scan_engine") @db.VarChar(100)
+  scanResult        Json?                 @map("scan_result")
+  scannedAt         DateTime?             @map("scanned_at") @db.Timestamptz(6)
+  retentionDays     Int                   @default(365) @map("retention_days")
+  purgeAfter        DateTime?             @map("purge_after") @db.Timestamptz(6)
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?             @map("deleted_at") @db.Timestamptz(6)
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerAccount ProviderAccount? @relation(fields: [providerAccountId], references: [id], onDelete: SetNull)
+
+  @@unique([storageBucket, objectKey], map: "uq_attachments_bucket_object_key")
+  @@index([workspaceId, purpose, createdAt], map: "idx_attachments_workspace_purpose_created_at")
+  @@index([workspaceId, scanStatus], map: "idx_attachments_workspace_scan_status")
+  @@index([providerAccountId], map: "idx_attachments_provider_account_id")
+  @@index([purgeAfter], map: "idx_attachments_purge_after")
+  @@map("attachments")
+}
