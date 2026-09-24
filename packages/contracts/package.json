@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
   }
 }

@@ -31,6 +31,13 @@
 - [x] **FND-008 [P1]** Added ownership guidance for security-sensitive and migration files (`docs/ownership-guidance.md`, `.github/CODEOWNERS`).
 - [x] **FND-009 [P0]** Created comprehensive root README with local setup, commands, architecture summary, and links to docs (`README.md`).
 - [x] **FND-010 [P0]** Added ADR template and recorded AD-001 through AD-014 in `docs/adr/` (`docs/adr/template.md`, `docs/adr/README.md`, `docs/adr/0001-...` through `0014-...`).
+- [x] **FND-011 [P0]** Defined Zod-validated environment schemas for web, API, and worker (`packages/contracts/src/env/`).
+- [x] **FND-012 [P0]** Separated public browser configuration (`NEXT_PUBLIC_*`) from server-only secrets (`packages/contracts/src/env/web.ts`, `apps/web/src/env.ts`, `apps/web/.env.example`).
+- [x] **FND-013 [P0]** Added safe `.env.example` files containing names and descriptions, never credentials (`.env.example`, `apps/api/.env.example`, `apps/worker/.env.example`, `apps/web/.env.example`).
+- [x] **FND-014 [P0]** Defined local, test, staging, and production configuration profiles (`docs/configuration-profiles.md`, `packages/contracts/src/env/common.ts`).
+- [x] **FND-015 [P0]** Defined provider credential envelope and secret-reference contract (`packages/contracts/src/security/credential-envelope.ts`).
+- [x] **FND-016 [P0]** Selected production secret storage and documented access/rotation procedure (`docs/secret-management-and-rotation.md` resolving OPEN QUESTION with Doppler/Infisical/Vault and step-by-step zero-downtime rotation).
+- [x] **FND-017 [P0]** Added startup failure on missing or invalid required configuration (`packages/contracts/src/env/validator.ts`, wired to `apps/api/src/main.ts`, `apps/worker/src/main.ts`, `apps/web/src/env.ts`).
 
 ### Quality Gate Status:
 
@@ -126,13 +133,20 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.2 Configuration and Secrets
 
-- [ ] **FND-011 [P0]** Define a Zod-validated environment schema for web, API, and worker. **Depends:** FND-003, FND-004.
-- [ ] **FND-012 [P0]** Separate public browser configuration (`NEXT_PUBLIC_*`) from server-only secrets. **Depends:** FND-011.
-- [ ] **FND-013 [P0]** Add safe `.env.example` files containing names and descriptions, never credentials. **Depends:** FND-011.
-- [ ] **FND-014 [P0]** Define local, test, staging, and production configuration profiles. **Depends:** FND-011.
-- [ ] **FND-015 [P0]** Define the provider credential envelope and secret-reference contract. **Depends:** FND-011.
-- [ ] **FND-016 [P0]** Select production secret storage and document access/rotation procedure. **Depends:** FND-015. _(OPEN QUESTION: Hosting platform)._
-- [ ] **FND-017 [P0]** Add startup failure on missing or invalid required configuration. **Depends:** FND-011.
+- [x] **FND-011 [P0]** Define a Zod-validated environment schema for web, API, and worker.  
+      _Completed in `packages/contracts/src/env/` (`ApiEnvSchema`, `WorkerEnvSchema`, `WebEnvSchema`)._
+- [x] **FND-012 [P0]** Separate public browser configuration (`NEXT_PUBLIC_*`) from server-only secrets.  
+      _Completed via `PublicWebEnvSchema` and `ServerWebEnvSchema` in `packages/contracts/src/env/web.ts` and `apps/web/src/env.ts`._
+- [x] **FND-013 [P0]** Add safe `.env.example` files containing names and descriptions, never credentials.  
+      _Completed across root `.env.example`, `apps/api/.env.example`, `apps/worker/.env.example`, and `apps/web/.env.example`._
+- [x] **FND-014 [P0]** Define local, test, staging, and production configuration profiles.  
+      _Completed in `docs/configuration-profiles.md` with explicit variable matrix and defaults._
+- [x] **FND-015 [P0]** Define the provider credential envelope and secret-reference contract.  
+      _Completed in `packages/contracts/src/security/credential-envelope.ts` (`ProviderCredentialEnvelopeSchema`, `SecretReferenceSchema`)._
+- [x] **FND-016 [P0]** Select production secret storage and document access/rotation procedure.  
+      _Completed in `docs/secret-management-and-rotation.md` resolving hosting platform OPEN QUESTION and zero-downtime procedures._
+- [x] **FND-017 [P0]** Add startup failure on missing or invalid required configuration.  
+      _Completed via `validateEnv` in `packages/contracts/src/env/validator.ts` and enforced at startup in API, worker, and web._
 
 ### 5.3 Database and Migrations
 
@@ -281,8 +295,8 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 ```mermaid
 flowchart TD
     B1["Batch 1 (Done): Monorepo & Shells (FND-001..005)"] --> B2["Batch 2 (Done): Linters, Conventions, ADRs & Readme (FND-006..010)"]
-    B2 --> B3["Batch 3 (Next): Environment Configuration & Secrets (FND-011..017)"]
-    B3 --> B4["Batch 4: Database, Prisma, Extensions & Seeds (FND-018..025, FND-DB-001..007)"]
+    B2 --> B3["Batch 3 (Done): Environment Configuration & Secrets (FND-011..017)"]
+    B3 --> B4["Batch 4 (Next): Database, Prisma, Extensions & Seeds (FND-018..025, FND-DB-001..007)"]
     B4 --> B5["Batch 5: Contracts, Observability & Error Taxonomy (FND-036..050, FND-061..070)"]
     B5 --> B6["Batch 6: Auth (Supabase), Actor Context & RBAC (FND-026..035, FND-BE-003..004)"]
     B5 --> B7["Batch 7: pg-boss, Outbox Engine & Dispatcher (FND-051..060, FND-BE-002, 005)"]
