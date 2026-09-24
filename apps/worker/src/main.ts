@@ -1,8 +1,8 @@
-import "reflect-metadata";
+import 'reflect-metadata';
 
-import { NestFactory } from "@nestjs/core";
+import { NestFactory } from '@nestjs/core';
 
-import { WorkerModule } from "./worker.module.js";
+import { WorkerModule } from './worker.module.js';
 
 const app = await NestFactory.createApplicationContext(WorkerModule);
 
