@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { type PermissionAction } from '@vynor/contracts';
-import { useAllPermissions, usePermission } from '../../lib/auth/auth-context.js';
+import { useAllPermissions, usePermission } from '@/lib/auth/auth-context';
 
 export interface PermissionGateProps {
   /** Single permission action required to render children */

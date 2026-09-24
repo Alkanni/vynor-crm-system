@@ -342,13 +342,20 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 6.3 Frontend Foundation (`apps/web`)
 
-- [ ] **FND-FE-001 [P0]** Bootstrap Next.js layout, Tailwind CSS configuration, and shadcn/ui design tokens. **Depends:** FND-003.
-- [ ] **FND-FE-002 [P0]** Implement Supabase Auth client and session boundary. **Depends:** FND-026.
-- [ ] **FND-FE-003 [P0]** Implement protected application shell and session-expiry handling. **Depends:** FND-FE-002, FND-BE-003.
-- [ ] **FND-FE-004 [P0]** Configure typed API client and TanStack Query defaults. **Depends:** FND-039, FND-BE-010.
-- [ ] **FND-FE-005 [P0]** Configure Zustand store for shell/UI state and document prohibited server-state duplication. **Depends:** FND-FE-001, FND-FE-004.
-- [ ] **FND-FE-006 [P0]** Add global loading, error boundary, permission-denied, offline, and empty-state patterns. **Depends:** FND-FE-003, FND-FE-004.
-- [ ] **FND-FE-007 [P0]** Add Socket.IO client authentication, reconnect, and query invalidation strategy. **Depends:** FND-BE-009, FND-FE-004.
+- [x] **FND-FE-001 [P0]** Bootstrap Next.js layout, Tailwind CSS configuration, and shadcn/ui design tokens. **Depends:** FND-003.  
+      _Completed in `apps/web/postcss.config.mjs`, `apps/web/src/app/globals.css`, and `apps/web/src/lib/utils.ts` configuring Tailwind v4 with shadcn/ui HSL color tokens, typography, dark mode CSS variables, and `cn` helper._
+- [x] **FND-FE-002 [P0]** Implement Supabase Auth client and session boundary. **Depends:** FND-026.  
+      _Completed in `apps/web/src/lib/supabase/client.ts` and `apps/web/src/lib/auth/auth-context.tsx` with isomorphic client initialization, auth state change subscription, cookie syncing (`vynor_session`), and actor context resolution._
+- [x] **FND-FE-003 [P0]** Implement protected application shell and session-expiry handling. **Depends:** FND-FE-002, FND-BE-003.  
+      _Completed in `apps/web/src/components/shell/AppShell.tsx`, `apps/web/src/components/shell/SessionExpiryDialog.tsx`, and `apps/web/src/components/navigation/` with responsive workspace header, realtime indicator, collapsible navigation, permission gates, and session expiry modal._
+- [x] **FND-FE-004 [P0]** Configure typed API client and TanStack Query defaults. **Depends:** FND-039, FND-BE-010.  
+      _Completed in `apps/web/src/lib/api/api-client.ts`, `apps/web/src/lib/query/query-client.ts`, and `apps/web/src/components/providers/QueryProvider.tsx` with RFC-7807 error parsing, correlation ID header propagation, 30s stale time, 5m gcTime, and smart retry policies (skip 4xx, retry 5xx)._
+- [x] **FND-FE-005 [P0]** Configure Zustand store for shell/UI state and document prohibited server-state duplication. **Depends:** FND-FE-001, FND-FE-004.  
+      _Completed in `apps/web/src/lib/store/ui-store.ts` managing sidebar collapse, theme, dialogs, and session expiry status, accompanied by strict anti-duplication guidelines in `docs/frontend-state-management.md`._
+- [x] **FND-FE-006 [P0]** Add global loading, error boundary, permission-denied, offline, and empty-state patterns. **Depends:** FND-FE-003, FND-FE-004.  
+      _Completed in `apps/web/src/components/common/` (`LoadingSpinner`, `ErrorBoundary`, `PermissionDenied`, `OfflineBanner`, `EmptyState`) and Next.js App Router hooks (`loading.tsx`, `error.tsx`)._
+- [x] **FND-FE-007 [P0]** Add Socket.IO client authentication, reconnect, and query invalidation strategy. **Depends:** FND-BE-009, FND-FE-004.  
+      _Completed in `apps/web/src/lib/realtime/realtime-client.ts` and `apps/web/src/lib/realtime/use-realtime.ts` connecting to `/realtime` namespace with JWT handshake, backoff reconnection, room subscription, and automated TanStack Query invalidation on realtime domain events._
 
 ### 6.4 Infrastructure & DevOps (`infrastructure/` & `.github/`)
 

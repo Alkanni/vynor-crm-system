@@ -9,6 +9,11 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
+    "verbatimModuleSyntax": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "plugins": [{ "name": "next" }]
   },
   "include": [
