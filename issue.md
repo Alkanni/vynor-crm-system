@@ -150,14 +150,22 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.3 Database and Migrations
 
-- [ ] **FND-018 [P0]** Configure Prisma for Supabase PostgreSQL with distinct runtime and migration connection guidance. **Depends:** FND-011.
-- [ ] **FND-019 [P0]** Define database naming, ID (`cuid2` / `uuidv7`), timestamp (UTC), timezone, soft-delete, and enum conventions. **Depends:** FND-018.
-- [ ] **FND-020 [P0]** Establish forward-only migration workflow and migration review checklist. **Depends:** FND-018.
-- [ ] **FND-021 [P0]** Add database seed strategy for local roles, permissions, and a development workspace. **Depends:** FND-019.
-- [ ] **FND-022 [P0]** Add isolated test database creation and cleanup strategy. **Depends:** FND-018.
-- [ ] **FND-023 [P0]** Enable required PostgreSQL extensions, including `pgvector` before Phase 2. **Depends:** FND-018.
-- [ ] **FND-024 [P0]** Define transaction helper and retry rules for serialization/deadlock errors. **Depends:** FND-018.
-- [ ] **FND-025 [P0]** Add migration drift check to CI design. **Depends:** FND-020.
+- [x] **FND-018 [P0]** Configure Prisma for Supabase PostgreSQL with distinct runtime and migration connection guidance.  
+      _Completed in `packages/database/prisma/schema.prisma` and `docs/migration-workflow.md` separating runtime pooler (`DATABASE_URL`, port 6543) and migration session (`DIRECT_URL`, port 5432)._
+- [x] **FND-019 [P0]** Define database naming, ID (`cuid2` / `uuidv7`), timestamp (UTC), timezone, soft-delete, and enum conventions.  
+      _Completed in `docs/database-conventions.md` and `packages/database/src/id.ts` with CUID2 domain IDs, UUIDv7 time-sortable IDs, UTC `TIMESTAMPTZ(6)`, soft-delete `deletedAt`, and native enums._
+- [x] **FND-020 [P0]** Establish forward-only migration workflow and migration review checklist.  
+      _Completed in `docs/migration-workflow.md` detailing forward-only policy, expand-and-contract breaking schema transitions, and review checklist._
+- [x] **FND-021 [P0]** Add database seed strategy for local roles, permissions, and a development workspace.  
+      _Completed in `packages/database/prisma/seed.ts` providing idempotent seeding for canonical permissions, default system roles (`SUPER_ADMIN`, `ADMIN`, `AGENT`, `AI_BOT`), dev workspace, and bootstrap users._
+- [x] **FND-022 [P0]** Add isolated test database creation and cleanup strategy.  
+      _Completed in `packages/database/src/test-utils.ts` and `docs/database-testing-and-seeding.md` providing fast `TRUNCATE CASCADE` and seed-preserving isolation._
+- [x] **FND-023 [P0]** Enable required PostgreSQL extensions, including `pgvector` before Phase 2.  
+      _Completed in `packages/database/prisma/schema.prisma` and initial migration `20260924130000_init` enabling `vector` (`pgvector`) and `uuid-ossp`._
+- [x] **FND-024 [P0]** Define transaction helper and retry rules for serialization/deadlock errors.  
+      _Completed in `packages/database/src/transaction.ts` (`withTransaction`) implementing automated exponential backoff with jitter for SQLSTATE `40001`, `40P01`, and Prisma `P2034`._
+- [x] **FND-025 [P0]** Add migration drift check to CI design.  
+      _Completed in `packages/database/package.json` (`db:migrate:diff`) and documented in `docs/migration-workflow.md`._
 
 ### 5.4 Authentication and Authorization (IAM)
 

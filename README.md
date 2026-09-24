@@ -116,5 +116,10 @@ pnpm dev
 
 - **[Master Implementation Plan (issue.md)](issue.md):** Comprehensive engineering roadmap, phase milestones, and live task checklist.
 - **[Architecture Decision Records (docs/adr/)](docs/adr/):** Complete index of foundational architectural decisions (AD-001 through AD-014).
+- **[Database Conventions & Standards (docs/database-conventions.md)](docs/database-conventions.md):** ID strategy (CUID2/UUIDv7), UTC timestamps, soft deletes, and naming standards.
+- **[Database Migration Guide (docs/migration-workflow.md)](docs/migration-workflow.md):** Supabase connection pooling vs direct migration endpoints, forward-only workflows, and CI drift verification.
+- **[Database Testing & Concurrency (docs/database-testing-and-seeding.md)](docs/database-testing-and-seeding.md):** Test database isolation, idempotent seeding, and serialization/deadlock retry policies.
+- **[Configuration Profiles (docs/configuration-profiles.md)](docs/configuration-profiles.md):** Matrix of environment profiles across local, test, staging, and production.
+- **[Secret Management & Rotation (docs/secret-management-and-rotation.md)](docs/secret-management-and-rotation.md):** Production secret vaulting, credential envelopes, and zero-downtime rotation.
 - **[Development & Review Conventions (docs/review-conventions.md)](docs/review-conventions.md):** Branch naming, Conventional Commits, PR standards, and safe database migration checklists.
 - **[Code Ownership Guidance (docs/ownership-guidance.md)](docs/ownership-guidance.md):** Sensitive file classifications (security, schema, infra) and review requirements.
