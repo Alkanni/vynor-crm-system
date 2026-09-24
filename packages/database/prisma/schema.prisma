@@ -46,6 +46,7 @@ model Workspace {
 
   memberships WorkspaceMembership[]
   roles       Role[]
+  teams       Team[]
   outboxEvents OutboxEvent[]
 
   @@map("workspaces")
@@ -79,11 +80,42 @@ model WorkspaceMembership {
   workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   userProfile UserProfile      @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
   roles       MembershipRole[]
+  teams       TeamMember[]
 
   @@unique([workspaceId, userProfileId], map: "uq_workspace_memberships_workspace_user")
   @@index([workspaceId], map: "idx_workspace_memberships_workspace_id")
   @@index([userProfileId], map: "idx_workspace_memberships_user_profile_id")
   @@map("workspace_memberships")
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+
+  @@unique([workspaceId, name], map: "uq_teams_workspace_name")
+  @@index([workspaceId], map: "idx_teams_workspace_id")
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId       String   @map("team_id")
+  membershipId String   @map("membership_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team       Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  membership WorkspaceMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, membershipId])
+  @@index([teamId], map: "idx_team_members_team_id")
+  @@index([membershipId], map: "idx_team_members_membership_id")
+  @@map("team_members")
 }
 
 model Role {

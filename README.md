@@ -120,6 +120,8 @@ pnpm dev
 - **[Database Migration Guide (docs/migration-workflow.md)](docs/migration-workflow.md):** Supabase connection pooling vs direct migration endpoints, forward-only workflows, and CI drift verification.
 - **[Database Testing & Concurrency (docs/database-testing-and-seeding.md)](docs/database-testing-and-seeding.md):** Test database isolation, idempotent seeding, and serialization/deadlock retry policies.
 - **[Configuration Profiles (docs/configuration-profiles.md)](docs/configuration-profiles.md):** Matrix of environment profiles across local, test, staging, and production.
-- **[Secret Management & Rotation (docs/secret-management-and-rotation.md)](docs/secret-management-and-rotation.md):** Production secret vaulting, credential envelopes, and zero-downtime rotation.
+- **[Authentication & Token Lifecycle (docs/auth-flows.md)](docs/auth-flows.md):** Supabase Auth login, refresh, logout, and token verification flows.
+- **[IAM Policies & Rejections (docs/iam-policies-and-rejections.md)](docs/iam-policies-and-rejections.md):** Canonical permission catalog, default roles, actor context, rejection matrix, and bootstrap admin path.
+- **[Frontend Auth & Navigation (docs/frontend-auth-and-navigation.md)](docs/frontend-auth-and-navigation.md):** Next.js route protection, permission gates, and permission-aware navigation.
 - **[Development & Review Conventions (docs/review-conventions.md)](docs/review-conventions.md):** Branch naming, Conventional Commits, PR standards, and safe database migration checklists.
 - **[Code Ownership Guidance (docs/ownership-guidance.md)](docs/ownership-guidance.md):** Sensitive file classifications (security, schema, infra) and review requirements.

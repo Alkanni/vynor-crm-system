@@ -15,7 +15,9 @@ export interface CleanDatabaseOptions {
  */
 export const CRM_TABLE_CLEANUP_ORDER = [
   'outbox_events',
+  'team_members',
   'membership_roles',
+  'teams',
   'role_permissions',
   'workspace_memberships',
   'roles',
@@ -43,7 +45,9 @@ export async function cleanDatabase(
     // Selectively clean dynamic data, leaving system permissions and system roles intact
     await prisma.$transaction(async (tx) => {
       await tx.outboxEvent.deleteMany();
+      await tx.teamMember.deleteMany();
       await tx.membershipRole.deleteMany();
+      await tx.team.deleteMany();
       await tx.workspaceMembership.deleteMany();
       await tx.role.deleteMany({
         where: {

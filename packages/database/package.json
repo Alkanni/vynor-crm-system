@@ -38,6 +38,7 @@
   "dependencies": {
     "@paralleldrive/cuid2": "3.3.0",
     "@prisma/client": "6.4.1",
+    "@vynor/contracts": "workspace:*",
     "uuidv7": "^1.2.1"
   }
 }

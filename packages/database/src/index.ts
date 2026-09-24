@@ -15,6 +15,8 @@ export type {
   Permission,
   RolePermission,
   MembershipRole,
+  Team,
+  TeamMember,
   OutboxEvent,
 } from '@prisma/client';
 
