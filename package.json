@@ -1,0 +1,22 @@
+{
+  "name": "vynor-crm",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Internal Omnichannel Communication & AI Engagement System",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.19.0 <25",
+    "pnpm": ">=11.25.0 <12"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "turbo": "2.11.3",
+    "typescript": "7.0.2"
+  }
+}
