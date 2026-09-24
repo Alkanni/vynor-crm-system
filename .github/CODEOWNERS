@@ -1,0 +1,26 @@
+# VYNOR CRM — CODEOWNERS
+# Syntax: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global Default Owners
+*       @Alkanni
+
+# Tier 1: Security & Identity Boundaries
+apps/api/src/auth/**                    @Alkanni
+apps/api/src/iam/**                     @Alkanni
+packages/contracts/src/auth/**          @Alkanni
+packages/observability/src/redact/**    @Alkanni
+packages/storage/src/signed-urls/**     @Alkanni
+.env*                                   @Alkanni
+
+# Tier 2: Database Schema & Migrations
+packages/database/prisma/**             @Alkanni
+packages/database/src/transaction/**    @Alkanni
+
+# Tier 3: External Integrations & Adapters
+packages/channel-adapters/**            @Alkanni
+apps/api/src/webhooks/**                @Alkanni
+
+# Tier 4: Infrastructure & Pipelines
+.github/workflows/**                    @Alkanni
+infrastructure/**                       @Alkanni
+docker-compose.yml                      @Alkanni
