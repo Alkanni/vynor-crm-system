@@ -1,133 +1,7 @@
 import { PrismaClient, SystemRoleName, MembershipStatus } from '@prisma/client';
+import { CANONICAL_PERMISSIONS } from '@vynor/contracts';
 
 const prisma = new PrismaClient();
-
-/**
- * Canonical permissions following the resource:action naming convention.
- */
-export const CANONICAL_PERMISSIONS = [
-  // Workspace management
-  {
-    action: 'workspace:read',
-    category: 'workspace',
-    description: 'View workspace settings and details',
-  },
-  {
-    action: 'workspace:update',
-    category: 'workspace',
-    description: 'Update workspace configurations',
-  },
-  { action: 'workspace:delete', category: 'workspace', description: 'Delete or archive workspace' },
-
-  // User and membership management
-  { action: 'user:read', category: 'user', description: 'View team members and profiles' },
-  { action: 'user:invite', category: 'user', description: 'Invite new members to the workspace' },
-  {
-    action: 'user:manage',
-    category: 'user',
-    description: 'Manage member roles, permissions, and status',
-  },
-
-  // Role and access control
-  { action: 'role:read', category: 'role', description: 'View workspace roles and permissions' },
-  {
-    action: 'role:manage',
-    category: 'role',
-    description: 'Create and edit custom workspace roles',
-  },
-
-  // Conversations and inbox
-  {
-    action: 'conversation:read',
-    category: 'conversation',
-    description: 'Read customer conversations and history',
-  },
-  {
-    action: 'conversation:write',
-    category: 'conversation',
-    description: 'Reply, assign, and update conversation state',
-  },
-  {
-    action: 'conversation:assign',
-    category: 'conversation',
-    description: 'Assign conversation to agents or teams',
-  },
-  {
-    action: 'conversation:close',
-    category: 'conversation',
-    description: 'Resolve and close customer conversations',
-  },
-
-  // Messages
-  {
-    action: 'message:read',
-    category: 'message',
-    description: 'View message details and attachments',
-  },
-  {
-    action: 'message:send',
-    category: 'message',
-    description: 'Send outbound omnichannel messages',
-  },
-  { action: 'message:delete', category: 'message', description: 'Delete or recall messages' },
-
-  // Contacts and CRM
-  {
-    action: 'contact:read',
-    category: 'contact',
-    description: 'View customer contacts and profiles',
-  },
-  {
-    action: 'contact:write',
-    category: 'contact',
-    description: 'Create and update customer contacts',
-  },
-  { action: 'contact:delete', category: 'contact', description: 'Delete customer contacts' },
-
-  // Campaigns and broadcasts
-  {
-    action: 'campaign:read',
-    category: 'campaign',
-    description: 'View broadcast campaigns and analytics',
-  },
-  {
-    action: 'campaign:write',
-    category: 'campaign',
-    description: 'Create and schedule broadcast campaigns',
-  },
-  { action: 'campaign:launch', category: 'campaign', description: 'Trigger broadcast execution' },
-
-  // Analytics and reporting
-  {
-    action: 'analytics:read',
-    category: 'analytics',
-    description: 'View operational dashboards and KPI reports',
-  },
-  {
-    action: 'analytics:export',
-    category: 'analytics',
-    description: 'Export raw analytical and audit datasets',
-  },
-
-  // Channels and integrations
-  {
-    action: 'integration:read',
-    category: 'integration',
-    description: 'View connected channels and provider accounts',
-  },
-  {
-    action: 'integration:manage',
-    category: 'integration',
-    description: 'Configure API keys, webhooks, and channel providers',
-  },
-
-  // Audit logs
-  {
-    action: 'audit:read',
-    category: 'audit',
-    description: 'View compliance and security audit logs',
-  },
-] as const;
 
 /**
  * Role to permission mapping defining least-privilege defaults.
@@ -141,6 +15,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<SystemRoleName, string[]> = {
     'user:invite',
     'user:manage',
     'role:read',
+    'team:read',
+    'team:manage',
     'conversation:read',
     'conversation:write',
     'conversation:assign',
@@ -161,6 +37,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<SystemRoleName, string[]> = {
   [SystemRoleName.AGENT]: [
     'workspace:read',
     'user:read',
+    'team:read',
     'conversation:read',
     'conversation:write',
     'conversation:assign',
@@ -187,7 +64,7 @@ async function main() {
   console.info('🌱 Starting VYNOR database seeding...');
 
   // 1. Seed canonical permissions
-  console.info('Seeding canonical permissions...');
+  console.info('Seeding canonical permissions from @vynor/contracts...');
   for (const perm of CANONICAL_PERMISSIONS) {
     await prisma.permission.upsert({
       where: { action: perm.action },
@@ -378,6 +255,57 @@ async function main() {
       },
     });
   }
+
+  // 6. Seed workspace teams and team assignments
+  console.info('Seeding workspace teams...');
+  const supportTeam = await prisma.team.upsert({
+    where: {
+      workspaceId_name: {
+        workspaceId: devWorkspace.id,
+        name: 'Tier 1 Support',
+      },
+    },
+    update: {
+      description: 'Frontline customer triage and conversation handling',
+    },
+    create: {
+      workspaceId: devWorkspace.id,
+      name: 'Tier 1 Support',
+      description: 'Frontline customer triage and conversation handling',
+    },
+  });
+
+  await prisma.team.upsert({
+    where: {
+      workspaceId_name: {
+        workspaceId: devWorkspace.id,
+        name: 'VIP Sales & Outreach',
+      },
+    },
+    update: {
+      description: 'High-value customer account management and outbound campaigns',
+    },
+    create: {
+      workspaceId: devWorkspace.id,
+      name: 'VIP Sales & Outreach',
+      description: 'High-value customer account management and outbound campaigns',
+    },
+  });
+
+  // Assign agent to support team
+  await prisma.teamMember.upsert({
+    where: {
+      teamId_membershipId: {
+        teamId: supportTeam.id,
+        membershipId: agentMembership.id,
+      },
+    },
+    update: {},
+    create: {
+      teamId: supportTeam.id,
+      membershipId: agentMembership.id,
+    },
+  });
 
   console.info('✅ Database seeding finished successfully.');
 }

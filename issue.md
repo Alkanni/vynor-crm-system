@@ -169,16 +169,26 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.4 Authentication and Authorization (IAM)
 
-- [ ] **FND-026 [P0]** Document Supabase Auth login, refresh, logout, and token verification flows. **Depends:** FND-011.
-- [ ] **FND-027 [P0]** Define internal `UserProfile`, `Workspace`, and `WorkspaceMembership` models in Prisma schema. **Depends:** FND-019, FND-026.
-- [ ] **FND-028 [P0]** Define `Team`, `Role`, `Permission`, role-permission, and membership-role models. **Depends:** FND-027.
-- [ ] **FND-029 [P0]** Create the canonical permission catalog and naming convention (`resource:action`). **Depends:** FND-028.
-- [ ] **FND-030 [P0]** Implement NestJS JWT verification against Supabase signing keys/JWKS. **Depends:** FND-026.
-- [ ] **FND-031 [P0]** Define request actor context with auth user, internal member, workspace, team, and correlation ID. **Depends:** FND-027, FND-030.
-- [ ] **FND-032 [P0]** Define permission guard and policy service behavior. **Depends:** FND-029, FND-031.
-- [ ] **FND-033 [P0]** Define disabled-user, removed-membership, expired-token, and wrong-workspace rejection behavior. **Depends:** FND-031, FND-032.
-- [ ] **FND-034 [P0]** Seed least-privilege default roles (SuperAdmin, Admin, Agent, AI Bot) and a bootstrap admin path. **Depends:** FND-021, FND-029.
-- [ ] **FND-035 [P0]** Define frontend protected-route and permission-aware navigation behavior. **Depends:** FND-031, FND-032.
+- [x] **FND-026 [P0]** Document Supabase Auth login, refresh, logout, and token verification flows.  
+      _Completed in `docs/auth-flows.md` detailing decoupled identity vs authorization (AD-009), token refresh, session revocation, and backend JWT verification._
+- [x] **FND-027 [P0]** Define internal `UserProfile`, `Workspace`, and `WorkspaceMembership` models in Prisma schema.  
+      _Completed in `packages/database/prisma/schema.prisma` with CUID2 IDs, UTC timestamps, soft-deletes, and status enums._
+- [x] **FND-028 [P0]** Define `Team`, `Role`, `Permission`, role-permission, and membership-role models.  
+      _Completed in `packages/database/prisma/schema.prisma` and migrations `20260924130000_init` and `20260924131500_add_teams`._
+- [x] **FND-029 [P0]** Create the canonical permission catalog and naming convention (`resource:action`).  
+      _Completed in `packages/contracts/src/iam/permissions.ts` establishing 28 canonical permissions across 11 categories with typed evaluation helpers._
+- [x] **FND-030 [P0]** Implement NestJS JWT verification against Supabase signing keys/JWKS.  
+      _Completed in `apps/api/src/iam/jwt-verifier.service.ts` supporting symmetric HS256 secret and asymmetric JWKS verification via `jose`._
+- [x] **FND-031 [P0]** Define request actor context with auth user, internal member, workspace, team, and correlation ID.  
+      _Completed in `packages/contracts/src/iam/actor.ts` and `apps/api/src/iam/actor-context.service.ts` assembling verified request `ActorContext`._
+- [x] **FND-032 [P0]** Define permission guard and policy service behavior.  
+      _Completed in `apps/api/src/iam/permission.guard.ts` (`@RequirePermissions(...)`) and `apps/api/src/iam/policy.service.ts` for programmatic authorization._
+- [x] **FND-033 [P0]** Define disabled-user, removed-membership, expired-token, and wrong-workspace rejection behavior.  
+      _Completed across `AuthGuard`, `PermissionGuard`, `packages/contracts/src/iam/errors.ts`, and documented in `docs/iam-policies-and-rejections.md`._
+- [x] **FND-034 [P0]** Seed least-privilege default roles (SuperAdmin, Admin, Agent, AI Bot) and a bootstrap admin path.  
+      _Completed in `packages/database/prisma/seed.ts` seeding canonical roles, teams, test users, and documented in `docs/iam-policies-and-rejections.md`._
+- [x] **FND-035 [P0]** Define frontend protected-route and permission-aware navigation behavior.  
+      _Completed in `apps/web/src/middleware.ts`, `apps/web/src/lib/auth/`, `PermissionGate.tsx`, `NavigationMenu.tsx`, and `docs/frontend-auth-and-navigation.md`._
 
 ### 5.5 API and Contract Conventions
 
