@@ -1,0 +1,215 @@
+name: vynor-crm
+
+networks:
+  vynor-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rustfs_data:
+  caddy_data:
+  caddy_config:
+
+services:
+  # 1. PostgreSQL Database with pgvector extension (FND-018, FND-023)
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: vynor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vynor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - vynor-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d vynor']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # 2. RustFS / S3-Compatible Object Store (FND-071..075, AD-010)
+  rustfs:
+    image: minio/minio:latest
+    container_name: vynor-rustfs
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: vynor_storage_admin
+      MINIO_ROOT_PASSWORD: vynor_storage_secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - rustfs_data:/data
+    networks:
+      - vynor-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9000/minio/health/live || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # 3. RustFS Bucket Provisioning Helper
+  rustfs-init:
+    image: minio/mc:latest
+    container_name: vynor-rustfs-init
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    networks:
+      - vynor-network
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://rustfs:9000 vynor_storage_admin vynor_storage_secret;
+      /usr/bin/mc mb --ignore-existing myminio/vynor-crm-attachments;
+      /usr/bin/mc mb --ignore-existing myminio/vynor-crm-attachments-quarantine;
+      echo 'RustFS S3 buckets initialized successfully';
+      exit 0;
+      "
+
+  # 4. Backend NestJS REST API & Realtime Gateway (FND-BE-001, FND-INF-001)
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: vynor-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      APP_URL: http://localhost:3001
+      CORS_ALLOWED_ORIGINS: 'http://localhost:3000,http://localhost:80,http://localhost'
+      DATABASE_URL: 'postgresql://postgres:postgres@postgres:5432/vynor?schema=public'
+      DIRECT_URL: 'postgresql://postgres:postgres@postgres:5432/vynor?schema=public'
+      SUPABASE_URL: 'http://localhost:54321'
+      SUPABASE_ANON_KEY: 'dev-anon-key-placeholder'
+      SUPABASE_SERVICE_ROLE_KEY: 'dev-service-role-key-placeholder'
+      SUPABASE_JWT_SECRET: 'dev-supabase-jwt-secret-for-local-testing-only-32-chars'
+      STORAGE_ENDPOINT: 'http://rustfs:9000'
+      STORAGE_REGION: 'us-east-1'
+      STORAGE_BUCKET: 'vynor-crm-attachments'
+      STORAGE_ACCESS_KEY_ID: 'vynor_storage_admin'
+      STORAGE_SECRET_ACCESS_KEY: 'vynor_storage_secret'
+      STORAGE_USE_SSL: 'false'
+    ports:
+      - '3001:3001'
+    networks:
+      - vynor-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'wget --no-verbose --tries=1 --spider http://localhost:3001/health/live || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # 5. Background Worker & Outbox Dispatcher (FND-BE-002, FND-051..060)
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: vynor-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: 'postgresql://postgres:postgres@postgres:5432/vynor?schema=public'
+      DIRECT_URL: 'postgresql://postgres:postgres@postgres:5432/vynor?schema=public'
+      PG_BOSS_SCHEMA: 'pgboss'
+      PG_BOSS_RETENTION_DAYS: 14
+      STORAGE_ENDPOINT: 'http://rustfs:9000'
+      STORAGE_REGION: 'us-east-1'
+      STORAGE_BUCKET: 'vynor-crm-attachments'
+      STORAGE_ACCESS_KEY_ID: 'vynor_storage_admin'
+      STORAGE_SECRET_ACCESS_KEY: 'vynor_storage_secret'
+      STORAGE_USE_SSL: 'false'
+    networks:
+      - vynor-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', "node -e 'process.exit(0)' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # 6. Frontend Next.js Web Application (FND-FE-001..007)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: vynor-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+      NEXT_PUBLIC_API_URL: 'http://localhost:3001'
+      NEXT_PUBLIC_SOCKET_URL: 'http://localhost:3001'
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321'
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'dev-anon-key-placeholder'
+    ports:
+      - '3000:3000'
+    networks:
+      - vynor-network
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # 7. Caddy Edge Reverse Proxy with TLS & Upload Limiting (FND-INF-004)
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: vynor-caddy
+    restart: unless-stopped
+    environment:
+      DOMAIN: 'localhost'
+      TLS_MODE: 'internal'
+    ports:
+      - '80:80'
+      - '443:443'
+      - '8080:8080'
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - vynor-network
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'wget --no-verbose --tries=1 --spider http://localhost:80/health/live || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

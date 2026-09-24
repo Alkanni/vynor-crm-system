@@ -1,0 +1,117 @@
+# VYNOR CRM Caddy Reverse Proxy Configuration
+# FND-INF-004: Reverse proxy separation, TLS, webhook path, and upload limits
+
+{
+    # Global options
+    admin off
+    auto_https disable_redirects
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}
+
+# Variable interpolation for domain and TLS mode
+# For local development: DOMAIN=localhost, TLS_MODE=internal
+# For staging/production: DOMAIN=crm.vynor.io, TLS_MODE=acme (or email address for ACME)
+{$DOMAIN:localhost} {
+    # TLS configuration: 'internal' uses Caddy's local root CA for zero-config HTTPS
+    # In production, set TLS_MODE to your ACME email (e.g. ops@vynor.io)
+    tls {$TLS_MODE:internal}
+
+    # Global security headers for all responses
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+
+    # 1. Attachment uploads (S3/RustFS upload boundary) - 50MB cap
+    handle /api/v1/attachments/* {
+        request_body {
+            max_size 50MB
+        }
+        reverse_proxy api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 2. Inbound Provider Webhooks (WhatsApp Meta, Telegram, etc.) - 5MB cap & fast proxy
+    handle /webhooks/* {
+        request_body {
+            max_size 5MB
+        }
+        reverse_proxy api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            transport http {
+                response_header_timeout 5s
+                dial_timeout 2s
+            }
+        }
+    }
+
+    # 3. Realtime Socket.IO and WebSockets Gateway
+    handle /socket.io/* {
+        reverse_proxy api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    handle /realtime/* {
+        reverse_proxy api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 4. REST API Endpoints & Health Probes (/api/v1/*, /health/*)
+    handle /api/* {
+        request_body {
+            max_size 10MB
+        }
+        reverse_proxy api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    handle /health/* {
+        reverse_proxy api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 5. Frontend Application Shell (Next.js) - Default route
+    handle {
+        request_body {
+            max_size 25MB
+        }
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}

@@ -1,0 +1,91 @@
+name: Container Security, Vulnerability Scan & SBOM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infrastructure/**'
+      - 'Dockerfile*'
+      - '.github/workflows/container-security.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infrastructure/**'
+      - 'Dockerfile*'
+  schedule:
+    # Run weekly scan on Sundays at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: container-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-scan-sbom:
+    name: Build, Scan & SBOM (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: api
+            dockerfile: apps/api/Dockerfile
+            image_name: vynor-api
+          - app: worker
+            dockerfile: apps/worker/Dockerfile
+            image_name: vynor-worker
+          - app: web
+            dockerfile: apps/web/Dockerfile
+            image_name: vynor-web
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ matrix.image_name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ matrix.image_name }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.app }}.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0' # Set to '1' to enforce hard failure in production release branch
+
+      - name: Upload Trivy Scan Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.app }}.sarif'
+          category: 'container-${{ matrix.app }}'
+
+      - name: Generate SPDX & CycloneDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ matrix.image_name }}:${{ github.sha }}
+          format: 'spdx-json'
+          output-file: 'sbom-${{ matrix.app }}.spdx.json'
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.app }}
+          path: 'sbom-${{ matrix.app }}.spdx.json'
