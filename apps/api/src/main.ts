@@ -8,6 +8,7 @@ import { AppModule } from './app.module.js';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter.js';
 import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor.js';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor.js';
+import { ZodValidationPipe } from './common/pipes/zod-validation.pipe.js';
 
 // Load local .env if present
 loadEnvFileIfPresent();
@@ -20,6 +21,9 @@ const app = await NestFactory.create(AppModule);
 
 // FND-036: Set global API prefix to /api/v1
 app.setGlobalPrefix('api/v1');
+
+// FND-BE-001 / FND-039: Register global Zod validation pipe
+app.useGlobalPipes(new ZodValidationPipe());
 
 // FND-037: Register global RFC-7807 compliant API exception filter
 app.useGlobalFilters(new ApiExceptionFilter());

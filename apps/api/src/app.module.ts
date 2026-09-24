@@ -3,9 +3,12 @@ import { AuditModule } from './audit/audit.module.js';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware.js';
 import { HealthModule } from './health/health.module.js';
 import { IamModule } from './iam/index.js';
+import { OpenApiModule } from './openapi/openapi.module.js';
+import { RealtimeModule } from './realtime/realtime.module.js';
+import { StorageModule } from './storage/storage.module.js';
 
 @Module({
-  imports: [IamModule, HealthModule, AuditModule],
+  imports: [IamModule, HealthModule, AuditModule, StorageModule, RealtimeModule, OpenApiModule],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

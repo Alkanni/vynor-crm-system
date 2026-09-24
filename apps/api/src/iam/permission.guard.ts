@@ -14,13 +14,17 @@ import {
   type PermissionAction,
 } from '@vynor/contracts';
 import type { Request } from 'express';
+import { AuditService } from '../audit/audit.service.js';
 import { IS_PUBLIC_KEY, REQUIRED_PERMISSIONS_KEY } from './decorators.js';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly auditService: AuditService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -61,6 +65,25 @@ export class PermissionGuard implements CanActivate {
 
     if (!hasAccess) {
       const missing = requiredPermissions.filter((p) => !hasPermission(actor.permissions, p));
+
+      // Record denied-access audit event (FND-BE-004, FND-048)
+      try {
+        await this.auditService.recordForActor(actor, {
+          action: 'security.permission_denied',
+          resourceType: 'iam.permission',
+          resourceId: missing.join(','),
+          correlationId: request.correlationId || 'unknown',
+          metadata: {
+            required: requiredPermissions,
+            missing,
+            granted: actor.permissions,
+            path: request.url,
+            method: request.method,
+          },
+        });
+      } catch {
+        // Audit recording failure must not mask authorization denial
+      }
 
       const payload: IamErrorResponse = {
         statusCode: HttpStatus.FORBIDDEN,

@@ -329,16 +329,16 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 6.2 Backend Core (`apps/api` & `apps/worker`)
 
-- [ ] **FND-BE-001 [P0]** Bootstrap NestJS API with global validation pipe, error filter, request context, and graceful shutdown. **Depends:** FND-011, FND-037, FND-039, FND-044.
-- [ ] **FND-BE-002 [P0]** Bootstrap worker with `pg-boss` lifecycle and graceful shutdown. **Depends:** FND-051, FND-060.
-- [ ] **FND-BE-003 [P0]** Implement auth verification and internal membership resolution. **Depends:** FND-030, FND-031, FND-DB-001.
-- [ ] **FND-BE-004 [P0]** Implement permission guard, permission service, and denied-access audit behavior. **Depends:** FND-032, FND-BE-003.
-- [ ] **FND-BE-005 [P0]** Implement outbox persistence and dispatcher foundation. **Depends:** FND-DB-003, FND-057 through FND-060.
-- [ ] **FND-BE-006 [P0]** Implement audit writer and actor context integration. **Depends:** FND-DB-002, FND-048, FND-BE-003.
-- [ ] **FND-BE-007 [P0]** Implement liveness, readiness, and dependency health endpoints (`/health/live`, `/health/ready`). **Depends:** FND-049, FND-050.
-- [ ] **FND-BE-008 [P0]** Implement RustFS/S3 adapter and authorized signed-download service. **Depends:** FND-071 through FND-075, FND-DB-005.
-- [ ] **FND-BE-009 [P0]** Implement authenticated Socket.IO gateway and versioned event publisher boundary. **Depends:** FND-076 through FND-078.
-- [ ] **FND-BE-010 [P0]** Publish initial OpenAPI document and error catalog. **Depends:** FND-BE-001, FND-039.
+- [x] **FND-BE-001 [P0]** Bootstrap NestJS API with global validation pipe, error filter, request context, and graceful shutdown. **Depends:** FND-011, FND-037, FND-039, FND-044.
+- [x] **FND-BE-002 [P0]** Bootstrap worker with `pg-boss` lifecycle and graceful shutdown. **Depends:** FND-051, FND-060.
+- [x] **FND-BE-003 [P0]** Implement auth verification and internal membership resolution. **Depends:** FND-030, FND-031, FND-DB-001.
+- [x] **FND-BE-004 [P0]** Implement permission guard, permission service, and denied-access audit behavior. **Depends:** FND-032, FND-BE-003.
+- [x] **FND-BE-005 [P0]** Implement outbox persistence and dispatcher foundation. **Depends:** FND-DB-003, FND-057 through FND-060.
+- [x] **FND-BE-006 [P0]** Implement audit writer and actor context integration. **Depends:** FND-DB-002, FND-048, FND-BE-003.
+- [x] **FND-BE-007 [P0]** Implement liveness, readiness, and dependency health endpoints (`/health/live`, `/health/ready`). **Depends:** FND-049, FND-050.
+- [x] **FND-BE-008 [P0]** Implement RustFS/S3 adapter and authorized signed-download service. **Depends:** FND-071 through FND-075, FND-DB-005.
+- [x] **FND-BE-009 [P0]** Implement authenticated Socket.IO gateway and versioned event publisher boundary. **Depends:** FND-076 through FND-078.
+- [x] **FND-BE-010 [P0]** Publish initial OpenAPI document and error catalog. **Depends:** FND-BE-001, FND-039.
 
 ### 6.3 Frontend Foundation (`apps/web`)
 

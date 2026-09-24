@@ -96,3 +96,12 @@ export interface S3CompatibleStorage {
   delete(input: DeleteObjectInput): Promise<void>;
   health(options?: StorageOperationOptions): Promise<StorageHealthResult>;
 }
+
+export interface StorageClientConfig {
+  readonly endpoint: string;
+  readonly region: string;
+  readonly accessKeyId: string;
+  readonly secretAccessKey: string;
+  readonly defaultBucket?: string;
+  readonly forcePathStyle?: boolean;
+}

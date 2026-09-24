@@ -20,21 +20,23 @@ import { Public } from '../iam/decorators.js';
 @Controller('health')
 export class HealthController {
   /**
-   * Liveness Probe (FND-049)
+   * Liveness Probe (FND-049, FND-BE-007)
    * Fast event loop check for container orchestration without external dependencies.
+   * Responds to both /health/live and /health/liveness.
    */
   @Public()
-  @Get('liveness')
+  @Get(['liveness', 'live'])
   getLiveness(): LivenessReport {
     return buildLivenessReport('vynor-api');
   }
 
   /**
-   * Readiness Probe (FND-049)
+   * Readiness Probe (FND-049, FND-BE-007)
    * Validates database connectivity before routing customer traffic.
+   * Responds to both /health/ready and /health/readiness.
    */
   @Public()
-  @Get('readiness')
+  @Get(['readiness', 'ready'])
   async getReadiness(@Res({ passthrough: true }) res: Response): Promise<ReadinessReport> {
     const dbHealth = await checkDatabaseHealth(prisma);
     const report = buildReadinessReport('vynor-api', dbHealth);
