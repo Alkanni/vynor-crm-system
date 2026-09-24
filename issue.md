@@ -312,16 +312,20 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 6.1 Database Schema & Migrations (`packages/database`)
 
-- [ ] **FND-DB-001 [P0]** Add initial workspace, user profile, membership, team, role, permission, and join-table migration. **Depends:** FND-027 through FND-029.
-- [ ] **FND-DB-002 [P0]** Add audit event table with append-only application policy. **Depends:** FND-048.
-- [ ] **FND-DB-003 [P0]** Add outbox event table and claim indexes. **Depends:** FND-056, FND-058.
-- [ ] **FND-DB-004 [P0]** Add channel account and provider event journal tables with unique deduplication constraints. **Depends:** FND-067 through FND-069.
-- [x] **FND-DB-005 [P0]** Add attachment metadata table without binary columns. **Depends:** FND-073.
-
-  _Completed in Prisma schema and migration `20260924150000_storage_and_realtime_foundation` with workspace/provider relations, checksum/size constraints, scan/retention fields, and operational indexes._
-
-- [ ] **FND-DB-006 [P0]** Add `pgvector` extension migration or documented provider enablement step. **Depends:** FND-023.
-- [ ] **FND-DB-007 [P0]** Verify all workspace-scoped foreign keys and high-frequency indexes. **Depends:** FND-DB-001 through FND-DB-005.
+- [x] **FND-DB-001 [P0]** Add initial workspace, user profile, membership, team, role, permission, and join-table migration. **Depends:** FND-027 through FND-029.  
+      _Completed in `packages/database/prisma/schema.prisma` and migrations `20260924130000_init` and `20260924131500_add_teams` with models for Workspace, UserProfile, WorkspaceMembership, Team, TeamMember, Role, Permission, RolePermission, and MembershipRole._
+- [x] **FND-DB-002 [P0]** Add audit event table with append-only application policy. **Depends:** FND-048.  
+      _Completed in `packages/database/prisma/schema.prisma` and migration `20260924133000_observability_audit_health` (`audit_logs` table), with strict append-only application policy in `apps/api/src/audit/audit.service.ts` and `docs/audit-logging.md`._
+- [x] **FND-DB-003 [P0]** Add outbox event table and claim indexes. **Depends:** FND-056, FND-058.  
+      _Completed in `packages/database/prisma/schema.prisma` and migrations `20260924130000_init` and `20260924140000_outbox_claiming_and_leases` with `claimed_at`, `claim_lease_expires_at`, `claimed_by`, `dispatched_at`, and index `idx_outbox_events_status_lease`._
+- [x] **FND-DB-004 [P0]** Add channel account and provider event journal tables with unique deduplication constraints. **Depends:** FND-067 through FND-069.  
+      _Completed in `packages/database/prisma/schema.prisma` and migration `20260924143000_channel_and_provider_events` with `provider_accounts` and `provider_events` unique constraints `uq_provider_accounts_workspace_channel_identifier` and `uq_provider_events_account_event_key`._
+- [x] **FND-DB-005 [P0]** Add attachment metadata table without binary columns. **Depends:** FND-073.  
+      _Completed in Prisma schema and migration `20260924150000_storage_and_realtime_foundation` with workspace/provider relations, checksum/size constraints, scan/retention fields, and operational indexes._
+- [x] **FND-DB-006 [P0]** Add `pgvector` extension migration or documented provider enablement step. **Depends:** FND-023.  
+      _Completed in `packages/database/prisma/schema.prisma` and initial migration `20260924130000_init` enabling `vector` (`pgvector`) and `uuid-ossp`, with documented provider enablement steps for Supabase, AWS RDS, and Docker in `docs/migration-workflow.md`._
+- [x] **FND-DB-007 [P0]** Verify all workspace-scoped foreign keys and high-frequency indexes. **Depends:** FND-DB-001 through FND-DB-005.  
+      _Completed via automated verification script `packages/database/src/verify-schema.ts` (`pnpm --filter @vynor/database db:verify`) validating 40/40 checks across workspace foreign keys, cascade rules, append-only invariants, deduplication constraints, and high-frequency indexes._
 
 ### 6.2 Backend Core (`apps/api` & `apps/worker`)
 
