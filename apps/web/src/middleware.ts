@@ -11,19 +11,27 @@ const PUBLIC_PATHS = ['/login', '/auth', '/api/health', '/_next', '/favicon.ico'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Skip public and static assets
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
-  if (isPublic) {
-    return NextResponse.next();
-  }
-
-  // 2. Propagate or generate correlation ID
-  const correlationId =
-    request.headers.get('x-correlation-id') ||
-    `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  // 1. Propagate or generate correlation ID
+  const correlationIdHeader = request.headers.get('x-correlation-id');
+  const isValid = correlationIdHeader && /^[a-zA-Z0-9_-]{8,128}$/.test(correlationIdHeader);
+  const correlationId = isValid
+    ? correlationIdHeader
+    : `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-correlation-id', correlationId);
+
+  // 2. Skip public and static assets
+  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  if (isPublic) {
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    response.headers.set('x-correlation-id', correlationId);
+    return response;
+  }
 
   // 3. Inspect Supabase authentication session cookies
   // Supabase stores access tokens in cookies named 'sb-<ref>-auth-token' or standard 'sb-access-token'
@@ -38,14 +46,18 @@ export function middleware(request: NextRequest) {
   if (!hasAuthCookie && pathname !== '/' && !pathname.startsWith('/api')) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('returnUrl', pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    redirectResponse.headers.set('x-correlation-id', correlationId);
+    return redirectResponse;
   }
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+  response.headers.set('x-correlation-id', correlationId);
+  return response;
 }
 
 export const config = {

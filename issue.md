@@ -209,14 +209,22 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.6 Observability, Audit, and Health
 
-- [ ] **FND-043 [P0]** Define Pino JSON log schema and mandatory fields (correlation ID, actor, workspace, level). **Depends:** FND-031.
-- [ ] **FND-044 [P0]** Generate or accept a correlation ID (`x-correlation-id`) at every HTTP boundary. **Depends:** FND-043.
-- [ ] **FND-045 [P0]** Propagate correlation, causation, actor, workspace, and trace context to outbox events and jobs. **Depends:** FND-044.
-- [ ] **FND-046 [P0]** Define sensitive-field redaction (tokens, passwords, PII, payload secrets) for logs and Sentry. **Depends:** FND-043.
-- [ ] **FND-047 [P0]** Configure Sentry boundaries for web, API, and worker environments. **Depends:** FND-043, FND-046.
-- [ ] **FND-048 [P0]** Define immutable audit event schema and audit helper contract. **Depends:** FND-019, FND-031.
-- [ ] **FND-049 [P0]** Define liveness and readiness checks for API and worker dependencies. **Depends:** FND-018, FND-043.
-- [ ] **FND-050 [P0]** Define queue, webhook, outbox, and provider health indicators. **Depends:** FND-049.
+- [x] **FND-043 [P0]** Define Pino JSON log schema and mandatory fields (correlation ID, actor, workspace, level).  
+      _Completed in `packages/contracts/src/observability/log.ts`, `packages/observability/src/logger/logger.ts`, and `docs/logging-and-observability.md` defining mandatory structured fields and child logger binding._
+- [x] **FND-044 [P0]** Generate or accept a correlation ID (`x-correlation-id`) at every HTTP boundary.  
+      _Completed in `packages/observability/src/correlation/`, `apps/api/src/common/middleware/correlation-id.middleware.ts`, `apps/web/src/middleware.ts`, and `docs/logging-and-observability.md` ensuring ubiquitous correlation ID validation, generation, and response echo._
+- [x] **FND-045 [P0]** Propagate correlation, causation, actor, workspace, and trace context to outbox events and jobs.  
+      _Completed in `packages/contracts/src/observability/events.ts`, `packages/database/prisma/schema.prisma` (`outbox_events` context columns), and `docs/logging-and-observability.md`._
+- [x] **FND-046 [P0]** Define sensitive-field redaction (tokens, passwords, PII, payload secrets) for logs and Sentry.  
+      _Completed in `packages/contracts/src/observability/redaction.ts`, `packages/observability/src/redact/redactor.ts`, and `docs/logging-and-observability.md` with zero-overhead Pino redaction paths and masking helpers._
+- [x] **FND-047 [P0]** Configure Sentry boundaries for web, API, and worker environments.  
+      _Completed in `packages/observability/src/sentry/sentry.ts` and `docs/sentry-error-boundaries.md` defining boundary taxonomy, scrubbing hooks, and environment sampling profiles._
+- [x] **FND-048 [P0]** Define immutable audit event schema and audit helper contract.  
+      _Completed in `packages/contracts/src/audit/`, `packages/database/prisma/schema.prisma` (`audit_logs` model and migration), `apps/api/src/audit/`, and `docs/audit-logging.md`._
+- [x] **FND-049 [P0]** Define liveness and readiness checks for API and worker dependencies.  
+      _Completed in `packages/observability/src/health/health-check.ts`, `apps/api/src/health/health.controller.ts` (`/liveness`, `/readiness`), and `docs/health-checks-and-probes.md`._
+- [x] **FND-050 [P0]** Define queue, webhook, outbox, and provider health indicators.  
+      _Completed in `packages/observability/src/health/health-check.ts`, `apps/api/src/health/health.controller.ts` (`/health`, `/indicators`), and `docs/health-checks-and-probes.md`._
 
 ### 5.7 Background Jobs and Transactional Outbox
 
