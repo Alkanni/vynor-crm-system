@@ -135,3 +135,5 @@ pnpm dev
 - **[Health Checks & Probes (docs/health-checks-and-probes.md)](docs/health-checks-and-probes.md):** Liveness probes, readiness probes, and subsystem health indicators.
 - **[Background Jobs & Queues (docs/background-jobs-and-queues.md)](docs/background-jobs-and-queues.md):** `pg-boss` queues, versioned job envelopes, failure classification, backoff, and DLQ operations.
 - **[Transactional Outbox Pattern (docs/transactional-outbox-and-dispatch.md)](docs/transactional-outbox-and-dispatch.md):** Atomic outbox persistence, `SKIP LOCKED` claiming, lease recovery, and idempotent dispatch.
+- **[Channel Architecture & Contracts (docs/channel-architecture-and-contracts.md)](docs/channel-architecture-and-contracts.md):** Channel types, capability matrix, normalized message contracts, monotonic delivery, and adapter registry.
+- **[Provider Event Journal & Deduplication (docs/provider-event-journal-and-deduplication.md)](docs/provider-event-journal-and-deduplication.md):** Raw webhook journal, fallback SHA-256 fingerprinting, unique constraints, and replay semantics.

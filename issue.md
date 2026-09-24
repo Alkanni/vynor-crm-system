@@ -251,16 +251,26 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 
 ### 5.8 Channel, Normalized Message, and Provider Event Foundation
 
-- [ ] **FND-061 [P0]** Define channel types, provider account identity, and capability flags. **Depends:** FND-039.
-- [ ] **FND-062 [P0]** Define normalized inbound message contract for text, media, location, contact, interactive, reaction, reply context, and unsupported content. **Depends:** FND-061.
-- [ ] **FND-063 [P0]** Define normalized outbound message intent and provider acknowledgement contracts. **Depends:** FND-061.
-- [ ] **FND-064 [P0]** Define normalized delivery status contract and monotonic status rules (sent -> delivered -> read). **Depends:** FND-063.
-- [ ] **FND-065 [P0]** Define `ChannelAdapter` interface: validate, normalize, send, download media, health, and error mapping. **Depends:** FND-062, FND-063, FND-064.
-- [ ] **FND-066 [P0]** Define adapter registry keyed by provider and account type. **Depends:** FND-065.
-- [ ] **FND-067 [P0]** Define immutable `ProviderEvent` journal model with payload, headers subset, provider event key, processing state, and retention metadata. **Depends:** FND-019, FND-061.
-- [ ] **FND-068 [P0]** Define deterministic fallback deduplication fingerprint when a provider event ID is absent. **Depends:** FND-067.
-- [ ] **FND-069 [P0]** Define unique constraints for provider account and provider event identity/fingerprint. **Depends:** FND-067, FND-068.
-- [ ] **FND-070 [P0]** Define provider event processing states (received, processing, processed, ignored, failed) and replay semantics. **Depends:** FND-053, FND-067.
+- [x] **FND-061 [P0]** Define channel types, provider account identity, and capability flags. **Depends:** FND-039.  
+      _Completed in `packages/contracts/src/channels/types.ts` defining `ChannelType`, `ChannelProviderType`, `ChannelCapabilities`, and `ProviderAccountIdentity`._
+- [x] **FND-062 [P0]** Define normalized inbound message contract for text, media, location, contact, interactive, reaction, reply context, and unsupported content. **Depends:** FND-061.  
+      _Completed in `packages/contracts/src/channels/inbound.ts` with discriminated content union (`TEXT`, `MEDIA`, `LOCATION`, `CONTACT`, `INTERACTIVE`, `REACTION`, `UNSUPPORTED`) and `NormalizedInboundMessage`._
+- [x] **FND-063 [P0]** Define normalized outbound message intent and provider acknowledgement contracts. **Depends:** FND-061.  
+      _Completed in `packages/contracts/src/channels/outbound.ts` with `OutboundMessageIntent` and `ProviderSendResult`._
+- [x] **FND-064 [P0]** Define normalized delivery status contract and monotonic status rules (sent -> delivered -> read). **Depends:** FND-063.  
+      _Completed in `packages/contracts/src/channels/delivery-status.ts` and `packages/channel-adapters/src/normalization/monotonic-delivery.ts` with `isDeliveryStatusMonotonic` and `applyDeliveryStatusTransition`._
+- [x] **FND-065 [P0]** Define `ChannelAdapter` interface: validate, normalize, send, download media, health, and error mapping. **Depends:** FND-062, FND-063, FND-064.  
+      _Completed in `packages/channel-adapters/src/interfaces/channel-adapter.interface.ts` defining standard `ChannelAdapter` lifecycle and methods._
+- [x] **FND-066 [P0]** Define adapter registry keyed by provider and account type. **Depends:** FND-065.  
+      _Completed in `packages/channel-adapters/src/registry/adapter-registry.ts` with `ChannelAdapterRegistry`._
+- [x] **FND-067 [P0]** Define immutable `ProviderEvent` journal model with payload, headers subset, provider event key, processing state, and retention metadata. **Depends:** FND-019, FND-061.  
+      _Completed in `packages/database/prisma/schema.prisma` (`ProviderAccount`, `ProviderEvent`) and migration `20260924143000_channel_and_provider_events`._
+- [x] **FND-068 [P0]** Define deterministic fallback deduplication fingerprint when a provider event ID is absent. **Depends:** FND-067.  
+      _Completed in `packages/channel-adapters/src/deduplication/fingerprint.ts` implementing `canonicalizePayload` and SHA-256 `generateEventFingerprint`._
+- [x] **FND-069 [P0]** Define unique constraints for provider account and provider event identity/fingerprint. **Depends:** FND-067, FND-068.  
+      _Completed in `packages/database/prisma/schema.prisma` (`uq_provider_accounts_workspace_channel_identifier`, `uq_provider_events_account_event_key`) and `persistProviderEvent` helper._
+- [x] **FND-070 [P0]** Define provider event processing states (received, processing, processed, ignored, failed) and replay semantics. **Depends:** FND-053, FND-067.  
+      _Completed in `packages/contracts/src/channels/provider-event.ts` and `packages/database/src/provider-events.ts` (`transitionProviderEventStatus`, `replayProviderEvent`)._
 
 ### 5.9 Storage and Realtime Foundation
 

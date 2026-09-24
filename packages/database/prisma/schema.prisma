@@ -35,6 +35,39 @@ enum OutboxEventStatus {
   DEAD_LETTER
 }
 
+enum ChannelType {
+  WHATSAPP
+  INSTAGRAM
+  MESSENGER
+  TELEGRAM
+  EMAIL
+  LINE
+  WEBCHAT
+}
+
+enum ProviderAccountStatus {
+  ACTIVE
+  INACTIVE
+  DISCONNECTED
+  ERROR
+}
+
+enum ProviderEventStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum MessageDeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
 model Workspace {
   id        String    @id @default(cuid())
   name      String    @db.VarChar(255)
@@ -49,6 +82,8 @@ model Workspace {
   teams       Team[]
   outboxEvents OutboxEvent[]
   auditLogs   AuditLog[]
+  providerAccounts ProviderAccount[]
+  providerEvents   ProviderEvent[]
 
   @@map("workspaces")
 }
@@ -232,5 +267,60 @@ model AuditLog {
   @@index([correlationId], map: "idx_audit_logs_correlation_id")
   @@index([resourceType, resourceId], map: "idx_audit_logs_resource")
   @@map("audit_logs")
+}
+
+model ProviderAccount {
+  id                String                @id @default(cuid())
+  workspaceId       String                @map("workspace_id")
+  channelType       ChannelType           @map("channel_type")
+  provider          String                @db.VarChar(50)
+  name              String                @db.VarChar(100)
+  accountIdentifier String                @map("account_identifier") @db.VarChar(255)
+  status            ProviderAccountStatus @default(ACTIVE)
+  credentials       Json
+  config            Json?
+  capabilities      Json?
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?             @map("deleted_at") @db.Timestamptz(6)
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerEvents ProviderEvent[]
+
+  @@unique([workspaceId, channelType, accountIdentifier], map: "uq_provider_accounts_workspace_channel_identifier")
+  @@index([workspaceId], map: "idx_provider_accounts_workspace_id")
+  @@index([channelType, status], map: "idx_provider_accounts_channel_status")
+  @@map("provider_accounts")
+}
+
+model ProviderEvent {
+  id                 String              @id @default(uuid())
+  workspaceId        String              @map("workspace_id")
+  providerAccountId  String              @map("provider_account_id")
+  provider           String              @db.VarChar(50)
+  channelType        ChannelType         @map("channel_type")
+  providerEventKey   String              @map("provider_event_key") @db.VarChar(255)
+  isFingerprinted    Boolean             @default(false) @map("is_fingerprinted")
+  payload            Json
+  headers            Json?
+  status             ProviderEventStatus @default(RECEIVED)
+  processingAttempts Int                 @default(0) @map("processing_attempts")
+  lastError          String?             @map("last_error") @db.Text
+  processedAt        DateTime?           @map("processed_at") @db.Timestamptz(6)
+  retentionDays      Int                 @default(90) @map("retention_days")
+  purgeAfter         DateTime?           @map("purge_after") @db.Timestamptz(6)
+  correlationId      String?             @map("correlation_id") @db.VarChar(128)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerAccount ProviderAccount @relation(fields: [providerAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([providerAccountId, providerEventKey], map: "uq_provider_events_account_event_key")
+  @@index([workspaceId, status], map: "idx_provider_events_workspace_status")
+  @@index([status, createdAt], map: "idx_provider_events_status_created_at")
+  @@index([correlationId], map: "idx_provider_events_correlation_id")
+  @@index([purgeAfter], map: "idx_provider_events_purge_after")
+  @@map("provider_events")
 }
 
