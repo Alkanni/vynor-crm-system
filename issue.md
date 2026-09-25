@@ -401,17 +401,44 @@ The first major milestone is an end-to-end production-shaped slice where an inbo
 flowchart TD
     B1["Batch 1 (Done): Monorepo & Shells (FND-001..005)"] --> B2["Batch 2 (Done): Linters, Conventions, ADRs & Readme (FND-006..010)"]
     B2 --> B3["Batch 3 (Done): Environment Configuration & Secrets (FND-011..017)"]
-    B3 --> B4["Batch 4 (Next): Database, Prisma, Extensions & Seeds (FND-018..025, FND-DB-001..007)"]
-    B4 --> B5["Batch 5: Contracts, Observability & Error Taxonomy (FND-036..050, FND-061..070)"]
-    B5 --> B6["Batch 6: Auth (Supabase), Actor Context & RBAC (FND-026..035, FND-BE-003..004)"]
-    B5 --> B7["Batch 7: pg-boss, Outbox Engine & Dispatcher (FND-051..060, FND-BE-002, 005)"]
-    B6 --> B8["Batch 8: Storage (RustFS) & Realtime (Socket.IO) (FND-071..078, FND-BE-008..009)"]
+    B3 --> B4["Batch 4 (Done): Database, Prisma, Extensions & Seeds (FND-018..025, FND-DB-001..007)"]
+    B4 --> B5["Batch 5 (Done): Contracts, Observability & Error Taxonomy (FND-036..050, FND-061..070)"]
+    B5 --> B6["Batch 6 (Done): Auth (Supabase), Actor Context & RBAC (FND-026..035, FND-BE-003..004)"]
+    B5 --> B7["Batch 7 (Done): pg-boss, Outbox Engine & Dispatcher (FND-051..060, FND-BE-002, 005)"]
+    B6 --> B8["Batch 8 (Done): Storage (RustFS) & Realtime (Socket.IO) (FND-071..078, FND-BE-008..009)"]
     B7 --> B8
-    B8 --> B9["Batch 9: Frontend Shell, TanStack Query & UI Tokens (FND-FE-001..007)"]
-    B8 --> B10["Batch 10: Docker Topology, Caddy, Health & CI (FND-INF-001..007, FND-BE-007, 010)"]
-    B9 --> B11["Batch 11: Full Test Suite, Smoke Tests & Phase 0 Sign-off (FND-TST-001..008)"]
+    B8 --> B9["Batch 9 (Done): Frontend Shell, TanStack Query & UI Tokens (FND-FE-001..007)"]
+    B8 --> B10["Batch 10 (Done): Docker Topology, Caddy, Health & CI (FND-INF-001..007, FND-BE-007, 010)"]
+    B9 --> B11["Batch 11 (Done): Full Test Suite, Smoke Tests & Phase 0 Sign-off (FND-TST-001..008)"]
     B10 --> B11
 ```
+
+### Workstream Batch Execution Checklist
+
+- [x] **Batch 1 (Done): Monorepo & Shells (FND-001..005)**  
+      _Completed in PR [#3](https://github.com/Alkanni/vynor-crm-system/pull/3). Configured pnpm workspace, Turborepo 2, packages (`contracts`, `database`, `observability`, `storage`, `channel-adapters`, `ai`, `shared`), application skeletons (`api`, `worker`, `web`), and directory topology._
+- [x] **Batch 2 (Done): Linters, Conventions, ADRs & Readme (FND-006..010)**  
+      _Completed in PR [#5](https://github.com/Alkanni/vynor-crm-system/pull/5). Configured ESLint v10 flat config, Prettier, TypeScript strict rules, code ownership, review conventions, and recorded architectural decisions AD-001 through AD-014 in `docs/adr/`._
+- [x] **Batch 3 (Done): Environment Configuration & Secrets (FND-011..017)**  
+      _Completed in PR [#6](https://github.com/Alkanni/vynor-crm-system/pull/6). Configured Zod environment validation schemas (`ApiEnvSchema`, `WorkerEnvSchema`, `PublicWebEnvSchema`), fail-fast startup validator (`validateEnv`), secret rotation policies, and encrypted credentials envelope._
+- [x] **Batch 4 (Done): Database, Prisma, Extensions & Seeds (FND-018..025, FND-DB-001..007)**  
+      _Completed in PR [#7](https://github.com/Alkanni/vynor-crm-system/pull/7) and PR [#14](https://github.com/Alkanni/vynor-crm-system/pull/14). Configured Prisma 6 schema with multi-tenant workspace models, pgvector extension, seed migrations, and zero data leakage verification._
+- [x] **Batch 5 (Done): Contracts, Observability & Error Taxonomy (FND-036..050, FND-061..070)**  
+      _Completed in PR [#9](https://github.com/Alkanni/vynor-crm-system/pull/9), PR [#10](https://github.com/Alkanni/vynor-crm-system/pull/10), and PR [#12](https://github.com/Alkanni/vynor-crm-system/pull/12). Standardized `/api/v1` routes, RFC-7807 error envelopes, cursor pagination, Pino log schemas with recursive sensitive-field redaction, correlation IDs, immutable audit journal, and normalized channel contracts._
+- [x] **Batch 6 (Done): Auth (Supabase), Actor Context & RBAC (FND-026..035, FND-BE-003..004)**  
+      _Completed in PR [#8](https://github.com/Alkanni/vynor-crm-system/pull/8) and PR [#15](https://github.com/Alkanni/vynor-crm-system/pull/15). Documented Supabase Auth flows, implemented NestJS JWT verification against JWKS/signing secrets, request actor context resolution, declarative `@RequirePermissions()` guard, and programmatic `PolicyService`._
+- [x] **Batch 7 (Done): pg-boss, Outbox Engine & Dispatcher (FND-051..060, FND-BE-002, 005)**  
+      _Completed in PR [#11](https://github.com/Alkanni/vynor-crm-system/pull/11) and PR [#15](https://github.com/Alkanni/vynor-crm-system/pull/15). Configured pg-boss background queues, versioned Zod job envelopes, classified error hierarchy with exponential jitter backoff, atomic outbox persistence helper, safe concurrent claiming (`SKIP LOCKED`), and singleton key idempotency._
+- [x] **Batch 8 (Done): Storage (RustFS) & Realtime (Socket.IO) (FND-071..078, FND-BE-008..009)**  
+      _Completed in PR [#13](https://github.com/Alkanni/vynor-crm-system/pull/13) and PR [#15](https://github.com/Alkanni/vynor-crm-system/pull/15). Implemented S3/RustFS storage abstraction with authorized signed-download service and zero binary columns in PostgreSQL, and authenticated Socket.IO `/realtime` namespace with room boundaries and sequence-based resynchronization._
+- [x] **Batch 9 (Done): Frontend Shell, TanStack Query & UI Tokens (FND-FE-001..007)**  
+      _Completed in PR [#16](https://github.com/Alkanni/vynor-crm-system/pull/16). Bootstrapped Next.js App Router with Tailwind CSS design tokens, Supabase Auth context, protected CRM application shell (`AppShell`), session expiry handling, TanStack Query defaults, Zustand store, and Socket.IO client invalidation._
+- [x] **Batch 10 (Done): Docker Topology, Caddy, Health & CI (FND-INF-001..007, FND-BE-007, 010)**  
+      _Completed in PR [#17](https://github.com/Alkanni/vynor-crm-system/pull/17). Created multi-stage Dockerfiles with non-root runtime users (UID 1001), Docker Compose topology, Caddy reverse proxy with SSL termination and upload limits, GitHub Actions CI workflows, and container security vulnerability scanning._
+- [x] **Batch 11 (Done): Full Test Suite, Smoke Tests & Phase 0 Sign-off (FND-TST-001..008)**  
+      _Completed in PR [#18](https://github.com/Alkanni/vynor-crm-system/pull/18). Established testing pyramid, Vitest unit/integration harness, real PostgreSQL transaction rollback tests (0 orphan outbox rows), concurrent claim verification (`SKIP LOCKED`), configuration/redaction specs, and Playwright authentication smoke tests._
+
+_Full roadmap documentation and verification matrix available in [`docs/phase-0-roadmap-and-workstream-batches.md`](docs/phase-0-roadmap-and-workstream-batches.md)._
 
 ---
 
