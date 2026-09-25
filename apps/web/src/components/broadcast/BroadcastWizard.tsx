@@ -261,7 +261,9 @@ export function BroadcastWizard({ onComplete }: { onComplete?: () => void }) {
           </div>
           <div className="text-xs text-muted-foreground font-mono">
             Audience:{' '}
-            <strong className="text-foreground">{campaignData.audienceCount.toLocaleString()}</strong>{' '}
+            <strong className="text-foreground">
+              {campaignData.audienceCount.toLocaleString()}
+            </strong>{' '}
             recipients
           </div>
         </div>
@@ -534,7 +536,9 @@ export function BroadcastWizard({ onComplete }: { onComplete?: () => void }) {
             <div className="space-y-3">
               <div className="bg-card p-3 rounded border border-border flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400">{'{{1}}'}</div>
+                  <div className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                    {'{{1}}'}
+                  </div>
                   <div className="text-[11px] text-muted-foreground">Customer Greeting Name</div>
                 </div>
                 <select
@@ -558,7 +562,9 @@ export function BroadcastWizard({ onComplete }: { onComplete?: () => void }) {
 
               <div className="bg-card p-3 rounded border border-border flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400">{'{{2}}'}</div>
+                  <div className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                    {'{{2}}'}
+                  </div>
                   <div className="text-[11px] text-muted-foreground">Promo Code or Voucher Key</div>
                 </div>
                 <input
@@ -635,7 +641,8 @@ export function BroadcastWizard({ onComplete }: { onComplete?: () => void }) {
                     chk.status === 'PASS' && 'bg-card border-border text-foreground',
                     chk.status === 'WARNING' &&
                       'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300',
-                    chk.status === 'FAIL' && 'bg-destructive/10 border-destructive/40 text-destructive',
+                    chk.status === 'FAIL' &&
+                      'bg-destructive/10 border-destructive/40 text-destructive',
                   )}
                 >
                   {chk.status === 'PASS' && (
@@ -810,8 +817,8 @@ export function BroadcastWizard({ onComplete }: { onComplete?: () => void }) {
                   </span>
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Campaign: <span className="text-foreground font-medium">{campaignData.name}</span> •
-                  Pacing at {campaignData.throttleMessagesPerSec} msg/sec
+                  Campaign: <span className="text-foreground font-medium">{campaignData.name}</span>{' '}
+                  • Pacing at {campaignData.throttleMessagesPerSec} msg/sec
                 </p>
               </div>
 
@@ -864,19 +871,25 @@ export function BroadcastWizard({ onComplete }: { onComplete?: () => void }) {
             {/* Live KPI Strip */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="bg-card p-3 rounded-lg border border-border shadow-2xs">
-                <div className="text-[11px] text-muted-foreground uppercase font-mono">Total Sent</div>
+                <div className="text-[11px] text-muted-foreground uppercase font-mono">
+                  Total Sent
+                </div>
                 <div className="text-lg font-bold font-mono text-foreground mt-1">
                   {telemetry.sent.toLocaleString()}
                 </div>
               </div>
               <div className="bg-card p-3 rounded-lg border border-border shadow-2xs">
-                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 uppercase font-mono">Delivered</div>
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 uppercase font-mono">
+                  Delivered
+                </div>
                 <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
                   {telemetry.delivered.toLocaleString()}
                 </div>
               </div>
               <div className="bg-card p-3 rounded-lg border border-border shadow-2xs">
-                <div className="text-[11px] text-blue-600 dark:text-blue-400 uppercase font-mono">Read</div>
+                <div className="text-[11px] text-blue-600 dark:text-blue-400 uppercase font-mono">
+                  Read
+                </div>
                 <div className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400 mt-1">
                   {telemetry.read.toLocaleString()}
                 </div>

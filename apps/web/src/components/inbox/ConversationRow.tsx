@@ -22,7 +22,8 @@ export function ConversationRow({ conversation, isSelected, onSelect }: Conversa
     },
     HIGH: {
       label: 'High',
-      className: 'bg-warning/10 text-warning-foreground dark:text-amber-400 border-warning/30 font-medium',
+      className:
+        'bg-warning/10 text-warning-foreground dark:text-amber-400 border-warning/30 font-medium',
     },
     MEDIUM: {
       label: 'Medium',

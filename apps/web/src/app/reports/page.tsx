@@ -129,16 +129,18 @@ export default function ReportsPage() {
     let csvRows: string[] = [];
 
     if (activeTab === 'AGENT_SLA') {
-      csvHeader = 'Agent Name,Team,Conversations Handled,Avg First Response,Avg Resolution,SLA Adherence %,CSAT,Handoffs\n';
+      csvHeader =
+        'Agent Name,Team,Conversations Handled,Avg First Response,Avg Resolution,SLA Adherence %,CSAT,Handoffs\n';
       csvRows = MOCK_AGENT_PERFORMANCE.map(
         (r) =>
-          `"${r.agentName}","${r.team}",${r.conversationsHandled},"${r.avgFirstResponseTime}","${r.avgResolutionTime}",${r.slaAdherenceRate},${r.csatScore},${r.handoffsToTier2}`
+          `"${r.agentName}","${r.team}",${r.conversationsHandled},"${r.avgFirstResponseTime}","${r.avgResolutionTime}",${r.slaAdherenceRate},${r.csatScore},${r.handoffsToTier2}`,
       );
     } else {
-      csvHeader = 'Channel,Total Sent,Delivered,Delivery Rate %,Read Rate %,Failed Count,Avg Latency (ms)\n';
+      csvHeader =
+        'Channel,Total Sent,Delivered,Delivery Rate %,Read Rate %,Failed Count,Avg Latency (ms)\n';
       csvRows = MOCK_CHANNEL_TELEMETRY.map(
         (r) =>
-          `"${r.channel}",${r.totalSent},${r.delivered},${r.deliveryRate},${r.readRate},${r.failedCount},${r.avgLatencyMs}`
+          `"${r.channel}",${r.totalSent},${r.delivered},${r.deliveryRate},${r.readRate},${r.failedCount},${r.avgLatencyMs}`,
       );
     }
 
@@ -243,7 +245,7 @@ export default function ReportsPage() {
             'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
             activeTab === 'AGENT_SLA'
               ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground',
           )}
         >
           Agent Performance & SLA
@@ -255,7 +257,7 @@ export default function ReportsPage() {
             'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
             activeTab === 'CHANNEL_TELEMETRY'
               ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground',
           )}
         >
           Channel Ingress & Deliverability
@@ -304,7 +306,7 @@ export default function ReportsPage() {
                           'inline-flex items-center font-bold px-1.5 py-0.5 rounded-xs text-[11px]',
                           row.slaAdherenceRate >= 95
                             ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-                            : 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+                            : 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
                         )}
                       >
                         {row.slaAdherenceRate}%

@@ -109,27 +109,41 @@ export default function CampaignsPage() {
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">30-Day Dispatched</div>
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                30-Day Dispatched
+              </div>
               <div className="text-2xl font-bold font-mono text-foreground mt-1">42,850</div>
               <div className="text-[11px] text-muted-foreground mt-1">Across 18 campaigns</div>
             </div>
 
             <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">Avg Delivery Rate</div>
-              <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">98.9%</div>
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                Avg Delivery Rate
+              </div>
+              <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                98.9%
+              </div>
               <div className="text-[11px] text-muted-foreground mt-1">Meta Tier High Quality</div>
             </div>
 
             <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">Current WABA Tier</div>
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                Current WABA Tier
+              </div>
               <div className="text-2xl font-bold font-mono text-foreground mt-1">Tier 2</div>
-              <div className="text-[11px] text-muted-foreground mt-1">10,000 unique recipients / 24h</div>
+              <div className="text-[11px] text-muted-foreground mt-1">
+                10,000 unique recipients / 24h
+              </div>
             </div>
 
             <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">Opt-Out Rate</div>
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                Opt-Out Rate
+              </div>
               <div className="text-2xl font-bold font-mono text-foreground mt-1">0.14%</div>
-              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">Well below 1.0% danger zone</div>
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+                Well below 1.0% danger zone
+              </div>
             </div>
           </div>
 

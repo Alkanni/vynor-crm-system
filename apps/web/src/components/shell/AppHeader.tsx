@@ -124,7 +124,8 @@ export function AppHeader() {
           type="button"
           onClick={() => {
             const currentTheme = useUiStore.getState().theme;
-            const nextTheme = currentTheme === 'light' ? 'dark' : currentTheme === 'dark' ? 'system' : 'light';
+            const nextTheme =
+              currentTheme === 'light' ? 'dark' : currentTheme === 'dark' ? 'system' : 'light';
             useUiStore.getState().setTheme(nextTheme);
           }}
           title={`Current theme: ${useUiStore.getState().theme}. Click to switch theme.`}

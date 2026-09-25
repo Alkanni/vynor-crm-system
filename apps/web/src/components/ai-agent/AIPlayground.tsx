@@ -222,7 +222,8 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
           </span>
           <span>•</span>
           <span>
-            Max Turns: <code className="text-foreground font-mono">{config.maxAutonomousTurns}</code>
+            Max Turns:{' '}
+            <code className="text-foreground font-mono">{config.maxAutonomousTurns}</code>
           </span>
         </div>
 
@@ -556,7 +557,9 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                     Retrieved Knowledge Sources ({selectedTelemetry.retrievedCitations.length})
                   </h4>
                   {selectedTelemetry.retrievedCitations.length === 0 ? (
-                    <p className="text-muted-foreground italic text-[11px]">No citations referenced</p>
+                    <p className="text-muted-foreground italic text-[11px]">
+                      No citations referenced
+                    </p>
                   ) : (
                     <div className="space-y-2">
                       {selectedTelemetry.retrievedCitations.map((cit, idx) => (

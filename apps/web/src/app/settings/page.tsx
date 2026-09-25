@@ -174,7 +174,8 @@ export default function SettingsPage() {
             </h1>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Identity and Access Management (IAM), 24 canonical RBAC permissions, integrations, and audit trail
+            Identity and Access Management (IAM), 24 canonical RBAC permissions, integrations, and
+            audit trail
           </p>
         </div>
       </div>
@@ -190,7 +191,7 @@ export default function SettingsPage() {
               'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
               activeTab === 'team'
                 ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
             <Users className="h-4 w-4" />
@@ -204,7 +205,7 @@ export default function SettingsPage() {
               'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
               activeTab === 'roles'
                 ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
             <Shield className="h-4 w-4" />
@@ -218,7 +219,7 @@ export default function SettingsPage() {
               'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
               activeTab === 'integrations'
                 ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
             <Plug className="h-4 w-4" />
@@ -232,7 +233,7 @@ export default function SettingsPage() {
               'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
               activeTab === 'audit'
                 ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
             <History className="h-4 w-4" />
@@ -246,7 +247,7 @@ export default function SettingsPage() {
               'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
               activeTab === 'workspace'
                 ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
             <Building className="h-4 w-4" />
@@ -262,7 +263,9 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
                   <h2 className="text-sm font-bold text-foreground">Workspace Team Members</h2>
-                  <p className="text-xs text-muted-foreground">Manage active seats and operator invitations</p>
+                  <p className="text-xs text-muted-foreground">
+                    Manage active seats and operator invitations
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -289,7 +292,9 @@ export default function SettingsPage() {
                       <tr key={m.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3">
                           <div className="font-semibold text-foreground">{m.name}</div>
-                          <div className="font-mono text-[11px] text-muted-foreground">{m.email}</div>
+                          <div className="font-mono text-[11px] text-muted-foreground">
+                            {m.email}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-xs bg-muted text-foreground border border-border">
@@ -303,7 +308,7 @@ export default function SettingsPage() {
                               'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs font-semibold text-[10px]',
                               m.status === 'ACTIVE'
                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
                             )}
                           >
                             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -326,7 +331,9 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <h2 className="text-sm font-bold text-foreground">Granular RBAC Permission Matrix</h2>
+                  <h2 className="text-sm font-bold text-foreground">
+                    Granular RBAC Permission Matrix
+                  </h2>
                   <p className="text-xs text-muted-foreground">
                     Canonical 24-permission enforcement engine (`resource:action`)
                   </p>
@@ -338,7 +345,9 @@ export default function SettingsPage() {
                     onClick={() => setSelectedRole('AGENT')}
                     className={cn(
                       'px-2.5 py-1 font-semibold rounded-xs transition-colors',
-                      selectedRole === 'AGENT' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
+                      selectedRole === 'AGENT'
+                        ? 'bg-card text-foreground shadow-2xs'
+                        : 'text-muted-foreground',
                     )}
                   >
                     Agent
@@ -348,7 +357,9 @@ export default function SettingsPage() {
                     onClick={() => setSelectedRole('SUPERVISOR')}
                     className={cn(
                       'px-2.5 py-1 font-semibold rounded-xs transition-colors',
-                      selectedRole === 'SUPERVISOR' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
+                      selectedRole === 'SUPERVISOR'
+                        ? 'bg-card text-foreground shadow-2xs'
+                        : 'text-muted-foreground',
                     )}
                   >
                     Supervisor
@@ -358,7 +369,9 @@ export default function SettingsPage() {
                     onClick={() => setSelectedRole('ADMIN')}
                     className={cn(
                       'px-2.5 py-1 font-semibold rounded-xs transition-colors',
-                      selectedRole === 'ADMIN' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
+                      selectedRole === 'ADMIN'
+                        ? 'bg-card text-foreground shadow-2xs'
+                        : 'text-muted-foreground',
                     )}
                   >
                     Admin
@@ -369,7 +382,7 @@ export default function SettingsPage() {
               {/* Permissions List Grid */}
               <div className="rounded-lg border border-border bg-card divide-y divide-border/60 shadow-2xs">
                 {CANONICAL_PERMISSIONS.map((perm) => {
-                  const isEnabled = rolePermissions[perm.action] ?? (selectedRole === 'ADMIN');
+                  const isEnabled = rolePermissions[perm.action] ?? selectedRole === 'ADMIN';
                   return (
                     <div
                       key={perm.action}
@@ -410,8 +423,12 @@ export default function SettingsPage() {
           {activeTab === 'integrations' && (
             <div className="flex flex-col gap-4">
               <div className="border-b border-border pb-3">
-                <h2 className="text-sm font-bold text-foreground">Developer API & Webhook Subscriptions</h2>
-                <p className="text-xs text-muted-foreground">Secret tokens and programmatic ingestion endpoints</p>
+                <h2 className="text-sm font-bold text-foreground">
+                  Developer API & Webhook Subscriptions
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Secret tokens and programmatic ingestion endpoints
+                </p>
               </div>
 
               <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3 shadow-2xs">
@@ -420,7 +437,9 @@ export default function SettingsPage() {
                   <div className="flex-1 flex items-center rounded-xs border border-border bg-background px-3 py-1.5 font-mono text-xs text-foreground">
                     <Key className="h-3.5 w-3.5 text-muted-foreground mr-2 shrink-0" />
                     <span>
-                      {showApiKey ? 'vynor_live_994821a8d02e4822fa981' : 'vynor_live_••••••••••••••••••••'}
+                      {showApiKey
+                        ? 'vynor_live_994821a8d02e4822fa981'
+                        : 'vynor_live_••••••••••••••••••••'}
                     </span>
                   </div>
                   <button
@@ -436,7 +455,11 @@ export default function SettingsPage() {
                     onClick={handleCopyApiKey}
                     className="inline-flex items-center gap-1.5 rounded-xs bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/80 text-foreground border border-border"
                   >
-                    {copiedKey ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedKey ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                     <span>{copiedKey ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
@@ -445,8 +468,12 @@ export default function SettingsPage() {
               <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold text-foreground">Inbound Webhook Subscription URL</span>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Real-time event notification delivery target</p>
+                    <span className="text-xs font-bold text-foreground">
+                      Inbound Webhook Subscription URL
+                    </span>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Real-time event notification delivery target
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -468,7 +495,9 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="border-b border-border pb-3">
                 <h2 className="text-sm font-bold text-foreground">Immutable Audit Log</h2>
-                <p className="text-xs text-muted-foreground">Enterprise compliance log recording all sensitive actions</p>
+                <p className="text-xs text-muted-foreground">
+                  Enterprise compliance log recording all sensitive actions
+                </p>
               </div>
 
               <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
@@ -510,13 +539,19 @@ export default function SettingsPage() {
           {activeTab === 'workspace' && (
             <div className="flex flex-col gap-4">
               <div className="border-b border-border pb-3">
-                <h2 className="text-sm font-bold text-foreground">Workspace Profile & Localization</h2>
-                <p className="text-xs text-muted-foreground">Tenant organizational attributes and timezone defaults</p>
+                <h2 className="text-sm font-bold text-foreground">
+                  Workspace Profile & Localization
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Tenant organizational attributes and timezone defaults
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">Organization Legal Name</label>
+                  <label className="text-xs font-semibold text-foreground">
+                    Organization Legal Name
+                  </label>
                   <input
                     type="text"
                     defaultValue="VYNOR Indonesia Operations"
@@ -548,7 +583,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">Default Accounting Currency</label>
+                  <label className="text-xs font-semibold text-foreground">
+                    Default Accounting Currency
+                  </label>
                   <input
                     type="text"
                     defaultValue="IDR (Rp)"

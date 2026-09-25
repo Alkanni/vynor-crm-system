@@ -67,7 +67,8 @@ const INITIAL_QUICK_REPLIES: CannedReply[] = [
     category: 'QUICK_REPLY',
     title: 'Standard Greeting',
     shortcut: '/greeting',
-    content: 'Halo kak! Terima kasih telah menghubungi VYNOR Customer Support. Ada yang bisa kami bantu hari ini?',
+    content:
+      'Halo kak! Terima kasih telah menghubungi VYNOR Customer Support. Ada yang bisa kami bantu hari ini?',
     tags: ['support', 'greeting'],
     usageCount: 412,
   },
@@ -76,7 +77,8 @@ const INITIAL_QUICK_REPLIES: CannedReply[] = [
     category: 'QUICK_REPLY',
     title: 'Shipping Tracking FAQ',
     shortcut: '/shipping_faq',
-    content: 'Untuk pengecekan resi pengiriman reguler membutuhkan waktu 1-3 hari kerja. Anda dapat memantau status langsung melalui tautan resi kami.',
+    content:
+      'Untuk pengecekan resi pengiriman reguler membutuhkan waktu 1-3 hari kerja. Anda dapat memantau status langsung melalui tautan resi kami.',
     tags: ['shipping', 'logistics'],
     usageCount: 298,
   },
@@ -85,7 +87,8 @@ const INITIAL_QUICK_REPLIES: CannedReply[] = [
     category: 'QUICK_REPLY',
     title: 'Refund Policy Overview',
     shortcut: '/refund_policy',
-    content: 'Pengajuan pengembalian dana (refund) diproses dalam 3x24 jam kerja setelah verifikasi kelengkapan bukti video unboxing.',
+    content:
+      'Pengajuan pengembalian dana (refund) diproses dalam 3x24 jam kerja setelah verifikasi kelengkapan bukti video unboxing.',
     tags: ['billing', 'refund'],
     usageCount: 145,
   },
@@ -94,7 +97,8 @@ const INITIAL_QUICK_REPLIES: CannedReply[] = [
     category: 'QUICK_REPLY',
     title: 'Escalation Notice',
     shortcut: '/escalate_tech',
-    content: 'Pertanyaan teknis Anda telah diteruskan ke Tim Technical Specialist Tier-2. Estimasi resolusi maksimal 2 jam.',
+    content:
+      'Pertanyaan teknis Anda telah diteruskan ke Tim Technical Specialist Tier-2. Estimasi resolusi maksimal 2 jam.',
     tags: ['tier2', 'technical'],
     usageCount: 88,
   },
@@ -109,7 +113,8 @@ const INITIAL_HSM_TEMPLATES: HsmTemplate[] = [
     status: 'APPROVED',
     metaCategory: 'UTILITY',
     headerText: 'Update Pengiriman Pesanan #{{1}}',
-    bodyText: 'Halo {{2}}, pesanan Anda telah dikirim via {{3}} dengan nomor resi {{4}}. Estimasi tiba {{5}}.',
+    bodyText:
+      'Halo {{2}}, pesanan Anda telah dikirim via {{3}} dengan nomor resi {{4}}. Estimasi tiba {{5}}.',
     footerText: 'VYNOR Operations Indonesia',
     sampleVariables: {
       '{{1}}': 'ORD-9921',
@@ -128,7 +133,8 @@ const INITIAL_HSM_TEMPLATES: HsmTemplate[] = [
     status: 'APPROVED',
     metaCategory: 'UTILITY',
     headerText: 'Pengingat Pembayaran Invoice',
-    bodyText: 'Halo {{1}}, batas pembayaran invoice sebesar {{2}} jatuh tempo pada {{3}}. Segera selesaikan transaksi melalui link pembayaran.',
+    bodyText:
+      'Halo {{1}}, batas pembayaran invoice sebesar {{2}} jatuh tempo pada {{3}}. Segera selesaikan transaksi melalui link pembayaran.',
     footerText: 'Sistem Penagihan VYNOR',
     sampleVariables: {
       '{{1}}': 'PT. Maju Bersama',
@@ -145,7 +151,8 @@ const INITIAL_HSM_TEMPLATES: HsmTemplate[] = [
     status: 'PENDING',
     metaCategory: 'MARKETING',
     headerText: 'Exclusive VIP Flash Sale',
-    bodyText: 'Hello {{1}}, don\'t miss out on {{2}}% off on all enterprise add-ons until {{3}}! Claim your voucher code inside.',
+    bodyText:
+      "Hello {{1}}, don't miss out on {{2}}% off on all enterprise add-ons until {{3}}! Claim your voucher code inside.",
     footerText: 'Reply STOP to unsubscribe',
     sampleVariables: {
       '{{1}}': 'Alex',
@@ -162,7 +169,8 @@ const INITIAL_HSM_TEMPLATES: HsmTemplate[] = [
     status: 'REJECTED',
     metaCategory: 'AUTHENTICATION',
     headerText: 'Kode Verifikasi Akun',
-    bodyText: 'Kode rahasia verifikasi masuk Anda adalah {{1}}. Jangan berikan kode ini kepada siapa pun.',
+    bodyText:
+      'Kode rahasia verifikasi masuk Anda adalah {{1}}. Jangan berikan kode ini kepada siapa pun.',
     footerText: 'Keamanan Akun VYNOR',
     sampleVariables: {
       '{{1}}': '894210',
@@ -207,7 +215,9 @@ const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
 export default function TemplatesPage() {
   const [activeTab, setActiveTab] = useState<TemplateCategory>('WHATSAPP_HSM');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedHsm, setSelectedHsm] = useState<HsmTemplate>(INITIAL_HSM_TEMPLATES[0] as HsmTemplate);
+  const [selectedHsm, setSelectedHsm] = useState<HsmTemplate>(
+    INITIAL_HSM_TEMPLATES[0] as HsmTemplate,
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Live variable preview replacement
@@ -229,20 +239,20 @@ export default function TemplatesPage() {
     (qr) =>
       qr.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       qr.shortcut.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      qr.content.toLowerCase().includes(searchQuery.toLowerCase())
+      qr.content.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredHsm = INITIAL_HSM_TEMPLATES.filter(
     (hsm) =>
       hsm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       hsm.bodyText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hsm.status.toLowerCase().includes(searchQuery.toLowerCase())
+      hsm.status.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredMedia = INITIAL_MEDIA_ASSETS.filter(
     (med) =>
       med.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      med.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+      med.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -257,7 +267,8 @@ export default function TemplatesPage() {
             </h1>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Meta WhatsApp HSM templates library, slash-command canned shortcuts, and verified media assets
+            Meta WhatsApp HSM templates library, slash-command canned shortcuts, and verified media
+            assets
           </p>
         </div>
 
@@ -282,7 +293,7 @@ export default function TemplatesPage() {
               'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
               activeTab === 'WHATSAPP_HSM'
                 ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             Meta HSM Templates ({INITIAL_HSM_TEMPLATES.length})
@@ -294,7 +305,7 @@ export default function TemplatesPage() {
               'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
               activeTab === 'QUICK_REPLY'
                 ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             Canned Quick Replies ({INITIAL_QUICK_REPLIES.length})
@@ -306,7 +317,7 @@ export default function TemplatesPage() {
               'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
               activeTab === 'MEDIA_ASSET'
                 ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             Media Assets ({INITIAL_MEDIA_ASSETS.length})
@@ -345,7 +356,7 @@ export default function TemplatesPage() {
                       'cursor-pointer rounded-lg border p-4 transition-all duration-150',
                       isSelected
                         ? 'border-primary/50 bg-primary/5 shadow-2xs'
-                        : 'border-border bg-card hover:border-border-strong'
+                        : 'border-border bg-card hover:border-border-strong',
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -410,7 +421,9 @@ export default function TemplatesPage() {
               <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-bold text-foreground">WhatsApp Business API Simulator</span>
+                  <span className="text-xs font-bold text-foreground">
+                    WhatsApp Business API Simulator
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -455,10 +468,15 @@ export default function TemplatesPage() {
 
               {/* Variable Replacement Controls */}
               <div className="mt-4 flex flex-col gap-2">
-                <span className="text-xs font-bold text-foreground">Placeholder Variable Values:</span>
+                <span className="text-xs font-bold text-foreground">
+                  Placeholder Variable Values:
+                </span>
                 <div className="grid grid-cols-1 gap-1.5">
                   {Object.entries(selectedHsm.sampleVariables).map(([token, val]) => (
-                    <div key={token} className="flex items-center justify-between text-xs bg-muted/30 p-2 rounded-xs border border-border">
+                    <div
+                      key={token}
+                      className="flex items-center justify-between text-xs bg-muted/30 p-2 rounded-xs border border-border"
+                    >
                       <span className="font-mono text-primary font-bold">{token}</span>
                       <span className="font-medium text-foreground">{val}</span>
                     </div>
@@ -490,9 +508,7 @@ export default function TemplatesPage() {
                     Used {qr.usageCount} times
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {qr.content}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{qr.content}</p>
               </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-2.5">

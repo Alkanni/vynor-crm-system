@@ -33,7 +33,10 @@ export function VynorLogomark({
 }) {
   return (
     <div
-      className={cn('relative inline-flex items-center justify-center shrink-0 select-none', className)}
+      className={cn(
+        'relative inline-flex items-center justify-center shrink-0 select-none',
+        className,
+      )}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
@@ -47,10 +50,7 @@ export function VynorLogomark({
         <circle cx="16" cy="16" r="16" fill="#E5494D" />
 
         {/* Geometric Folded V Mark */}
-        <path
-          d="M7.8 8.8H11.8L16 18.2L20.2 8.8H24.2L17.8 23.2H14.2L7.8 8.8Z"
-          fill="white"
-        />
+        <path d="M7.8 8.8H11.8L16 18.2L20.2 8.8H24.2L17.8 23.2H14.2L7.8 8.8Z" fill="white" />
       </svg>
 
       {/* Unread Alert Indicator Badge (Golden dot on Brand Red ring) */}
@@ -139,12 +139,7 @@ export function VynorLogo({
   }
 
   if (variant === 'wordmark') {
-    return (
-      <VynorWordmark
-        size={pixelSize * 0.65}
-        className={cn(className, textClassName)}
-      />
-    );
+    return <VynorWordmark size={pixelSize * 0.65} className={cn(className, textClassName)} />;
   }
 
   return (
@@ -152,15 +147,8 @@ export function VynorLogo({
       className={cn('inline-flex items-center gap-2 select-none', className)}
       aria-label="VYNOR CRM"
     >
-      <VynorLogomark
-        size={pixelSize}
-        hasUnread={hasUnread}
-        className={markClassName}
-      />
-      <VynorWordmark
-        size={pixelSize * 0.68}
-        className={textClassName}
-      />
+      <VynorLogomark size={pixelSize} hasUnread={hasUnread} className={markClassName} />
+      <VynorWordmark size={pixelSize * 0.68} className={textClassName} />
     </div>
   );
 }

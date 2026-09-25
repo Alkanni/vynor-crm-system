@@ -244,9 +244,7 @@ export function BlastDispatcher() {
         }}
         className={cn(
           'border-2 border-dashed rounded-lg p-6 text-center transition-all bg-card',
-          isDragOver
-            ? 'border-primary bg-primary/5'
-            : 'border-border hover:border-border-strong',
+          isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-border-strong',
         )}
       >
         <div className="flex flex-col items-center justify-center space-y-3">
@@ -285,14 +283,18 @@ export function BlastDispatcher() {
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="bg-card border border-border p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-muted-foreground uppercase">Total Ingested</div>
+              <div className="text-[10px] font-mono text-muted-foreground uppercase">
+                Total Ingested
+              </div>
               <div className="text-xl font-bold font-mono text-foreground mt-0.5">
                 {summary.totalRows}
               </div>
             </div>
 
             <div className="bg-card border border-emerald-500/30 p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase">Valid Rows</div>
+              <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase">
+                Valid Rows
+              </div>
               <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {summary.validCount}
               </div>
@@ -306,7 +308,9 @@ export function BlastDispatcher() {
             </div>
 
             <div className="bg-card border border-amber-500/30 p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 uppercase">Duplicates</div>
+              <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 uppercase">
+                Duplicates
+              </div>
               <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">
                 {summary.duplicateCount}
               </div>
@@ -495,7 +499,9 @@ export function BlastDispatcher() {
                           row.status !== 'VALID' && 'bg-muted/10',
                         )}
                       >
-                        <td className="py-2.5 px-3 font-mono text-muted-foreground">{row.rowNumber}</td>
+                        <td className="py-2.5 px-3 font-mono text-muted-foreground">
+                          {row.rowNumber}
+                        </td>
                         <td className="py-2.5 px-3 font-mono font-medium text-foreground">
                           {row.phone}
                         </td>

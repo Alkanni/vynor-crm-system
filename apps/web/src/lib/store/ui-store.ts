@@ -95,7 +95,10 @@ export const useUiStore = create<UiState>((set) => ({
   selectedConversationId: null,
   setSelectedConversationId: (id) => set({ selectedConversationId: id }),
 
-  theme: typeof window !== 'undefined' ? (localStorage.getItem('vynor_theme') as 'light' | 'dark' | 'system') || 'system' : 'system',
+  theme:
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('vynor_theme') as 'light' | 'dark' | 'system') || 'system'
+      : 'system',
   setTheme: (theme) => {
     set({ theme });
     if (typeof window !== 'undefined') {

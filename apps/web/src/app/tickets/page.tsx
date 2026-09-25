@@ -143,7 +143,8 @@ export default function TicketsManagementPage() {
             </h1>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Cross-department operational accountability, SLA escalation workflows, and ticket lifecycle
+            Cross-department operational accountability, SLA escalation workflows, and ticket
+            lifecycle
           </p>
         </div>
 
@@ -167,23 +168,23 @@ export default function TicketsManagementPage() {
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
         <div className="flex items-center gap-1 rounded-xs bg-muted/60 p-0.5 text-xs font-medium overflow-x-auto">
-          {(['ALL', 'OPEN', 'IN_PROGRESS', 'ESCALATED', 'PENDING_CUSTOMER', 'RESOLVED'] as const).map(
-            (st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => setStatusFilter(st)}
-                className={cn(
-                  'px-3 py-1 rounded-xs transition-all cursor-pointer shrink-0',
-                  statusFilter === st
-                    ? 'bg-card text-foreground font-semibold shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {st === 'ALL' ? 'All Tickets' : st.replace('_', ' ')}
-              </button>
-            ),
-          )}
+          {(
+            ['ALL', 'OPEN', 'IN_PROGRESS', 'ESCALATED', 'PENDING_CUSTOMER', 'RESOLVED'] as const
+          ).map((st) => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setStatusFilter(st)}
+              className={cn(
+                'px-3 py-1 rounded-xs transition-all cursor-pointer shrink-0',
+                statusFilter === st
+                  ? 'bg-card text-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {st === 'ALL' ? 'All Tickets' : st.replace('_', ' ')}
+            </button>
+          ))}
         </div>
 
         <div className="relative w-full sm:w-64">

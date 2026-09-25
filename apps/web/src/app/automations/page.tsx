@@ -74,9 +74,7 @@ export default function AutomationsBuilderPage() {
   const [rules, setRules] = useState<AutomationRule[]>(MOCK_RULES);
 
   const handleToggleRule = (id: string) => {
-    setRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, isActive: !r.isActive } : r)),
-    );
+    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, isActive: !r.isActive } : r)));
   };
 
   return (
@@ -91,7 +89,8 @@ export default function AutomationsBuilderPage() {
             </h1>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Construct robust WHEN &rarr; IF &rarr; THEN workflow triggers without brittle visual block spaghetti
+            Construct robust WHEN &rarr; IF &rarr; THEN workflow triggers without brittle visual
+            block spaghetti
           </p>
         </div>
 

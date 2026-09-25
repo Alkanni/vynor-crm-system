@@ -1126,7 +1126,6 @@ Following approval of this design plan, the engineering and UI design execution 
 3. **UX-BROADCAST-001 [P0]:** Design 9-Step Guided Broadcast Workflow with Pre-flight Validation (`/campaigns`).
 4. **UX-BLAST-001 [P0]:** Design CSV Blast Dispatcher with Granular Syntax & Rejection Tables (`/blast`).
 
-
 ---
 
 # VYNOR CRM — UI/UX Refresh & Brand Alignment Plan
@@ -1144,6 +1143,7 @@ Following approval of this design plan, the engineering and UI design execution 
 VYNOR CRM is purpose-built as an **internal sovereign omnichannel operational platform** engineered for high-volume customer communications, multi-channel inbound triage (WhatsApp, Instagram, Telegram, Email, Livechat), AI-assisted customer service, and compliant batch outreach.
 
 While the existing codebase has established an initial engineering foundation and implemented initial views for the application shell, inbox, channels, AI agent, broadcast, and blast, an exhaustive visual and architectural audit reveals significant UX deficiencies:
+
 1. **Generic Blue SaaS Aesthetic:** The current design system defaults to electric blue (`hsl(221.2 83.2% 53.3%)`) as its primary accent, completely disconnected from VYNOR's authoritative Red brand identity.
 2. **Severe Dark Mode Degradation:** Dark mode currently suffers from severe contrast loss (navigation text, input fields, search placeholders, and conversation snippets are near-black on black), rendering the interface illegible and non-compliant with WCAG 2.2 AA.
 3. **Severe 1024px Responsive Breakage:** At 1024px, the Unified Inbox forces 3 fixed-width panes alongside an expanded navigation rail, compressing the active conversation workspace to ~160px and rendering messages in broken single-word vertical wraps.
@@ -1152,6 +1152,7 @@ While the existing codebase has established an initial engineering foundation an
 6. **Visual Clutter & Cognitive Fatigue:** Conversation rows contain up to 11 competing chips, badges, and avatars with equal visual weight, causing operational friction for agents triaging hundreds of daily conversations.
 
 ### Purpose of this UI/UX Refresh
+
 - Establish a **calm, dense, professional, and reliable** product experience tailored for agents working 6-10 hour continuous shifts.
 - Align all visual elements with the **authoritative VYNOR brand identity** (Radix Red brand scale + Ruby destructive semantics).
 - Treat **Light Mode and Dark Mode as first-class citizens** with verified WCAG 2.2 AA contrast ratios and semantic surface luminance.
@@ -1166,31 +1167,33 @@ An exhaustive audit was executed against the running Next.js application across 
 
 ### Route Availability & GAP Analysis
 
-| Route / Module | HTTP Status | Visual Status | Current State & Identified Deficiencies | Classification |
-| :--- | :--- | :--- | :--- | :--- |
-| `/inbox` | 200 OK | Available | **Severe 1024px responsive breakage:** Center workspace crushed to 160px width. **Badge overload:** 11 visual indicators per row. **Header truncation:** Customer name truncates (`Budi Sa...`) at 1440px due to cramped action buttons. Active row uses generic blue tint. | **REFINE (P0)** |
-| `/contacts` | 404 Not Found | **GAP** | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error. | **GAP (P1)** |
-| `/channels` | 200 OK | Available | Functional account cards. Uses arbitrary KPI boxes and bright red `#e11d48` re-auth buttons. Lacks detailed webhook error inspection drawer. | **REFINE (P1)** |
-| `/ai-agent` | 200 OK | Available | **Theme defect:** Entire playground and simulator hardcoded with `bg-zinc-950` dark container even in Light Mode. Uses generic green robot icon. | **REFINE (P1)** |
-| `/campaigns` | 200 OK | Available | **Theme defect:** Title text is nearly invisible white-on-white. KPI cards and campaign table hardcoded dark zinc in Light Mode. Wizard lacks template variable preview. | **REFINE (P1)** |
-| `/blast` | 200 OK | Available | **Theme defect:** Drag-and-drop dropzone, metrics, and CSV table hardcoded dark zinc in Light Mode. Title text washed out. Missing high-risk confirmation modal. | **REFINE (P1)** |
-| `/tickets` | 404 Not Found | **GAP** | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error. | **GAP (P2)** |
-| `/automations` | 404 Not Found | **GAP** | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error. | **GAP (P2)** |
-| `/templates` | 404 Not Found | **GAP** | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error. | **GAP (P2)** |
-| `/dashboard` | 404 Not Found | **GAP** | Navigation links to `/dashboard` which throws 404. Root `/` exists but renders generic non-operational "Welcome back" card grid. | **GAP (P2)** |
-| `/reports` | 404 Not Found | **GAP** | Navigation links to `/analytics` which throws 404. Route does not exist. | **GAP (P2)** |
-| `/settings` | 404 Not Found | **GAP** | Navigation links to `/settings`, `/settings/teams`, `/settings/roles`, `/settings/integrations`, `/settings/audit`, all of which return 404. | **GAP (P2)** |
-| `/` (Home) | 200 OK | Available | Generic "Welcome back" banner with 4 KPI cards and Socket.IO status. Not an operational overview. | **REPLACE (P2)** |
-| `/login` | 200 OK | Available | Functional Supabase Auth form. Uses generic `ShieldCheck` icon inside blue box; missing official VYNOR logo mark and wordmark. | **REFINE (P0)** |
+| Route / Module | HTTP Status   | Visual Status | Current State & Identified Deficiencies                                                                                                                                                                                                                                     | Classification   |
+| :------------- | :------------ | :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| `/inbox`       | 200 OK        | Available     | **Severe 1024px responsive breakage:** Center workspace crushed to 160px width. **Badge overload:** 11 visual indicators per row. **Header truncation:** Customer name truncates (`Budi Sa...`) at 1440px due to cramped action buttons. Active row uses generic blue tint. | **REFINE (P0)**  |
+| `/contacts`    | 404 Not Found | **GAP**       | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error.                                                                                                                                                                              | **GAP (P1)**     |
+| `/channels`    | 200 OK        | Available     | Functional account cards. Uses arbitrary KPI boxes and bright red `#e11d48` re-auth buttons. Lacks detailed webhook error inspection drawer.                                                                                                                                | **REFINE (P1)**  |
+| `/ai-agent`    | 200 OK        | Available     | **Theme defect:** Entire playground and simulator hardcoded with `bg-zinc-950` dark container even in Light Mode. Uses generic green robot icon.                                                                                                                            | **REFINE (P1)**  |
+| `/campaigns`   | 200 OK        | Available     | **Theme defect:** Title text is nearly invisible white-on-white. KPI cards and campaign table hardcoded dark zinc in Light Mode. Wizard lacks template variable preview.                                                                                                    | **REFINE (P1)**  |
+| `/blast`       | 200 OK        | Available     | **Theme defect:** Drag-and-drop dropzone, metrics, and CSV table hardcoded dark zinc in Light Mode. Title text washed out. Missing high-risk confirmation modal.                                                                                                            | **REFINE (P1)**  |
+| `/tickets`     | 404 Not Found | **GAP**       | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error.                                                                                                                                                                              | **GAP (P2)**     |
+| `/automations` | 404 Not Found | **GAP**       | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error.                                                                                                                                                                              | **GAP (P2)**     |
+| `/templates`   | 404 Not Found | **GAP**       | Route does not exist in `apps/web/src/app`. Clicking navigation item throws Next.js 404 error.                                                                                                                                                                              | **GAP (P2)**     |
+| `/dashboard`   | 404 Not Found | **GAP**       | Navigation links to `/dashboard` which throws 404. Root `/` exists but renders generic non-operational "Welcome back" card grid.                                                                                                                                            | **GAP (P2)**     |
+| `/reports`     | 404 Not Found | **GAP**       | Navigation links to `/analytics` which throws 404. Route does not exist.                                                                                                                                                                                                    | **GAP (P2)**     |
+| `/settings`    | 404 Not Found | **GAP**       | Navigation links to `/settings`, `/settings/teams`, `/settings/roles`, `/settings/integrations`, `/settings/audit`, all of which return 404.                                                                                                                                | **GAP (P2)**     |
+| `/` (Home)     | 200 OK        | Available     | Generic "Welcome back" banner with 4 KPI cards and Socket.IO status. Not an operational overview.                                                                                                                                                                           | **REPLACE (P2)** |
+| `/login`       | 200 OK        | Available     | Functional Supabase Auth form. Uses generic `ShieldCheck` icon inside blue box; missing official VYNOR logo mark and wordmark.                                                                                                                                              | **REFINE (P0)**  |
 
 ### Visual Inspection Findings by Viewport & Theme
 
 #### Light Mode Inspection (1440px, 1280px, 1024px)
+
 - **1440px:** Clean shell structure, but dominated by generic blue primary buttons and selection highlights. Broadcast and Blast screens display jarring black rectangles inside an otherwise white application shell. Header text truncates customer names prematurely.
 - **1280px:** 3-pane layout becomes tight; customer context accordion labels wrap awkwardly; composer action buttons crowd together.
 - **1024px (CRITICAL FAILURE):** Layout engine attempts to render 56px/220px rail + 320px queue + 320px customer context panel simultaneously. Center conversation workspace is crushed to ~160px. Messages wrap into single-word vertical towers. Completely unusable.
 
 #### Dark Mode Inspection (1440px, 1280px, 1024px)
+
 - **1440px (CRITICAL CONTRAST DEFECT):** Background set to `hsl(220 14% 4%)`. Text tokens fail WCAG 2.2 AA contrast: Navigation rail links, queue search placeholder, and last message snippets render in dark charcoal on black (contrast < 1.8:1). Composer tabs and inputs are visually lost.
 - **1280px:** Low contrast exacerbated by narrow borders. Border dividers (`--border: 217.2 19% 15%`) disappear on low-tier office monitors.
 - **1024px:** Exhibits both the 160px workspace crushing bug and complete darkness/illegibility.
@@ -1202,6 +1205,7 @@ An exhaustive audit was executed against the running Next.js application across 
 The following components, utilities, and assets currently exist in `apps/web/src`:
 
 ### Shell & Navigation
+
 - `AppShell.tsx`: Indestructible 100vh viewport frame, desktop rail + mobile overlay drawer.
 - `AppHeader.tsx`: Fixed 48px header with workspace selector, search trigger, channel telemetry, and user profile.
 - `NavigationRail.tsx`: Collapsible 56px / 220px sidebar with 4 category groupings (OPERATIONAL, OUTREACH, WORKFLOW, SYSTEM).
@@ -1211,6 +1215,7 @@ The following components, utilities, and assets currently exist in `apps/web/src
 - `SessionExpiryDialog.tsx`: Supabase JWT session renewal alert.
 
 ### Unified Inbox Module (`/inbox`)
+
 - `ConversationQueueList.tsx`: Virtualized queue list with tabs (`Unassigned`, `Mine`, `All`).
 - `ConversationRow.tsx`: Individual conversation row with avatar initial, channel badge, unread dot, snippet, priority chip, assignment chip, and tag chip.
 - `ConversationTimeline.tsx`: Message stream with date separators and autoscroll lock.
@@ -1225,6 +1230,7 @@ The following components, utilities, and assets currently exist in `apps/web/src
 - `ChannelBadge.tsx`: Visual badge for WhatsApp, Instagram, Telegram, Email, and Webchat.
 
 ### Secondary Operational Modules
+
 - `ChannelHealthList.tsx` & `ChannelCard.tsx`: Connected platform cards displaying 24h inbound/outbound meters and latency.
 - `AIAgentConfig.tsx`: Model selector, confidence threshold slider, and forbidden keywords tags.
 - `AIPlayground.tsx`: Simulated chat interface for testing bot responses with token telemetry and citation inspector.
@@ -1232,6 +1238,7 @@ The following components, utilities, and assets currently exist in `apps/web/src
 - `BlastDispatcher.tsx`: CSV file ingest engine with client-side E.164 syntax validation.
 
 ### Design Tokens & Base Primitives
+
 - `globals.css`: Tailwind CSS v4 setup, color variables, typography utilities, and high-contrast focus rings.
 - Base UI Primitives: Handcrafted accessible components using Radix-like DOM patterns (`PermissionGate`, `EmptyState`, `ErrorBoundary`, `OfflineBanner`, `LoadingSpinner`).
 
@@ -1240,11 +1247,13 @@ The following components, utilities, and assets currently exist in `apps/web/src
 ## 4. Reference Research
 
 To achieve an industry-standard operational UX without producing a generic template or a copycat interface, research was conducted against leading platforms:
+
 1. **Chatwoot (`chatwoot/chatwoot`):** Evaluated for Unified Inbox queue handling, conversation workspace hierarchy, message bubble differentiation, and 3-pane responsive mechanics.
 2. **CEKAT (`cekat.ai`):** Evaluated for Indonesian operational reality—WhatsApp Business API centrality, +62 phone ergonomics, Meta HSM templates, rate limiting, and hybrid AI-to-human escalation.
 3. **shadcn/ui & Radix Primitives:** Evaluated strictly as unstyled interaction and accessibility primitives, never as a visual design identity.
 
 ### Reference Precedence Hierarchy
+
 1. **Existing VYNOR Engineering Contracts:** Backend schemas, Socket.IO contracts, Supabase Auth boundaries, RFC-7807 error formats.
 2. **Existing Functional Code:** Working frontend workflows (queue filtering, claiming, sending, internal notes, CSV validation).
 3. **Authoritative VYNOR Brand Reference:** Logo geometry, Radix Red scale, Ruby destructive scale, light/dark baseline canvases.
@@ -1257,17 +1266,20 @@ To achieve an industry-standard operational UX without producing a generic templ
 ## 5. Chatwoot Pattern Analysis
 
 ### Evaluated Patterns in Modern Chatwoot
+
 - **Unified Inbox Ergonomics:** Chatwoot anchors agents inside a persistent 3-pane workspace (`InboxView.vue`). The left pane serves as a queue filter and conversation list; the center pane is the conversation timeline with an integrated message composer; the right pane displays contact attributes and conversation details.
 - **Visual Density & Typography:** Chatwoot uses a restrained 13px base body font size with tight 18px line heights in conversation rows, allowing 8-10 conversations to be visible without scrolling.
 - **Message Bubble Semantics:** Modern Chatwoot (`components-next/message/`) clearly separates incoming customer messages (neutral gray), agent replies (distinct surface), and private notes (warm yellow/amber container with lock icon).
 - **Context Drawer Transformation:** On screens `< 1200px`, Chatwoot automatically collapses the contact details panel into a slide-over drawer, preserving adequate width for message bubbles and the composer.
 
 ### What VYNOR Adapts from Chatwoot
+
 - **3-Pane Desktop Workspace:** Replicate the structural clarity of Queue -> Timeline -> Customer Context.
 - **Responsive Drawer Collapse:** At `< 1280px` and `1024px`, collapse the right Customer Context panel into an on-demand slide-over drawer to prevent workspace crushing.
 - **Internal Note Delineation:** Adopt Chatwoot's unambiguous visual divergence between public customer replies and private team notes.
 
 ### What VYNOR Strictly Rejects from Chatwoot
+
 - **Color Palette:** Do NOT use Chatwoot's blue/cyan/teal branding. VYNOR uses Radix Red and warm neutrals.
 - **Bulky Card Containers:** Do NOT wrap conversation threads in floating card bubbles with heavy drop-shadows. VYNOR uses crisp 1px structural dividers.
 - **Vue.js Dependencies:** VYNOR is built on Next.js 16 (React 19) and Tailwind CSS v4.
@@ -1277,40 +1289,45 @@ To achieve an industry-standard operational UX without producing a generic templ
 ## 6. CEKAT Pattern Analysis
 
 ### Evaluated Patterns in CEKAT (cekat.ai)
+
 - **WhatsApp-First Architecture:** CEKAT is deeply tailored for Indonesian commercial operations where WhatsApp Business API is the primary customer lifeline.
 - **Indonesian Phone & Identity Ergonomics:** Native support for local phone formatting (`+62 8xx` / `08xx`), Indonesian customer naming conventions, and e-commerce order lookups.
 - **Hybrid AI + Human Agent Handoff:** In CEKAT, AI bots handle routine FAQs, catalog queries, and operational hours. When sentiment turns negative or complex inquiries arise, the bot triggers an immediate handoff to human agents with supervisor notification.
 - **Broadcast & Blast Safety Gates:** High-risk batch messaging includes pre-flight validation against Meta HSM templates, rate-limit warnings, and opt-out suppression to prevent WhatsApp account bans.
 
 ### What VYNOR Adapts from CEKAT
+
 - **Operational Terminology & Context:** Indonesian phone formatting (+62), domestic e-commerce order tags, and dual-language operational readability.
 - **Prominent AI Handoff Indicators:** Clear visual tags indicating when a conversation is bot-managed vs when a human agent has taken ownership.
 - **Pre-Flight Validation for Outbound:** Strict validation gates in Broadcast and Blast before messages can be submitted to provider queues.
 
 ### What VYNOR Rejects from CEKAT
+
 - **Closed SaaS Bloat:** VYNOR maintains complete architectural sovereignty with zero dependency on third-party proprietary UI code.
 
 ---
 
 ## 7. Reference Pattern Matrix
 
-| Operational Area | Chatwoot Pattern | CEKAT Pattern | Existing VYNOR Implementation | VYNOR UI/UX Refresh Adaptation | What NOT to Copy |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Unified Inbox Layout** | 3-pane layout with right contact drawer on tablet. | Split inbox focused heavily on WhatsApp numbers. | 3-pane layout with fixed widths; breaks completely at 1024px. | **Adaptive 3-pane layout:** 340px queue, flex-1 workspace, 320px context at >=1440px; 300px/flex-1/280px at 1280px; auto-collapse context to overlay drawer at 1024px. | Do not copy Chatwoot's blue/teal theme or CEKAT's mobile-first interface. |
-| **Conversation Row** | Compact list with unread counter, avatar, and relative time. | WhatsApp-style list with phone number prominence. | 11 chips and badges on a single row; visual weight overloaded. | **3-Tier Visual Hierarchy:** 1) Name, unread dot, priority (if high); 2) Last message snippet, channel icon; 3) Relative time, assignee avatar. | Do not display all metadata simultaneously with equal visual priority. |
-| **Message Timeline** | Left/Right bubbles with read receipts and private note styling. | WhatsApp web-style bubbles with delivery checkmarks. | Basic left/right bubbles with blue agent background; amber internal note. | **Calm Neutral Bubbles:** Customer (neutral surface), Agent (calm subtle surface with border, NOT bright red), Note (amber), System (chip). | Do not color all agent messages in bright brand red. |
-| **Message Composer** | Dual tabs for Reply vs Note, slash command templates. | Quick replies dropdown, template selector. | Dual mode tabs with Alt+N shortcut and `/` template picker. | **Retain dual mode; polish ergonomics:** Customer reply uses VYNOR Red CTA; Internal note turns entire frame warm amber with prominent Lock icon. | Do not clutter composer with dozens of formatting buttons. |
-| **Customer Context** | Accordion list of custom attributes and previous conversations. | Customer profile with linked CRM tags and order history. | Accordion panel with 6 sections; bulky padding. | **Dense Information Workspace:** Clean dividers, compact key/value rows, inline tag editor, instant priority/assignee dropdowns. | Do not put every attribute into an isolated rounded card. |
-| **Connected Platforms** | Inbox list with channel icons and webhook status. | Platform connection cards with QR code scanner and token health. | Grid of 6 channel cards with KPI counters. | **Operational Health Telemetry:** Clear connection state badges, webhook latency indicators, 1-click token refresh, Ruby destructive disconnect. | Do not make it a decorative gallery of corporate logos. |
-| **AI Agent Console** | AI assistance toggle with canned bot settings. | AI bot with FAQ training, intent routing, and handoff rules. | Split console with config sliders and black playground box. | **Operational Supervisor Console:** System prompt tuning, forbidden keyword chips, and sanitized playground with high-visibility safety warning banner. | Do not use purple gradients, neon sparkles, or futuristic AI bot icons. |
-| **Broadcast & Blast** | Outbound campaign list with delivery stats. | Broadcast campaign manager with Meta HSM template sync. | 9-step broadcast wizard + CSV blast dispatcher with E.164 parsing. | **High-Risk Safety Workflow:** Pre-flight validation, rejection breakdown tables, rate-limit warnings, and high-risk confirmation modal. | Do not make final Send button look identical to an ordinary Save button. |
+| Operational Area         | Chatwoot Pattern                                                | CEKAT Pattern                                                    | Existing VYNOR Implementation                                             | VYNOR UI/UX Refresh Adaptation                                                                                                                                         | What NOT to Copy                                                          |
+| :----------------------- | :-------------------------------------------------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| **Unified Inbox Layout** | 3-pane layout with right contact drawer on tablet.              | Split inbox focused heavily on WhatsApp numbers.                 | 3-pane layout with fixed widths; breaks completely at 1024px.             | **Adaptive 3-pane layout:** 340px queue, flex-1 workspace, 320px context at >=1440px; 300px/flex-1/280px at 1280px; auto-collapse context to overlay drawer at 1024px. | Do not copy Chatwoot's blue/teal theme or CEKAT's mobile-first interface. |
+| **Conversation Row**     | Compact list with unread counter, avatar, and relative time.    | WhatsApp-style list with phone number prominence.                | 11 chips and badges on a single row; visual weight overloaded.            | **3-Tier Visual Hierarchy:** 1) Name, unread dot, priority (if high); 2) Last message snippet, channel icon; 3) Relative time, assignee avatar.                        | Do not display all metadata simultaneously with equal visual priority.    |
+| **Message Timeline**     | Left/Right bubbles with read receipts and private note styling. | WhatsApp web-style bubbles with delivery checkmarks.             | Basic left/right bubbles with blue agent background; amber internal note. | **Calm Neutral Bubbles:** Customer (neutral surface), Agent (calm subtle surface with border, NOT bright red), Note (amber), System (chip).                            | Do not color all agent messages in bright brand red.                      |
+| **Message Composer**     | Dual tabs for Reply vs Note, slash command templates.           | Quick replies dropdown, template selector.                       | Dual mode tabs with Alt+N shortcut and `/` template picker.               | **Retain dual mode; polish ergonomics:** Customer reply uses VYNOR Red CTA; Internal note turns entire frame warm amber with prominent Lock icon.                      | Do not clutter composer with dozens of formatting buttons.                |
+| **Customer Context**     | Accordion list of custom attributes and previous conversations. | Customer profile with linked CRM tags and order history.         | Accordion panel with 6 sections; bulky padding.                           | **Dense Information Workspace:** Clean dividers, compact key/value rows, inline tag editor, instant priority/assignee dropdowns.                                       | Do not put every attribute into an isolated rounded card.                 |
+| **Connected Platforms**  | Inbox list with channel icons and webhook status.               | Platform connection cards with QR code scanner and token health. | Grid of 6 channel cards with KPI counters.                                | **Operational Health Telemetry:** Clear connection state badges, webhook latency indicators, 1-click token refresh, Ruby destructive disconnect.                       | Do not make it a decorative gallery of corporate logos.                   |
+| **AI Agent Console**     | AI assistance toggle with canned bot settings.                  | AI bot with FAQ training, intent routing, and handoff rules.     | Split console with config sliders and black playground box.               | **Operational Supervisor Console:** System prompt tuning, forbidden keyword chips, and sanitized playground with high-visibility safety warning banner.                | Do not use purple gradients, neon sparkles, or futuristic AI bot icons.   |
+| **Broadcast & Blast**    | Outbound campaign list with delivery stats.                     | Broadcast campaign manager with Meta HSM template sync.          | 9-step broadcast wizard + CSV blast dispatcher with E.164 parsing.        | **High-Risk Safety Workflow:** Pre-flight validation, rejection breakdown tables, rate-limit warnings, and high-risk confirmation modal.                               | Do not make final Send button look identical to an ordinary Save button.  |
 
 ---
 
 ## 8. VYNOR Brand Analysis
 
 ### Authoritative Brand Personality
+
 Based on the provided official brand artwork (`media_1790309741466.png`), VYNOR expresses:
+
 - **Professional:** Rigorous, disciplined, enterprise-grade.
 - **Operational:** Optimized for continuous high-velocity mission-critical workflows.
 - **Modern:** Clean geometric precision, uncluttered surfaces, contemporary typography.
@@ -1321,6 +1338,7 @@ Based on the provided official brand artwork (`media_1790309741466.png`), VYNOR 
 - **Distinctive:** Instantly recognizable VYNOR Red logomark and custom typography.
 
 ### Strict Anti-Identity (What VYNOR Is NOT)
+
 - **NOT futuristic AI:** No purple or cyan gradients, glowing borders, or sparkle animations.
 - **NOT cyberpunk / gaming:** No neon green accents, dark matrix themes, or robotic sound effects.
 - **NOT luxury / decorative:** No gold accents, heavy serif headings, or glassmorphic blurs.
@@ -1332,6 +1350,7 @@ Based on the provided official brand artwork (`media_1790309741466.png`), VYNOR 
 ## 9. Logo Usage
 
 The official VYNOR logo comprises two elements:
+
 1. **The V Logomark:** A solid circular red mark enclosing a white, geometric folded "V" chevron.
 2. **The VYNOR Wordmark:** Bold, rounded geometric letterforms with distinctive circular styling on the letter 'O'.
 
@@ -1345,6 +1364,7 @@ The official VYNOR logo comprises two elements:
 ```
 
 ### Approved Logo Sizes & Variants
+
 - **16px Logomark:** Micro favicon, browser tab, compact status bar indicator.
 - **32px Logomark:** Collapsed navigation rail header, mobile navigation trigger.
 - **32px Logomark with Unread Badge:** Includes an amber/golden dot (`#FFB224`) pinned to the upper-right quadrant to signal pending unassigned queue volume.
@@ -1353,6 +1373,7 @@ The official VYNOR logo comprises two elements:
 - **Full Horizontal Logo (Mark + Wordmark):** Expanded sidebar header (height: 28px), top application bar, login card header.
 
 ### Usage Rules
+
 - **Light Mode:** Red circular logomark (`#E5494D`) + Dark charcoal wordmark (`#1C2024`).
 - **Dark Mode:** Red circular logomark (`#E5494D`) + Pure white wordmark (`#FFFFFF`).
 - **CSS Inversion Prohibition:** NEVER apply `filter: invert(1)` to the full logo; doing so mutates the brand red mark into cyan/blue. Use SVG fill tokens or separate theme-aware vector assets.
@@ -1366,20 +1387,20 @@ The VYNOR color architecture is derived directly from the authoritative brand re
 
 ### Brand vs Destructive Scales Comparison
 
-| Step | Purpose | VYNOR Brand Red (Radix Red) | Semantic Token Alias | Destructive Ruby (Radix Ruby) | Semantic Token Alias |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | App background | `#FFFDFD` (Light) / `#191111` (Dark) | `--brand-1` | `#FFFDFE` (Light) / `#1D0E13` (Dark) | `--ruby-1` |
-| **2** | Subtle surface | `#FFF7F7` (Light) / `#201314` (Dark) | `--brand-2` | `#FFF5F7` (Light) / `#27141A` (Dark) | `--ruby-2` |
-| **3** | UI element background | `#FEEFEF` (Light) / `#3B1219` (Dark) | `--brand-3` | `#FFE9ED` (Light) / `#3C1824` (Dark) | `--ruby-3` |
-| **4** | Hovered UI element | `#FCE3E4` (Light) / `#4C1721` (Dark) | `--brand-4` | `#FFDBE2` (Light) / `#4C1D2D` (Dark) | `--ruby-4` |
-| **5** | Active / Selected element | `#FAD4D6` (Light) / `#5A1F29` (Dark) | `--brand-5` | `#FFC9D4` (Light) / `#5B2537` (Dark) | `--ruby-5` |
-| **6** | Subtle border / accent | `#F6C1C4` (Light) / `#6B2A35` (Dark) | `--brand-6` | `#FBB3C1` (Light) / `#6F2F43` (Dark) | `--ruby-6` |
-| **7** | Border / focus ring | `#F0A7AC` (Light) / `#843845` (Dark) | `--brand-7` | `#F498A9` (Light) / `#893C54` (Dark) | `--ruby-7` |
-| **8** | Hovered border | `#E9838B` (Light) / `#A84857` (Dark) | `--brand-8` | `#ED758B` (Light) / `#AD4968` (Dark) | `--ruby-8` |
-| **9** | **Solid Brand CTA / Accent** | **`#E5494D` (Light) / `#E5494D` (Dark)** | **`--brand-9` / `--primary`** | **`#E54666` (Light) / `#E54666` (Dark)** | **`--ruby-9` / `--destructive`** |
-| **10** | Hovered Solid CTA | `#DC3E42` (Light) / `#EC5E62` (Dark) | `--brand-10` / `--primary-hover`| `#DC3B5D` (Light) / `#EC5A7B` (Dark) | `--ruby-10` / `--destructive-hover`|
-| **11** | Low-contrast text / link | `#CE2C31` (Light) / `#FF8589` (Dark) | `--brand-11` | `#CE284F` (Light) / `#FF859F` (Dark) | `--ruby-11` |
-| **12** | High-contrast text | `#641723` (Light) / `#FFDCDD` (Dark) | `--brand-12` | `#651227` (Light) / `#FFDCE5` (Dark) | `--ruby-12` |
+| Step   | Purpose                      | VYNOR Brand Red (Radix Red)              | Semantic Token Alias             | Destructive Ruby (Radix Ruby)            | Semantic Token Alias                |
+| :----- | :--------------------------- | :--------------------------------------- | :------------------------------- | :--------------------------------------- | :---------------------------------- |
+| **1**  | App background               | `#FFFDFD` (Light) / `#191111` (Dark)     | `--brand-1`                      | `#FFFDFE` (Light) / `#1D0E13` (Dark)     | `--ruby-1`                          |
+| **2**  | Subtle surface               | `#FFF7F7` (Light) / `#201314` (Dark)     | `--brand-2`                      | `#FFF5F7` (Light) / `#27141A` (Dark)     | `--ruby-2`                          |
+| **3**  | UI element background        | `#FEEFEF` (Light) / `#3B1219` (Dark)     | `--brand-3`                      | `#FFE9ED` (Light) / `#3C1824` (Dark)     | `--ruby-3`                          |
+| **4**  | Hovered UI element           | `#FCE3E4` (Light) / `#4C1721` (Dark)     | `--brand-4`                      | `#FFDBE2` (Light) / `#4C1D2D` (Dark)     | `--ruby-4`                          |
+| **5**  | Active / Selected element    | `#FAD4D6` (Light) / `#5A1F29` (Dark)     | `--brand-5`                      | `#FFC9D4` (Light) / `#5B2537` (Dark)     | `--ruby-5`                          |
+| **6**  | Subtle border / accent       | `#F6C1C4` (Light) / `#6B2A35` (Dark)     | `--brand-6`                      | `#FBB3C1` (Light) / `#6F2F43` (Dark)     | `--ruby-6`                          |
+| **7**  | Border / focus ring          | `#F0A7AC` (Light) / `#843845` (Dark)     | `--brand-7`                      | `#F498A9` (Light) / `#893C54` (Dark)     | `--ruby-7`                          |
+| **8**  | Hovered border               | `#E9838B` (Light) / `#A84857` (Dark)     | `--brand-8`                      | `#ED758B` (Light) / `#AD4968` (Dark)     | `--ruby-8`                          |
+| **9**  | **Solid Brand CTA / Accent** | **`#E5494D` (Light) / `#E5494D` (Dark)** | **`--brand-9` / `--primary`**    | **`#E54666` (Light) / `#E54666` (Dark)** | **`--ruby-9` / `--destructive`**    |
+| **10** | Hovered Solid CTA            | `#DC3E42` (Light) / `#EC5E62` (Dark)     | `--brand-10` / `--primary-hover` | `#DC3B5D` (Light) / `#EC5A7B` (Dark)     | `--ruby-10` / `--destructive-hover` |
+| **11** | Low-contrast text / link     | `#CE2C31` (Light) / `#FF8589` (Dark)     | `--brand-11`                     | `#CE284F` (Light) / `#FF859F` (Dark)     | `--ruby-11`                         |
+| **12** | High-contrast text           | `#641723` (Light) / `#FFDCDD` (Dark)     | `--brand-12`                     | `#651227` (Light) / `#FFDCE5` (Dark)     | `--ruby-12`                         |
 
 ---
 
@@ -1388,6 +1409,7 @@ The VYNOR color architecture is derived directly from the authoritative brand re
 Light Mode is the primary daytime operating environment for support agents and supervisors.
 
 ### Key Visual Characteristics
+
 - **Canvas Baseline:** Warm, low-strain neutral canvas (`#F7F7F7`).
 - **Primary Surface:** Crisp near-white / pure white (`#FFFFFF`) for workspaces, panels, and dialogs.
 - **Sub-Surface:** Calm off-white (`#F0F0F0`) for navigation rails, table headers, and composer toolbars.
@@ -1403,6 +1425,7 @@ Light Mode is the primary daytime operating environment for support agents and s
 Dark Mode is a fully mature, semantic operational environment engineered for low-light conditions and long night shifts.
 
 ### Key Visual Characteristics
+
 - **Canvas Baseline:** Deep charcoal baseline canvas (`#1C1E20`), avoiding harsh pitch-black OLED black (`#000000`).
 - **Primary Surface:** Neutral dark surface (`#24272A`) for active workspace panes and cards.
 - **Elevated Surface:** Lifted surface (`#2E3236`) for modal dialogs, popovers, and floating menus.
@@ -1423,88 +1446,88 @@ The application will transition completely from arbitrary Tailwind utility color
 ```css
 :root {
   /* Canvas & Surfaces */
-  --background: #F7F7F7;
-  --surface: #FFFFFF;
-  --surface-muted: #F0F0F0;
-  --surface-elevated: #FFFFFF;
+  --background: #f7f7f7;
+  --surface: #ffffff;
+  --surface-muted: #f0f0f0;
+  --surface-elevated: #ffffff;
 
   /* Typography */
-  --foreground: #1C2024;
-  --foreground-secondary: #40454D;
-  --muted-foreground: #60646C;
+  --foreground: #1c2024;
+  --foreground-secondary: #40454d;
+  --muted-foreground: #60646c;
 
   /* Borders & Focus */
-  --border: #E0E0E0;
-  --border-subtle: #EBEBEB;
-  --border-strong: #C4C4C4;
-  --ring: #E5494D;
+  --border: #e0e0e0;
+  --border-subtle: #ebebeb;
+  --border-strong: #c4c4c4;
+  --ring: #e5494d;
 
   /* Primary Brand (Radix Red Scale) */
-  --primary: #E5494D;
-  --primary-hover: #DC3E42;
-  --primary-active: #CE2C31;
-  --primary-subtle: #FEEFEF;
-  --primary-border: #F6C1C4;
-  --primary-foreground: #FFFFFF;
+  --primary: #e5494d;
+  --primary-hover: #dc3e42;
+  --primary-active: #ce2c31;
+  --primary-subtle: #feefef;
+  --primary-border: #f6c1c4;
+  --primary-foreground: #ffffff;
 
   /* Destructive (Radix Ruby Scale) */
-  --destructive: #E54666;
-  --destructive-hover: #DC3B5D;
-  --destructive-active: #CE284F;
-  --destructive-subtle: #FFE9ED;
-  --destructive-border: #FBB3C1;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #e54666;
+  --destructive-hover: #dc3b5d;
+  --destructive-active: #ce284f;
+  --destructive-subtle: #ffe9ed;
+  --destructive-border: #fbb3c1;
+  --destructive-foreground: #ffffff;
 
   /* Semantic Signals */
-  --success: #10B981;
-  --success-subtle: #ECFDF5;
-  --warning: #F59E0B;
-  --warning-subtle: #FFFBEB;
-  --info: #0284C7;
-  --info-subtle: #F0F9FF;
+  --success: #10b981;
+  --success-subtle: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-subtle: #fffbeb;
+  --info: #0284c7;
+  --info-subtle: #f0f9ff;
 }
 
 .dark {
   /* Canvas & Surfaces */
-  --background: #1C1E20;
-  --surface: #24272A;
-  --surface-muted: #1E2023;
-  --surface-elevated: #2E3236;
+  --background: #1c1e20;
+  --surface: #24272a;
+  --surface-muted: #1e2023;
+  --surface-elevated: #2e3236;
 
   /* Typography */
-  --foreground: #FFFFFF;
-  --foreground-secondary: #D3D6DC;
-  --muted-foreground: #8C929D;
+  --foreground: #ffffff;
+  --foreground-secondary: #d3d6dc;
+  --muted-foreground: #8c929d;
 
   /* Borders & Focus */
-  --border: #363A3E;
-  --border-subtle: #2C3034;
-  --border-strong: #4A5056;
-  --ring: #E5494D;
+  --border: #363a3e;
+  --border-subtle: #2c3034;
+  --border-strong: #4a5056;
+  --ring: #e5494d;
 
   /* Primary Brand (Radix Red Dark Scale) */
-  --primary: #E5494D;
-  --primary-hover: #EC5E62;
-  --primary-active: #FF8589;
-  --primary-subtle: #3B1219;
-  --primary-border: #6B2A35;
-  --primary-foreground: #FFFFFF;
+  --primary: #e5494d;
+  --primary-hover: #ec5e62;
+  --primary-active: #ff8589;
+  --primary-subtle: #3b1219;
+  --primary-border: #6b2a35;
+  --primary-foreground: #ffffff;
 
   /* Destructive (Radix Ruby Dark Scale) */
-  --destructive: #E54666;
-  --destructive-hover: #EC5A7B;
-  --destructive-active: #FF859F;
-  --destructive-subtle: #3C1824;
-  --destructive-border: #6F2F43;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #e54666;
+  --destructive-hover: #ec5a7b;
+  --destructive-active: #ff859f;
+  --destructive-subtle: #3c1824;
+  --destructive-border: #6f2f43;
+  --destructive-foreground: #ffffff;
 
   /* Semantic Signals */
   --success: #059669;
-  --success-subtle: #064E3B;
-  --warning: #D97706;
-  --warning-subtle: #451A03;
-  --info: #0284C7;
-  --info-subtle: #082F49;
+  --success-subtle: #064e3b;
+  --warning: #d97706;
+  --warning-subtle: #451a03;
+  --info: #0284c7;
+  --info-subtle: #082f49;
 }
 ```
 
@@ -1524,6 +1547,7 @@ Because VYNOR's primary brand color is Red (`#E5494D`), user interface design mu
 ```
 
 ### Multi-Dimensional Distinction Rules
+
 1. **Hue Separation:** Primary actions resolve to warm Brand Red (`#E5494D`). Destructive actions resolve to cooler, pink-shifted Ruby (`#E54666`).
 2. **Iconographic Differentiation:** Destructive actions MUST always feature an unambiguous negative icon (`Trash2`, `AlertTriangle`, `XOctagon`, `UserMinus`). Primary CTAs feature affirmative or neutral icons (`Check`, `Send`, `Plus`, `ArrowRight`).
 3. **Explicit Wording:** Destructive buttons must state the exact consequence (e.g., `Delete Webhook`, `Revoke API Key`, `Disconnect WhatsApp`), never ambiguous verbs like `Confirm` or `Proceed`.
@@ -1537,10 +1561,12 @@ Because VYNOR's primary brand color is Red (`#E5494D`), user interface design mu
 VYNOR employs an ultra-crisp, high-density typographical hierarchy optimized for tabular data and conversational speed.
 
 ### Font Families
+
 - **Primary UI Font:** `Inter`, `-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `Roboto`, `sans-serif` (with font features `'rlig' 1, 'calt' 1, 'tnum' 1`).
 - **Code & Operational Monospace:** `JetBrains Mono`, `ui-monospace`, `SFMono-Regular`, `Menlo`, `monospace` (applied to customer phone numbers, timestamps, ticket IDs, and API payloads).
 
 ### Operational Scale Utilities
+
 - **Page Title (`.text-page-title`):** `18px` / Line Height `24px` / Font Weight `600` / Letter Spacing `-0.015em`.
 - **Section Header (`.text-section-header`):** `14px` / Line Height `20px` / Font Weight `600` / Letter Spacing `-0.01em`.
 - **Default Body (`.text-body-default`):** `13px` / Line Height `18px` / Font Weight `400`.
@@ -1564,12 +1590,12 @@ VYNOR employs an ultra-crisp, high-density typographical hierarchy optimized for
 
 ## 17. Application Shell Review
 
-| Shell Element | Current Implementation | Finding & Problem | Proposed Recommendation | Action |
-| :--- | :--- | :--- | :--- | :--- |
-| **AppHeader** | 48px sticky bar with branding, Ctrl+K search trigger, channel telemetry, and profile menu. | Duplicates socket status and channel telemetry that is already present in StatusBarFooter. Lacks official VYNOR logo mark. Search bar is overly wide. | Replace text with official VYNOR horizontal logo (Mark + Wordmark). Remove duplicate telemetry. Add Appearance selector (Light / Dark / System) to user profile menu. | **REFINE** |
-| **NavigationRail** | Collapsible 56px / 220px rail with 12 items across 4 categories. | Active link uses bright blue background. Multiple items link to 404 routes. Grouping does not reflect operational triage frequency. | Align active indicator with VYNOR red accent (`bg-brand-3 text-brand-11 border-r-2 border-brand-9`). Re-order items based on daily frequency. Stub missing routes. | **REFINE** |
-| **StatusBarFooter** | 24px bottom bar showing Socket status, Latency, Channels, and Build version. | Telemetry is redundant with header; occupies vertical screen real estate without providing actionable triage value. | Remove permanent 24px footer. Move essential connection health indicators into a compact popover triggered from the top header or contextual toast. | **REPLACE** |
-| **CommandPalette** | `Ctrl+K` dialog with route navigation, triage shortcuts, and theme toggle. | Useful for power users, but currently the ONLY place theme can be toggled. | Keep command palette; refine styling with semantic brand tokens; ensure theme can also be changed in profile settings. | **REFINE** |
+| Shell Element       | Current Implementation                                                                     | Finding & Problem                                                                                                                                     | Proposed Recommendation                                                                                                                                               | Action      |
+| :------------------ | :----------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------- |
+| **AppHeader**       | 48px sticky bar with branding, Ctrl+K search trigger, channel telemetry, and profile menu. | Duplicates socket status and channel telemetry that is already present in StatusBarFooter. Lacks official VYNOR logo mark. Search bar is overly wide. | Replace text with official VYNOR horizontal logo (Mark + Wordmark). Remove duplicate telemetry. Add Appearance selector (Light / Dark / System) to user profile menu. | **REFINE**  |
+| **NavigationRail**  | Collapsible 56px / 220px rail with 12 items across 4 categories.                           | Active link uses bright blue background. Multiple items link to 404 routes. Grouping does not reflect operational triage frequency.                   | Align active indicator with VYNOR red accent (`bg-brand-3 text-brand-11 border-r-2 border-brand-9`). Re-order items based on daily frequency. Stub missing routes.    | **REFINE**  |
+| **StatusBarFooter** | 24px bottom bar showing Socket status, Latency, Channels, and Build version.               | Telemetry is redundant with header; occupies vertical screen real estate without providing actionable triage value.                                   | Remove permanent 24px footer. Move essential connection health indicators into a compact popover triggered from the top header or contextual toast.                   | **REPLACE** |
+| **CommandPalette**  | `Ctrl+K` dialog with route navigation, triage shortcuts, and theme toggle.                 | Useful for power users, but currently the ONLY place theme can be toggled.                                                                            | Keep command palette; refine styling with semantic brand tokens; ensure theme can also be changed in profile settings.                                                | **REFINE**  |
 
 ---
 
@@ -1610,6 +1636,7 @@ SYSTEM (Tenant Administration)
 The Unified Inbox (`/inbox`) is the mission-critical core of VYNOR CRM.
 
 ### Desktop Layout Architecture (>= 1440px)
+
 ```
 +------------------------+---------------------------------------+------------------------+
 | PANE 1: QUEUE LIST     | PANE 2: CONVERSATION WORKSPACE        | PANE 3: CONTEXT PANEL  |
@@ -1626,6 +1653,7 @@ The Unified Inbox (`/inbox`) is the mission-critical core of VYNOR CRM.
 ```
 
 ### Responsive Ergonomics Strategy
+
 - **>= 1440px:** Full 3-pane layout with 340px Queue, flex-1 Workspace, and 320px Customer Context.
 - **1280px - 1439px:** Compact 3-pane layout with 300px Queue, flex-1 Workspace, and 280px Customer Context.
 - **1024px - 1279px:** Automatic 2-pane mode: Customer Context panel collapses into a smooth slide-over drawer triggered by `]` or the header toggle button, guaranteeing that the center workspace maintains at least 500px of comfortable reading width.
@@ -1636,9 +1664,11 @@ The Unified Inbox (`/inbox`) is the mission-critical core of VYNOR CRM.
 ## 20. Conversation List Refresh
 
 ### Current Problem
+
 The existing `ConversationRow.tsx` displays up to 11 badges and indicators per row (initial avatar, unread dot, customer name, channel badge, clock, timestamp, message snippet, AI badge, priority chip, assignment chip, tag chip, and delivery error badge). This produces severe visual clutter.
 
 ### Proposed 3-Tier Hierarchy
+
 ```
   ┌─────────────────────────────────────────────────────────────┐
   │ (B) Budi Santoso   [WA]                  10:42 AM           │  <- Tier 1 & 3
@@ -1657,6 +1687,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 21. Timeline Refresh
 
 ### Message Stream Semantic Differentiation
+
 - **Customer Incoming:** Left-aligned. Surface: `--surface` (Light: `#FFFFFF`, Dark: `#24272A`). Border: 1px `border-border`. Text: `--foreground`.
 - **Human Agent Outgoing:** Right-aligned. Surface: Calm neutral tint (`--surface-muted` or subtle `--brand-2` tint). Border: 1px `--border-strong`. Text: `--foreground`. Status ticks: Single check (Sent), Double check (Delivered), Sky double check (Read).
 - **AI Assistant Outgoing:** Right-aligned or Left-aligned with distinctive `Bot` badge (`text-sky-600 bg-sky-50 dark:bg-sky-950`). Zero purple gradients or sparkles.
@@ -1669,6 +1700,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 22. Composer Refresh
 
 ### Operational Principles
+
 - **Dual-Mode Visual Divergence:** Switching between `Customer Reply` and `Internal Note` must cause radical visual feedback to make sending private notes to customers impossible.
 - **Customer Reply Mode:** Neutral background, clear placeholder (`"Type a customer reply... (/ for templates, Ctrl+Enter to send)"`), primary action button: Solid Brand Red `[Send Reply (Ctrl+Enter)]`.
 - **Internal Note Mode:** Entire composer frame shifts to warm amber, placeholder changes to `"Type an internal note for team members..."`, primary action button shifts to solid amber `[Add Internal Note (Alt+N)]`.
@@ -1679,6 +1711,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 23. Customer Context Refresh
 
 ### Transformation from Bulky Cards to Information Workspace
+
 - **Header:** Customer avatar initial, full customer name, online status indicator, primary phone, and email.
 - **Channel Identities:** Clean tabular rows displaying linked accounts (WhatsApp phone, Instagram handle, Email address) with 1-click clipboard copy.
 - **Triage & SLA:** Compact dropdowns for Priority (`URGENT`, `HIGH`, `MEDIUM`, `LOW`) and Assignee (`Agent Sarah`, `Agent Smith`, `Unassigned`).
@@ -1691,6 +1724,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 24. Contacts Refresh
 
 ### Addressing GAP: Customer Directory (`/contacts`)
+
 - **High-Density Table:** Customer Name, Primary Channel, Identifier, Assigned Agent, Tags, Last Interaction Date, Open Tickets.
 - **Filter Bar:** Multi-attribute filtering by Channel, Tag, Priority, and Assignee.
 - **Slide-Over Detail Drawer:** Clicking a customer opens a 400px side drawer displaying their 360-degree profile, active conversations, and communication logs without leaving the directory table.
@@ -1700,6 +1734,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 25. Connected Platforms Refresh
 
 ### Connected Platforms & Health Monitoring (`/channels`)
+
 - **Operational Health Cards:** WhatsApp Business API, Instagram Direct, Telegram Bot, Email Ingress, Live Webchat.
 - **Telemetry Indicators:** Inbound (24h), Outbound (24h), Webhook Latency (ms), Connection Status (`CONNECTED`, `WARNING`, `DISCONNECTED`, `RATE_LIMITED`).
 - **Action Triggers:** 1-click token re-authentication, test ping, and Ruby destructive disconnect (`[Trash] Disconnect Channel`).
@@ -1709,6 +1744,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 26. AI Agent Refresh
 
 ### AI Agent Supervisor Console (`/ai-agent`)
+
 - **Eliminate Hardcoded Zinc Styling:** Refactor playground and configuration panels to resolve from semantic design tokens (`--surface`, `--card`, `--foreground`).
 - **Operational Configuration:** System instructions editor, model picker (Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro), temperature slider, and forbidden keyword tags.
 - **Sanitized Playground:** Full-height interactive testing sandbox with prominent high-contrast banner:  
@@ -1720,6 +1756,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 27. Broadcast Refresh
 
 ### Outbound Campaigns (`/campaigns`)
+
 - **Eliminate Hardcoded Zinc Styling:** Fix white-on-white text defect in Light Mode; ensure table and metric cards resolve cleanly in both Light and Dark themes.
 - **9-Step Pre-Flight Safety Wizard:**
   1. Campaign Metadata -> 2. Channel Selection -> 3. Audience Segment -> 4. Meta HSM Template Selector -> 5. Variable Mapping -> 6. Preview on Device Mockup -> 7. Pre-Flight Validation -> 8. High-Risk Confirmation Modal -> 9. Live Dispatch Telemetry.
@@ -1730,6 +1767,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 28. Blast Refresh
 
 ### CSV Batch Dispatcher (`/blast`)
+
 - **Theme Remediation:** Refactor dropzone, validation cards, and rejection tables from hardcoded dark zinc to semantic Light/Dark design tokens.
 - **Granular Rejection Tables:**
   - Tab 1: All Ingested (Total count).
@@ -1744,6 +1782,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 29. Tickets Refresh
 
 ### Addressing GAP: Structured Work Items (`/tickets`)
+
 - **Distinct from Realtime Chat:** Conversation is ephemeral realtime messaging; a Ticket is an asynchronous, multi-team accountability work item with an SLA deadline.
 - **Visual Presentation:** Clean Kanban board or dense data table with status columns (`OPEN`, `PENDING_CUSTOMER`, `IN_PROGRESS`, `ESCALATED`, `RESOLVED`).
 - **Ticket Detail View:** Subject, linked customer, linked conversation ID, priority, SLA countdown timer, and internal escalation notes.
@@ -1753,6 +1792,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 30. Automations Refresh
 
 ### Addressing GAP: Event Rules (`/automations`)
+
 - **Linear Rule Engine:** Constrained `WHEN -> IF -> THEN` vertical builder.
 - **Triggers:** Inbound message received, conversation created, SLA breached.
 - **Conditions:** Channel equals WhatsApp, customer has VIP tag, message contains keywords.
@@ -1763,6 +1803,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 31. Templates Refresh
 
 ### Addressing GAP: Content & Templates (`/templates`)
+
 - **Meta HSM Templates:** Direct sync with WhatsApp Business Cloud API templates with approval status badges (`APPROVED`, `PENDING`, `REJECTED`).
 - **Internal Canned Quick Responses:** Slash-command shortcuts (e.g., `/greeting`, `/shipping_faq`, `/refund_policy`) for instant insertion by human agents.
 
@@ -1771,6 +1812,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 32. Dashboard Refresh
 
 ### Addressing GAP: Operational Pulse (`/dashboard`)
+
 - **Purpose:** Provide supervisors with live situational awareness at shift change.
 - **Actionable Metrics Only:**
   - Realtime Queue Depth (Unassigned conversations waiting).
@@ -1785,6 +1827,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 33. Reports Refresh
 
 ### Addressing GAP: Analytics (`/reports` / `/analytics`)
+
 - **Shift Retrospectives:** Tabular performance reports by Agent, Team, and Channel.
 - **Exportability:** 1-click export to CSV / JSON for enterprise audits.
 - **Metrics Tracked:** Handled volume, average resolution time, CSAT ratings, handoff frequency.
@@ -1794,6 +1837,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 34. Settings Refresh
 
 ### Addressing GAP: Governance & IAM (`/settings`)
+
 - **Standardized Left-Subnav Admin Layout:**
   - Team Members: User invitations, team assignments, seat management.
   - Roles & Permissions: Granular inspection of 24 canonical RBAC permissions.
@@ -1804,32 +1848,33 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 
 ## 35. Component Audit
 
-| Component Name | File Path | Current Status | Primary Problem | Action | Proposed Remediation |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `AppHeader` | `components/shell/AppHeader.tsx` | Functional | Duplicate telemetry; missing VYNOR logo; oversized search bar. | **REFINE** | Integrate official horizontal VYNOR logo; remove duplicate telemetry; add Appearance selector. |
-| `NavigationRail` | `components/navigation/NavigationRail.tsx` | Functional | Generic blue active state; links to 404 routes. | **REFINE** | Apply VYNOR Red active accent; reorder by operational frequency; gracefully stub missing routes. |
-| `StatusBarFooter` | `components/shell/StatusBarFooter.tsx` | Functional | Redundant telemetry occupies vertical space. | **REMOVE** | Consolidate connection indicators into header popover; reclaim 24px vertical screen height. |
-| `CommandPaletteDialog` | `components/shell/CommandPaletteDialog.tsx` | Functional | Only place theme toggle exists. | **REFINE** | Polish tokens with VYNOR red; retain shortcuts. |
-| `ConversationRow` | `components/inbox/ConversationRow.tsx` | Functional | 11 competing badges; visual weight overload. | **REFINE** | Implement 3-tier visual hierarchy; subtle brand-subtle selected row styling. |
-| `ConversationQueueList` | `components/inbox/ConversationQueueList.tsx` | Functional | Good structure; needs minor density polish. | **REFINE** | Tighten queue tab counters and search bar alignment. |
-| `MessageBubble` | `components/inbox/MessageBubble.tsx` | Functional | Blue agent bubble; potential red brand confusion. | **REFINE** | Calm neutral surface for agent replies; ruby border for delivery failures with retry CTA. |
-| `InternalNoteBubble` | `components/inbox/InternalNoteBubble.tsx` | Functional | Amber styling works well. | **KEEP** | Retain warm amber styling and lock icon; ensure high contrast in Dark Mode. |
-| `SystemEventChip` | `components/inbox/SystemEventChip.tsx` | Functional | Clean chip presentation. | **KEEP** | Retain centered monospace layout. |
-| `MessageComposer` | `components/inbox/MessageComposer.tsx` | Functional | Dual mode works; needs visual polish. | **REFINE** | Apply VYNOR Red CTA on Customer Reply; prominent amber frame on Internal Note. |
-| `CustomerContextPanel` | `components/inbox/CustomerContextPanel.tsx` | Functional | Bulky padding; wraps awkwardly at 1280px. | **REFINE** | Dense information rows; collapse to slide-over drawer at 1024px. |
-| `ChannelCard` | `components/channels/ChannelCard.tsx` | Functional | Bright red `#e11d48` re-auth button. | **REFINE** | Align with VYNOR brand tokens and Ruby destructive semantics. |
-| `ChannelHealthList` | `components/channels/ChannelHealthList.tsx` | Functional | Arbitrary KPI boxes. | **REFINE** | Tighten operational metrics and status pills. |
-| `AIAgentConfig` | `components/ai-agent/AIAgentConfig.tsx` | Functional | Sparkle icons; generic robot branding. | **REFINE** | Replace generic AI icons with clean operational symbols. |
-| `AIPlayground` | `components/ai-agent/AIPlayground.tsx` | Functional | Hardcoded dark zinc container in Light Mode. | **REFINE** | Migrate to semantic tokens; preserve test environment safety banner. |
-| `BroadcastWizard` | `components/broadcast/BroadcastWizard.tsx` | Functional | Hardcoded dark zinc; washed out title in Light Mode. | **REFINE** | Migrate to semantic tokens; ensure pre-flight safety gates are clear. |
-| `BlastDispatcher` | `components/blast/BlastDispatcher.tsx` | Functional | Hardcoded dark zinc dropzone and tables. | **REFINE** | Migrate to semantic tokens; polish rejection tables and CSV export. |
-| `CollisionBanner` | `components/inbox/CollisionBanner.tsx` | Functional | Clean co-viewing banner. | **KEEP** | Retain realtime co-presence alert. |
+| Component Name          | File Path                                    | Current Status | Primary Problem                                                | Action     | Proposed Remediation                                                                             |
+| :---------------------- | :------------------------------------------- | :------------- | :------------------------------------------------------------- | :--------- | :----------------------------------------------------------------------------------------------- |
+| `AppHeader`             | `components/shell/AppHeader.tsx`             | Functional     | Duplicate telemetry; missing VYNOR logo; oversized search bar. | **REFINE** | Integrate official horizontal VYNOR logo; remove duplicate telemetry; add Appearance selector.   |
+| `NavigationRail`        | `components/navigation/NavigationRail.tsx`   | Functional     | Generic blue active state; links to 404 routes.                | **REFINE** | Apply VYNOR Red active accent; reorder by operational frequency; gracefully stub missing routes. |
+| `StatusBarFooter`       | `components/shell/StatusBarFooter.tsx`       | Functional     | Redundant telemetry occupies vertical space.                   | **REMOVE** | Consolidate connection indicators into header popover; reclaim 24px vertical screen height.      |
+| `CommandPaletteDialog`  | `components/shell/CommandPaletteDialog.tsx`  | Functional     | Only place theme toggle exists.                                | **REFINE** | Polish tokens with VYNOR red; retain shortcuts.                                                  |
+| `ConversationRow`       | `components/inbox/ConversationRow.tsx`       | Functional     | 11 competing badges; visual weight overload.                   | **REFINE** | Implement 3-tier visual hierarchy; subtle brand-subtle selected row styling.                     |
+| `ConversationQueueList` | `components/inbox/ConversationQueueList.tsx` | Functional     | Good structure; needs minor density polish.                    | **REFINE** | Tighten queue tab counters and search bar alignment.                                             |
+| `MessageBubble`         | `components/inbox/MessageBubble.tsx`         | Functional     | Blue agent bubble; potential red brand confusion.              | **REFINE** | Calm neutral surface for agent replies; ruby border for delivery failures with retry CTA.        |
+| `InternalNoteBubble`    | `components/inbox/InternalNoteBubble.tsx`    | Functional     | Amber styling works well.                                      | **KEEP**   | Retain warm amber styling and lock icon; ensure high contrast in Dark Mode.                      |
+| `SystemEventChip`       | `components/inbox/SystemEventChip.tsx`       | Functional     | Clean chip presentation.                                       | **KEEP**   | Retain centered monospace layout.                                                                |
+| `MessageComposer`       | `components/inbox/MessageComposer.tsx`       | Functional     | Dual mode works; needs visual polish.                          | **REFINE** | Apply VYNOR Red CTA on Customer Reply; prominent amber frame on Internal Note.                   |
+| `CustomerContextPanel`  | `components/inbox/CustomerContextPanel.tsx`  | Functional     | Bulky padding; wraps awkwardly at 1280px.                      | **REFINE** | Dense information rows; collapse to slide-over drawer at 1024px.                                 |
+| `ChannelCard`           | `components/channels/ChannelCard.tsx`        | Functional     | Bright red `#e11d48` re-auth button.                           | **REFINE** | Align with VYNOR brand tokens and Ruby destructive semantics.                                    |
+| `ChannelHealthList`     | `components/channels/ChannelHealthList.tsx`  | Functional     | Arbitrary KPI boxes.                                           | **REFINE** | Tighten operational metrics and status pills.                                                    |
+| `AIAgentConfig`         | `components/ai-agent/AIAgentConfig.tsx`      | Functional     | Sparkle icons; generic robot branding.                         | **REFINE** | Replace generic AI icons with clean operational symbols.                                         |
+| `AIPlayground`          | `components/ai-agent/AIPlayground.tsx`       | Functional     | Hardcoded dark zinc container in Light Mode.                   | **REFINE** | Migrate to semantic tokens; preserve test environment safety banner.                             |
+| `BroadcastWizard`       | `components/broadcast/BroadcastWizard.tsx`   | Functional     | Hardcoded dark zinc; washed out title in Light Mode.           | **REFINE** | Migrate to semantic tokens; ensure pre-flight safety gates are clear.                            |
+| `BlastDispatcher`       | `components/blast/BlastDispatcher.tsx`       | Functional     | Hardcoded dark zinc dropzone and tables.                       | **REFINE** | Migrate to semantic tokens; polish rejection tables and CSV export.                              |
+| `CollisionBanner`       | `components/inbox/CollisionBanner.tsx`       | Functional     | Clean co-viewing banner.                                       | **KEEP**   | Retain realtime co-presence alert.                                                               |
 
 ---
 
 ## 36. Responsive Strategy
 
 ### Viewport Breakpoints & Behavioral Rules
+
 - **Desktop Extra-Wide (>= 1440px):** Full 3-pane layout. Navigation Rail expanded (220px) or collapsed (56px). Conversation Queue (340px), Conversation Workspace (flex-1, min 600px), Customer Context Panel (320px). Zero horizontal scrolling.
 - **Desktop Standard (1280px - 1439px):** Compact 3-pane layout. Conversation Queue (300px), Conversation Workspace (flex-1, min 500px), Customer Context Panel (280px).
 - **Tablet / Small Laptop (1024px - 1279px):** 2-pane layout. Navigation Rail collapsed to 56px icon rail by default. Conversation Queue (300px), Conversation Workspace (flex-1). Customer Context panel collapses into a high-performance slide-over overlay drawer triggered by `]` or header button.
@@ -1840,6 +1885,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 37. Accessibility
 
 ### WCAG 2.2 Level AA Directives
+
 1. **Color Contrast Verification:**
    - Normal text (13px body): Minimum contrast ratio of **4.5:1** against canvas and surfaces in both Light and Dark modes.
    - Large text (>=18px or >=14px bold): Minimum contrast ratio of **3.0:1**.
@@ -1865,6 +1911,7 @@ The existing `ConversationRow.tsx` displays up to 11 badges and indicators per r
 ## 38. Interaction States
 
 Every interactive element in VYNOR CRM must support six distinct, predictable states:
+
 1. **Default:** Crisp semantic surface, legible text, subtle 1px border.
 2. **Hover:** Subtle surface luminance shift (`bg-muted/60`), border darkening, cursor pointer.
 3. **Active / Pressed:** Physical depression feedback (`scale-[0.98]` or solid surface darkening).
@@ -1877,6 +1924,7 @@ Every interactive element in VYNOR CRM must support six distinct, predictable st
 ## 39. Visual QA Strategy
 
 Automated linting and unit tests cannot verify visual harmony, spacing, or color contrast. Every modified screen must pass a 3-tier QA protocol:
+
 1. **Automated Structural Verification:** Execution of TypeScript typechecks and headless verification scripts (`verify-all-p0-modules.ts`).
 2. **Rendered Visual Playwright Captures:** Multi-viewport screenshot generation (1440px, 1280px, 1024px) in both Light and Dark themes, reviewed for:
    - Text contrast and truncation.
@@ -1889,20 +1937,20 @@ Automated linting and unit tests cannot verify visual harmony, spacing, or color
 
 ## 40. Brand Migration Map
 
-| Current Element / State | Current Styling | VYNOR Target Token | Target Visual Expression |
-| :--- | :--- | :--- | :--- |
-| **Global Primary Accent** | `hsl(221.2 83.2% 53.3%)` (Blue) | `--primary: #E5494D` | Authoritative VYNOR Brand Red (Radix Red 9) |
-| **Keyboard Focus Ring** | `hsl(221.2 83.2% 53.3%)` (Blue) | `--ring: #E5494D` | 2px Brand Red high-contrast outline |
-| **Active Navigation Rail Link** | `bg-primary text-primary-foreground` (Blue) | `bg-brand-3 text-brand-11 border-r-2 border-brand-9` | Subtle red-tinted surface with solid red right accent bar |
-| **Selected Conversation Row** | `bg-primary/5 border-l-2 border-l-primary` (Blue) | `bg-brand-2 border-l-2 border-brand-9` | Subtle warm red background with crisp 2px solid red bar |
-| **Active Queue Tab** | `bg-card text-foreground font-semibold` | `bg-brand-9 text-white font-bold` | Solid VYNOR Red active pill with white text |
-| **Destructive Actions** | `hsl(0 84.2% 60.2%)` (Generic Rose) | `--destructive: #E54666` | Radix Ruby 9 (cooler, pink-shifted red with Trash icon) |
-| **Light Canvas Background** | `hsl(0 0% 100%)` (Stark White) | `--background: #F7F7F7` | Warm, low-fatigue operational canvas |
-| **Light Primary Surface** | `hsl(210 40% 98%)` (Cool Slate) | `--surface: #FFFFFF` | Crisp pure white workspace surfaces |
-| **Dark Canvas Background** | `hsl(220 14% 4%)` (Pitch Slate) | `--background: #1C1E20` | Authoritative dark charcoal baseline canvas |
-| **Dark Surface** | `hsl(220 13% 7%)` (Near Black) | `--surface: #24272A` | Calibrated neutral dark surface with 4.5:1 text contrast |
-| **Broadcast & Blast Containers** | `bg-zinc-950`, `bg-zinc-900` | `bg-card`, `bg-surface`, `border-border` | Fully semantic surfaces that adapt seamlessly to Light and Dark |
-| **Application Logo** | Text string `"VYNOR CRM"` | Official VYNOR Vector Asset | Red circular folded 'V' mark + styled 'VYNOR' wordmark |
+| Current Element / State          | Current Styling                                   | VYNOR Target Token                                   | Target Visual Expression                                        |
+| :------------------------------- | :------------------------------------------------ | :--------------------------------------------------- | :-------------------------------------------------------------- |
+| **Global Primary Accent**        | `hsl(221.2 83.2% 53.3%)` (Blue)                   | `--primary: #E5494D`                                 | Authoritative VYNOR Brand Red (Radix Red 9)                     |
+| **Keyboard Focus Ring**          | `hsl(221.2 83.2% 53.3%)` (Blue)                   | `--ring: #E5494D`                                    | 2px Brand Red high-contrast outline                             |
+| **Active Navigation Rail Link**  | `bg-primary text-primary-foreground` (Blue)       | `bg-brand-3 text-brand-11 border-r-2 border-brand-9` | Subtle red-tinted surface with solid red right accent bar       |
+| **Selected Conversation Row**    | `bg-primary/5 border-l-2 border-l-primary` (Blue) | `bg-brand-2 border-l-2 border-brand-9`               | Subtle warm red background with crisp 2px solid red bar         |
+| **Active Queue Tab**             | `bg-card text-foreground font-semibold`           | `bg-brand-9 text-white font-bold`                    | Solid VYNOR Red active pill with white text                     |
+| **Destructive Actions**          | `hsl(0 84.2% 60.2%)` (Generic Rose)               | `--destructive: #E54666`                             | Radix Ruby 9 (cooler, pink-shifted red with Trash icon)         |
+| **Light Canvas Background**      | `hsl(0 0% 100%)` (Stark White)                    | `--background: #F7F7F7`                              | Warm, low-fatigue operational canvas                            |
+| **Light Primary Surface**        | `hsl(210 40% 98%)` (Cool Slate)                   | `--surface: #FFFFFF`                                 | Crisp pure white workspace surfaces                             |
+| **Dark Canvas Background**       | `hsl(220 14% 4%)` (Pitch Slate)                   | `--background: #1C1E20`                              | Authoritative dark charcoal baseline canvas                     |
+| **Dark Surface**                 | `hsl(220 13% 7%)` (Near Black)                    | `--surface: #24272A`                                 | Calibrated neutral dark surface with 4.5:1 text contrast        |
+| **Broadcast & Blast Containers** | `bg-zinc-950`, `bg-zinc-900`                      | `bg-card`, `bg-surface`, `border-border`             | Fully semantic surfaces that adapt seamlessly to Light and Dark |
+| **Application Logo**             | Text string `"VYNOR CRM"`                         | Official VYNOR Vector Asset                          | Red circular folded 'V' mark + styled 'VYNOR' wordmark          |
 
 ---
 
@@ -2123,29 +2171,30 @@ Automated linting and unit tests cannot verify visual harmony, spacing, or color
 ## 43. Risks
 
 1. **Risk: Confusion between Primary Brand Red and Destructive Danger.**
-   - *Mitigation:* Strict multi-dimensional separation. Primary CTA uses warm Brand Red (`#E5494D`); destructive actions use pink-shifted Ruby (`#E54666`) coupled with negative icons (`Trash2`), explicit verbs (`Delete Connection`), and confirmation dialogs.
+   - _Mitigation:_ Strict multi-dimensional separation. Primary CTA uses warm Brand Red (`#E5494D`); destructive actions use pink-shifted Ruby (`#E54666`) coupled with negative icons (`Trash2`), explicit verbs (`Delete Connection`), and confirmation dialogs.
 2. **Risk: Flash of Unstyled Content (FOUC) or Hydration Mismatch on Theme Load.**
-   - *Mitigation:* Synchronous inline script in `<head>` that reads `localStorage`/cookie and applies `.dark` before first paint; suppress hydration warnings on `<html>`.
+   - _Mitigation:_ Synchronous inline script in `<head>` that reads `localStorage`/cookie and applies `.dark` before first paint; suppress hydration warnings on `<html>`.
 3. **Risk: 1024px Responsive Workspace Crushing.**
-   - *Mitigation:* Enforce automatic responsive collapse of the Customer Context panel into an overlay slide-over drawer below 1280px.
+   - _Mitigation:_ Enforce automatic responsive collapse of the Customer Context panel into an overlay slide-over drawer below 1280px.
 4. **Risk: Operator Cognitive Fatigue from Badge Overload.**
-   - *Mitigation:* Implement strict 3-tier hierarchy in `ConversationRow`; show priority chips ONLY when Urgent or High; suppress redundant status pills.
+   - _Mitigation:_ Implement strict 3-tier hierarchy in `ConversationRow`; show priority chips ONLY when Urgent or High; suppress redundant status pills.
 5. **Risk: Inadvertent Outbound Message Dispatch in Mass Campaigns.**
-   - *Mitigation:* Enforce 9-step pre-flight validation in Broadcast and typing-confirmation modal in CSV Blast.
+   - _Mitigation:_ Enforce 9-step pre-flight validation in Broadcast and typing-confirmation modal in CSV Blast.
 
 ---
 
 ## 44. Open Decisions
 
-1. **Theme Preference Persistence:** Store theme preference in an HTTP cookie alongside `localStorage` so Next.js server-rendered pages can render the correct theme class on first paint without client-side DOM mutation. *(Recommendation: Implement cookie-based theme hydration).*
-2. **Customer Context Drawer Default on 1280px:** Should the Customer Context panel be open or collapsed by default on 1280px screens? *(Recommendation: Keep open in compact 280px mode on 1280px; auto-collapse to drawer only at < 1200px / 1024px).*
-3. **Logo Asset Implementation:** Store VYNOR logo mark and wordmark as pure inline React SVGs with semantic `currentColor` / `var(--primary)` tokens rather than external PNG files to guarantee zero pixelation and instant theme adaptation. *(Recommendation: Inline SVG components).*
+1. **Theme Preference Persistence:** Store theme preference in an HTTP cookie alongside `localStorage` so Next.js server-rendered pages can render the correct theme class on first paint without client-side DOM mutation. _(Recommendation: Implement cookie-based theme hydration)._
+2. **Customer Context Drawer Default on 1280px:** Should the Customer Context panel be open or collapsed by default on 1280px screens? _(Recommendation: Keep open in compact 280px mode on 1280px; auto-collapse to drawer only at < 1200px / 1024px)._
+3. **Logo Asset Implementation:** Store VYNOR logo mark and wordmark as pure inline React SVGs with semantic `currentColor` / `var(--primary)` tokens rather than external PNG files to guarantee zero pixelation and instant theme adaptation. _(Recommendation: Inline SVG components)._
 
 ---
 
 ## 45. Definition of Done
 
 A UI/UX Refresh task is certified **DONE** only when:
+
 1. **Zero ESLint & TypeScript Errors:** `pnpm lint` and `pnpm typecheck` pass with 0 errors.
 2. **Automated Verification Script Pass:** `pnpm --filter @vynor/web test` passes 100%.
 3. **No Color Hardcoding:** All colors resolve from semantic design tokens; zero inline hex codes or arbitrary `zinc-900` classes.
@@ -2158,6 +2207,7 @@ A UI/UX Refresh task is certified **DONE** only when:
 ## 46. Implementation Sequence
 
 The UI/UX refresh must be executed incrementally in strict dependency order:
+
 - **Stage 1:** Brand & Theme Foundation (`globals.css`, token architecture, Light/Dark persistence, logo vectors).
 - **Stage 2:** Application Shell Refinement (`AppHeader`, `NavigationRail`, footer removal, route stubs).
 - **Stage 3:** Unified Inbox Core (1024px responsive drawer fix, conversation row hierarchy, timeline bubbles, dual-mode composer, customer context panel).
@@ -2176,10 +2226,11 @@ The UI/UX refresh must be executed incrementally in strict dependency order:
 This milestone proves the new visual direction in the most critical operational workflow.
 
 #### Complete Operational Journey Flow
+
 1. **Agent Authentication:** Agent opens `/login`, sees official VYNOR circular red logomark and bold wordmark, logs in, and enters the VYNOR branded application shell.
 2. **Shell Orientation:** AppHeader displays official logo, clean search bar, and active user profile. Navigation Rail displays operational modules with VYNOR red active indicator.
 3. **Queue Inspection:** Agent navigates to `/inbox`. Active queue tab (`Unassigned`) is highlighted with VYNOR red. Agent reviews queue list; rows display clean 3-tier hierarchy without badge clutter.
-4. **Select Conversation:** Agent selects conversation from customer *"Budi Santoso"*. Row highlights with subtle warm red surface (`--brand-2`) and 2px solid red bar. Center workspace loads instantly.
+4. **Select Conversation:** Agent selects conversation from customer _"Budi Santoso"_. Row highlights with subtle warm red surface (`--brand-2`) and 2px solid red bar. Center workspace loads instantly.
 5. **Customer Context Comprehension:** Customer details render cleanly in right context panel (or slide-over drawer on 1024px). Agent reviews linked WhatsApp identity and tags in < 2 seconds.
 6. **Claim Conversation:** Agent presses `A` or clicks `"Claim (A)"`. Ownership updates to agent; queue transfers to "Mine".
 7. **Compose Customer Reply:** Agent presses `C`, composer focuses. Agent types `/` to pick approved template, customizes message, and presses `Ctrl+Enter`. Primary button displays VYNOR Red.
@@ -2193,6 +2244,7 @@ This milestone proves the new visual direction in the most critical operational 
 ## 48. Visual Acceptance Gate
 
 Every updated screen must pass this 10-point visual acceptance gate:
+
 - [x] **1. Instant Brand Identity:** VYNOR circular mark and typography are immediately recognizable; UI does NOT look like default blue shadcn or recolored Chatwoot.
 - [x] **2. Semantic Contrast:** Primary Brand Red (`#E5494D`) is reserved for primary CTAs and active navigation; Destructive actions use pinkish Ruby (`#E54666`) with negative icons.
 - [x] **3. Light Mode Polish:** Warm neutral canvas (`#F7F7F7`), crisp surfaces, calm dividers, zero washed-out white text.
@@ -2336,4 +2388,3 @@ The following **7 initial P0 tasks** must be executed in exact sequential order:
   - **Regression Risk:** Zero.
 
 > **CRITICAL DIRECTIVE:** STOP HERE. Do not begin modifying application source code until this design plan has been reviewed and approved.
-
