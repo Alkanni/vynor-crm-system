@@ -9,6 +9,7 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/tests/e2e/**', '**/.turbo/**'],
     testTimeout: 15000,
     hookTimeout: 15000,
+    fileParallelism: false,
     alias: {
       '@vynor/contracts': path.resolve(import.meta.dirname, './packages/contracts/src'),
       '@vynor/database': path.resolve(import.meta.dirname, './packages/database/src'),
