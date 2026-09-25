@@ -67,12 +67,12 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
       {/* Bubble Container */}
       <div
         className={cn(
-          'relative max-w-[75%] sm:max-w-lg rounded-sm px-3.5 py-2 text-xs leading-relaxed shadow-2xs transition-colors',
+          'relative max-w-[75%] sm:max-w-lg px-3.5 py-2 text-xs leading-relaxed shadow-2xs transition-colors text-body-main',
           isCustomer
-            ? 'bg-card text-foreground border border-border/80'
+            ? 'bg-card text-foreground border border-border/80 rounded-xl rounded-bl-xs'
             : isAi
-              ? 'bg-surface text-foreground border border-border/90'
-              : 'bg-muted/70 dark:bg-surface-elevated text-foreground border border-border-strong',
+              ? 'bg-n-solid-iris text-foreground border border-border/90 rounded-xl rounded-br-xs'
+              : 'bg-n-solid-blue text-foreground border border-border-strong rounded-xl rounded-br-xs',
           isFailed && 'border-destructive/60 bg-destructive/5',
         )}
       >
