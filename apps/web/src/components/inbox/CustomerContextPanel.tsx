@@ -25,6 +25,7 @@ interface CustomerContextPanelProps {
   onUpdateAssignee?: (assignee: string) => void;
   onAddTag?: (tag: string) => void;
   onRemoveTag?: (tag: string) => void;
+  className?: string;
 }
 
 export function CustomerContextPanel({
@@ -33,6 +34,7 @@ export function CustomerContextPanel({
   onUpdateAssignee,
   onAddTag,
   onRemoveTag,
+  className,
 }: CustomerContextPanelProps) {
   const { customerContextOpen, toggleCustomerContext } = useUiStore();
   const [newTagInput, setNewTagInput] = useState('');
@@ -68,7 +70,10 @@ export function CustomerContextPanel({
   return (
     <aside
       aria-label="Customer Context Panel"
-      className="flex h-full w-80 shrink-0 flex-col border-l border-border bg-card overflow-hidden text-xs select-none"
+      className={cn(
+        'flex h-full w-72 2xl:w-80 shrink-0 flex-col border-l border-border bg-card overflow-hidden text-xs select-none',
+        className,
+      )}
     >
       {/* Panel Header */}
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3.5 bg-surface/50">
@@ -170,7 +175,7 @@ export function CustomerContextPanel({
                 <select
                   value={customer.priority}
                   onChange={(e) => onUpdatePriority?.(e.target.value as PriorityLevel)}
-                  className="w-full h-7 rounded-xs border border-border bg-surface px-2 text-xs text-foreground focus-visible:outline-hidden"
+                  className="w-full h-7 rounded-xs border border-border bg-surface px-2 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                 >
                   <option value="URGENT">Urgent (15m SLA)</option>
                   <option value="HIGH">High (1h SLA)</option>
@@ -187,7 +192,7 @@ export function CustomerContextPanel({
                 <select
                   value={customer.assignedAgent}
                   onChange={(e) => onUpdateAssignee?.(e.target.value)}
-                  className="w-full h-7 rounded-xs border border-border bg-surface px-2 text-xs text-foreground focus-visible:outline-hidden"
+                  className="w-full h-7 rounded-xs border border-border bg-surface px-2 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                 >
                   <option value="Unassigned">Unassigned (Queue)</option>
                   <option value="Agent Smith">Agent Smith (You)</option>
@@ -256,12 +261,12 @@ export function CustomerContextPanel({
                     value={newTagInput}
                     onChange={(e) => setNewTagInput(e.target.value)}
                     placeholder="New tag..."
-                    className="h-6 flex-1 rounded-xs border border-border bg-surface px-1.5 text-xs text-foreground outline-hidden"
+                    className="h-6 flex-1 rounded-xs border border-border bg-surface px-1.5 text-xs text-foreground outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                     autoFocus
                   />
                   <button
                     type="submit"
-                    className="h-6 rounded-xs bg-primary px-2 text-[10px] font-medium text-primary-foreground"
+                    className="h-6 rounded-xs bg-primary px-2 text-[10px] font-medium text-primary-foreground hover:bg-primary-hover transition-colors"
                   >
                     Add
                   </button>

@@ -92,7 +92,7 @@ export function ChannelHealthList({
         <div className="rounded-md border border-border bg-card p-3 shadow-2xs">
           <div className="flex items-center justify-between text-muted-foreground text-xs">
             <span>Disconnected</span>
-            <XCircle className="h-4 w-4 text-rose-500" />
+            <XCircle className="h-4 w-4 text-destructive" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="font-mono text-xl font-bold text-foreground">
@@ -169,7 +169,7 @@ export function ChannelHealthList({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search platforms..."
-              className="h-7 w-48 rounded-xs border border-border bg-surface pl-8 pr-2.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden"
+              className="h-7 w-48 rounded-xs border border-border bg-surface pl-8 pr-2.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
 
@@ -177,7 +177,7 @@ export function ChannelHealthList({
           <button
             type="button"
             onClick={onConnectChannel}
-            className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary-hover transition-colors cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Connect Channel</span>

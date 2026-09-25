@@ -41,7 +41,7 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
       case 'FAILED':
         return (
           <span title="Delivery failed">
-            <AlertCircle className="h-3 w-3 text-rose-500" />
+            <AlertCircle className="h-3 w-3 text-destructive" />
           </span>
         );
       default:
@@ -67,13 +67,13 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
       {/* Bubble Container */}
       <div
         className={cn(
-          'relative max-w-lg rounded-sm px-3.5 py-2 text-xs leading-relaxed shadow-2xs',
+          'relative max-w-[75%] sm:max-w-lg rounded-sm px-3.5 py-2 text-xs leading-relaxed shadow-2xs transition-colors',
           isCustomer
             ? 'bg-card text-foreground border border-border/80'
             : isAi
               ? 'bg-surface text-foreground border border-border/90'
-              : 'bg-primary/10 text-foreground border border-primary/20',
-          isFailed && 'border-rose-500/80 bg-rose-500/5',
+              : 'bg-muted/70 dark:bg-surface-elevated text-foreground border border-border-strong',
+          isFailed && 'border-destructive/60 bg-destructive/5',
         )}
       >
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -96,7 +96,7 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
 
         {/* Failure Message & Actionable Retry */}
         {isFailed && (
-          <div className="mt-2 flex items-center justify-between gap-2 border-t border-rose-500/30 pt-1.5 text-[11px] text-rose-700 dark:text-rose-400">
+          <div className="mt-2 flex items-center justify-between gap-2 border-t border-destructive/20 pt-1.5 text-[11px] text-destructive">
             <span className="truncate">
               {message.errorMessage || 'Failed to deliver: Provider connection error'}
             </span>
@@ -104,7 +104,7 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
               <button
                 type="button"
                 onClick={() => onRetry(message.id)}
-                className="inline-flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400 hover:underline shrink-0"
+                className="inline-flex items-center gap-1 font-semibold text-destructive hover:underline shrink-0"
               >
                 <RefreshCw className="h-2.5 w-2.5" />
                 <span>Retry</span>

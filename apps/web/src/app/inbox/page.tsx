@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo } from 'react';
-import { CheckCircle, UserPlus, PanelRight, Sparkles } from 'lucide-react';
+import { CheckCircle, UserPlus, PanelRight, Bot } from 'lucide-react';
 import { ConversationQueueList } from '@/components/inbox/ConversationQueueList';
 import { ConversationTimeline } from '@/components/inbox/ConversationTimeline';
 import { MessageComposer, type MessageComposerHandle } from '@/components/inbox/MessageComposer';
@@ -10,6 +10,7 @@ import { ChannelBadge } from '@/components/inbox/ChannelBadge';
 import { CollisionBanner } from '@/components/inbox/CollisionBanner';
 import { useInboxKeyboardShortcuts } from '@/hooks/use-inbox-keyboard-shortcuts';
 import { useUiStore } from '@/lib/store/ui-store';
+import { cn } from '@/lib/utils';
 import type {
   ConversationSummary,
   MessageRecord,
@@ -612,9 +613,9 @@ export default function UnifiedInboxPage() {
   });
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-background select-none">
-      {/* PANE 1: Conversation List (Width: 340-380px) */}
-      <div className="w-80 md:w-96 shrink-0 h-full overflow-hidden border-r border-border">
+    <div className="flex h-full w-full overflow-hidden bg-background select-none relative">
+      {/* PANE 1: Conversation List (Width: 288px on <1280px, 320px on xl+) */}
+      <div className="w-72 xl:w-80 shrink-0 h-full overflow-hidden border-r border-border">
         <ConversationQueueList
           conversations={conversations}
           selectedId={selectedId}
@@ -623,31 +624,31 @@ export default function UnifiedInboxPage() {
         />
       </div>
 
-      {/* PANE 2: Active Conversation Workspace (Flex-1) */}
+      {/* PANE 2: Active Conversation Workspace (Flex-1, guaranteed >=500px width) */}
       <div className="flex flex-1 flex-col h-full overflow-hidden min-w-0 bg-background">
         {activeConversation ? (
           <>
             {/* Conversation Workspace Header */}
-            <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <ChannelBadge channel={activeConversation.channel} showLabel />
-                <h2 className="text-sm font-semibold text-foreground truncate">
+                <h2 className="text-sm font-semibold text-foreground truncate max-w-[140px] sm:max-w-xs md:max-w-sm">
                   {activeConversation.customerName}
                 </h2>
-                <span className="font-mono text-xs text-muted-foreground hidden sm:inline">
+                <span className="font-mono text-xs text-muted-foreground hidden lg:inline">
                   {activeConversation.customerIdentifier}
                 </span>
 
                 {activeConversation.isHandledByAi && (
                   <span className="inline-flex items-center gap-1 rounded-xs border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.2 text-[10px] font-medium text-sky-700 dark:text-sky-400">
-                    <Sparkles className="h-3 w-3" />
+                    <Bot className="h-3 w-3" />
                     <span>AI Autonomous</span>
                   </span>
                 )}
               </div>
 
               {/* Action Toolbar */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {/* Claim Conversation Button (A) */}
                 {!activeConversation.assignedAgentId && (
                   <button
@@ -676,7 +677,10 @@ export default function UnifiedInboxPage() {
                   onClick={toggleCustomerContext}
                   title="Toggle Customer Context Panel (])"
                   aria-label="Toggle Customer Context Panel"
-                  className="rounded-xs p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-1"
+                  className={cn(
+                    'rounded-xs p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-0.5',
+                    customerContextOpen && 'bg-muted text-foreground',
+                  )}
                 >
                   <PanelRight className="h-4 w-4" />
                 </button>
@@ -705,15 +709,39 @@ export default function UnifiedInboxPage() {
         )}
       </div>
 
-      {/* PANE 3: Collapsible Customer Context Panel (Width: 320px) */}
+      {/* PANE 3 (Desktop >= 1280px): Inline Customer Context Panel */}
       {activeCustomer && customerContextOpen && (
-        <CustomerContextPanel
-          customer={activeCustomer}
-          onUpdatePriority={handleUpdatePriority}
-          onUpdateAssignee={handleUpdateAssignee}
-          onAddTag={handleAddTag}
-          onRemoveTag={handleRemoveTag}
-        />
+        <div className="hidden xl:flex h-full shrink-0">
+          <CustomerContextPanel
+            customer={activeCustomer}
+            onUpdatePriority={handleUpdatePriority}
+            onUpdateAssignee={handleUpdateAssignee}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+          />
+        </div>
+      )}
+
+      {/* PANE 3 (Tablet/Laptop < 1280px, including 1024px): Slide-Over Overlay Drawer */}
+      {activeCustomer && customerContextOpen && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end xl:hidden bg-black/40 backdrop-blur-xs animate-in fade-in"
+          onClick={toggleCustomerContext}
+        >
+          <div
+            className="w-80 h-full shadow-2xl bg-card border-l border-border animate-in slide-in-from-right duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CustomerContextPanel
+              customer={activeCustomer}
+              onUpdatePriority={handleUpdatePriority}
+              onUpdateAssignee={handleUpdateAssignee}
+              onAddTag={handleAddTag}
+              onRemoveTag={handleRemoveTag}
+              className="w-full border-l-0"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

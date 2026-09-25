@@ -104,11 +104,11 @@ test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TS
     await expect(page.getByRole('banner').getByText('Smoke Test Workspace')).toBeVisible();
 
     // Verify navigation sidebar
-    const navMenu = page.locator('nav[aria-label="Main Navigation"]');
+    const navMenu = page.locator('nav[aria-label="Main Navigation"]').first();
     await expect(navMenu).toBeVisible();
 
     // Verify home page welcome header
-    await expect(page.locator('h1')).toContainText('Welcome back, Agent Smoke');
+    await expect(page.locator('h1').first()).toContainText('Welcome back, Agent Smoke');
     await expect(page.getByText('Authenticated (RBAC Active)')).toBeVisible();
 
     // Verify user display name in header

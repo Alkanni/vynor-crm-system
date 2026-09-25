@@ -11,10 +11,14 @@ import {
   CheckCircle2,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
+  Moon,
+  Laptop,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useRealtime } from '@/lib/realtime/use-realtime';
 import { useUiStore } from '@/lib/store/ui-store';
+import { VynorLogo } from '@/components/common/VynorLogo';
 import { cn } from '@/lib/utils';
 
 export function AppHeader() {
@@ -55,7 +59,7 @@ export function AppHeader() {
           type="button"
           onClick={toggleSidebarCollapsed}
           title={sidebarCollapsed ? 'Expand Navigation Rail' : 'Collapse Navigation Rail'}
-          aria-label="Toggle Navigation Rail Collapse"
+          aria-label="Toggle Navigation Sidebar"
           className="hidden md:inline-flex h-7 w-7 items-center justify-center rounded-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           {sidebarCollapsed ? (
@@ -67,9 +71,9 @@ export function AppHeader() {
 
         {/* Brand */}
         <div className="flex items-center gap-2">
-          <span className="font-bold tracking-tight text-foreground text-sm">VYNOR CRM</span>
+          <VynorLogo variant="full" size={24} />
           {actor?.workspace && (
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-xs border border-border/80 bg-surface px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-xs border border-border bg-surface px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
               <Building2 className="h-3 w-3 text-primary" />
               {actor.workspace.name}
             </span>
@@ -78,7 +82,7 @@ export function AppHeader() {
       </div>
 
       {/* Center: Command Palette Trigger Button (Ctrl+K) */}
-      <div className="flex-1 max-w-sm px-4 hidden sm:block">
+      <div className="flex-1 max-w-xs px-4 hidden sm:block">
         <button
           type="button"
           onClick={toggleCommandPalette}
@@ -95,7 +99,7 @@ export function AppHeader() {
       </div>
 
       {/* Right: Operational Telemetry, Shortcuts Help & User Profile */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Channel Health summary */}
         <div
           title="All omnichannel providers operational"
@@ -114,6 +118,27 @@ export function AppHeader() {
           <Radio className="h-3 w-3" />
           <span className="capitalize hidden sm:inline">{status}</span>
         </div>
+
+        {/* Theme Toggle (Light / Dark / System) */}
+        <button
+          type="button"
+          onClick={() => {
+            const currentTheme = useUiStore.getState().theme;
+            const nextTheme = currentTheme === 'light' ? 'dark' : currentTheme === 'dark' ? 'system' : 'light';
+            useUiStore.getState().setTheme(nextTheme);
+          }}
+          title={`Current theme: ${useUiStore.getState().theme}. Click to switch theme.`}
+          aria-label="Toggle Theme Appearance"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          {useUiStore.getState().theme === 'dark' ? (
+            <Moon className="h-4 w-4" />
+          ) : useUiStore.getState().theme === 'light' ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Laptop className="h-4 w-4" />
+          )}
+        </button>
 
         {/* Shortcuts Help Icon Button */}
         <button
