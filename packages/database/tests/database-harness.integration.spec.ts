@@ -15,6 +15,19 @@ describe('Database Integration Test Harness & Outbox Rollback (FND-TST-003, FND-
       process.env.DATABASE_URL ||
       'postgresql://postgres:postgres@localhost:5434/vynor?schema=public';
     prisma = createTestPrismaClient();
+
+    // Ensure system seed roles exist for test asserting on preserved seed data
+    const existingRoles = await prisma.role.count({ where: { isSystem: true } });
+    if (existingRoles === 0) {
+      await prisma.role.createMany({
+        data: [
+          { name: 'SUPER_ADMIN', description: 'Super Admin', isSystem: true },
+          { name: 'ADMIN', description: 'Admin', isSystem: true },
+          { name: 'AGENT', description: 'Agent', isSystem: true },
+          { name: 'AI_BOT', description: 'AI Bot', isSystem: true },
+        ],
+      });
+    }
   });
 
   afterAll(async () => {
