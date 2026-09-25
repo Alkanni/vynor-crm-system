@@ -4,6 +4,10 @@ export interface NavItem {
   id: string;
   label: string;
   href: string;
+  /** Keyboard chord or shortcut hint (e.g. 'G I') */
+  shortcut?: string;
+  /** Module grouping category */
+  category?: 'core' | 'outreach' | 'flow' | 'admin';
   /** Canonical permissions required to view and access this route */
   requiredPermissions?: PermissionAction[];
   /** Sub-navigation items */
@@ -11,42 +15,106 @@ export interface NavItem {
 }
 
 /**
- * Master navigation hierarchy for VYNOR CRM with permission bindings.
+ * Master navigation hierarchy for VYNOR CRM with permission bindings and keyboard chords.
  */
 export const CRM_NAV_ITEMS: readonly NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/',
-  },
+  // Core Operational
   {
     id: 'inbox',
     label: 'Inbox',
     href: '/inbox',
+    shortcut: 'G I',
+    category: 'core',
     requiredPermissions: ['conversation:read'],
   },
   {
     id: 'contacts',
     label: 'Contacts',
     href: '/contacts',
+    shortcut: 'G C',
+    category: 'core',
     requiredPermissions: ['contact:read'],
   },
   {
+    id: 'channels',
+    label: 'Channels',
+    href: '/channels',
+    shortcut: 'G P',
+    category: 'core',
+    requiredPermissions: ['integration:read'],
+  },
+  {
+    id: 'ai-agent',
+    label: 'AI Agent',
+    href: '/ai-agent',
+    shortcut: 'G A',
+    category: 'core',
+    requiredPermissions: ['conversation:write'],
+  },
+
+  // Outreach & Growth
+  {
     id: 'campaigns',
-    label: 'Campaigns',
+    label: 'Broadcast',
     href: '/campaigns',
+    shortcut: 'G B',
+    category: 'outreach',
     requiredPermissions: ['campaign:read'],
   },
   {
+    id: 'blast',
+    label: 'CSV Blast',
+    href: '/blast',
+    category: 'outreach',
+    requiredPermissions: ['campaign:write'],
+  },
+
+  // Resolution & Flow
+  {
+    id: 'tickets',
+    label: 'Tickets',
+    href: '/tickets',
+    shortcut: 'G T',
+    category: 'flow',
+    requiredPermissions: ['conversation:read'],
+  },
+  {
+    id: 'automations',
+    label: 'Automations',
+    href: '/automations',
+    category: 'flow',
+    requiredPermissions: ['workspace:read'],
+  },
+  {
+    id: 'templates',
+    label: 'Templates',
+    href: '/templates',
+    category: 'flow',
+    requiredPermissions: ['message:send'],
+  },
+
+  // Analytics & Admin
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    href: '/',
+    shortcut: 'G D',
+    category: 'admin',
+  },
+  {
     id: 'analytics',
-    label: 'Analytics',
+    label: 'Reports',
     href: '/analytics',
+    shortcut: 'G R',
+    category: 'admin',
     requiredPermissions: ['analytics:read'],
   },
   {
     id: 'settings',
     label: 'Settings',
     href: '/settings',
+    shortcut: 'G S',
+    category: 'admin',
     requiredPermissions: ['workspace:read'],
     children: [
       {

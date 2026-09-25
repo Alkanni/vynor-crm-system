@@ -898,7 +898,7 @@ flowchart TD
 
 The following granular P0 design tasks define the implementation requirements:
 
-- [ ] **UX-TOK-001 [P0]** Establish Design System Tokens & Semantic Theme Config
+- [x] **UX-TOK-001 [P0]** Establish Design System Tokens & Semantic Theme Config
   - **Goal:** Define single source of truth for colors, typography scale, spacing, radii, and elevations in Tailwind CSS v4.
   - **Inputs:** Section 13, 14, 15 token definitions.
   - **Depends:** None.
@@ -907,7 +907,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `apps/web/src/app/globals.css` updated with complete semantic variables.
   - **Acceptance criteria:** All colors and spacing match token tables; contrast ratio >= 4.5:1 verified.
 
-- [ ] **UX-SHELL-001 [P0]** Design and Implement Persistent Application Shell Layout
+- [x] **UX-SHELL-001 [P0]** Design and Implement Persistent Application Shell Layout
   - **Goal:** Create indestructible 100vh application shell with collapsible sidebar rail and contextual header.
   - **Inputs:** Section 11 & 12 specifications.
   - **Depends:** UX-TOK-001.
@@ -916,7 +916,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `AppShell` component with header, navigation rail, and status footer.
   - **Acceptance criteria:** Transitions smoothly between modules without DOM remounting or layout flash.
 
-- [ ] **UX-INBOX-001 [P0]** Define Information Hierarchy for Conversation Row
+- [x] **UX-INBOX-001 [P0]** Define Information Hierarchy for Conversation Row
   - **Goal:** Enable human agents to scan and differentiate high-priority conversations in under 2 seconds.
   - **Inputs:** Customer identity, channel, unread count, timestamp, assignment, AI state, priority.
   - **Depends:** UX-TOK-001, `@vynor/contracts`.
@@ -925,7 +925,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `ConversationRow` component specification and test harness.
   - **Acceptance criteria:** Renders 100+ items smoothly in virtualized list without horizontal overflow.
 
-- [ ] **UX-INBOX-002 [P0]** Design Conversation Timeline & Differentiated Message Bubbles
+- [x] **UX-INBOX-002 [P0]** Design Conversation Timeline & Differentiated Message Bubbles
   - **Goal:** Unambiguously distinguish customer, agent, AI, internal note, and system events.
   - **Inputs:** Section 20 conversation timeline specs.
   - **Depends:** UX-INBOX-001.
@@ -934,7 +934,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `MessageTimeline`, `MessageBubble`, and `InternalNoteBubble` components.
   - **Acceptance criteria:** Zero risk of confusing an internal note with a customer-facing message.
 
-- [ ] **UX-INBOX-003 [P0]** Design High-Velocity Keyboard-Driven Message Composer
+- [x] **UX-INBOX-003 [P0]** Design High-Velocity Keyboard-Driven Message Composer
   - **Goal:** Allow agents to draft, attach files, insert templates (`/`), and toggle internal notes (`Alt+N`) rapidly.
   - **Inputs:** Section 21 composer specs.
   - **Depends:** UX-INBOX-002.
@@ -943,7 +943,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `MessageComposer` component.
   - **Acceptance criteria:** Successfully inserts canned response via keyboard in under 3 keystrokes.
 
-- [ ] **UX-INBOX-004 [P0]** Design Collapsible Customer Context & Metadata Panel
+- [x] **UX-INBOX-004 [P0]** Design Collapsible Customer Context & Metadata Panel
   - **Goal:** Provide 360-degree customer context alongside conversation without page transitions.
   - **Inputs:** Section 22 context panel specs.
   - **Depends:** UX-INBOX-001.
@@ -1109,12 +1109,19 @@ The first concrete deliverable of the UI/UX phase is an **end-to-end implementat
 
 ## NEXT UI/UX ACTION
 
-Following approval of this design plan, the engineering and UI design execution will commence immediately with these **7 initial P0 tasks**:
+Following approval of this design plan, the engineering and UI design execution has completed these **7 initial P0 tasks** (Milestone M1):
 
-1. **UX-TOK-001 [P0]:** Implement complete semantic design tokens, color scales, and typography in `apps/web/src/app/globals.css`.
-2. **UX-SHELL-001 [P0]:** Build the persistent `AppShell` with collapsible 56px/220px navigation rail and contextual top header.
-3. **UX-INBOX-001 [P0]:** Implement the `ConversationRow` component with avatar, multi-channel badge, unread pulse, and priority indicator.
-4. **UX-INBOX-002 [P0]:** Implement the `ConversationTimeline` with left/right bubble differentiation, warm amber `InternalNoteBubble`, and system event chips.
-5. **UX-INBOX-003 [P0]:** Implement the `MessageComposer` with auto-expanding textarea, slash-command template picker, and dual-mode Internal Note toggle.
-6. **UX-INBOX-004 [P0]:** Implement the collapsible `CustomerContextPanel` with identities, labels, custom fields, and linked tickets.
-7. **UX-INBOX-005 [P0]:** Wire keyboard shortcut chords (`J`, `K`, `C`, `A`, `E`, `Alt+N`, `Ctrl+Enter`) for the Unified Inbox operational loop.
+- [x] **UX-TOK-001 [P0]:** Implement complete semantic design tokens, color scales, and typography in `apps/web/src/app/globals.css`.
+- [x] **UX-SHELL-001 [P0]:** Build the persistent `AppShell` with collapsible 56px/220px navigation rail and contextual top header.
+- [x] **UX-INBOX-001 [P0]:** Implement the `ConversationRow` component with avatar, multi-channel badge, unread pulse, and priority indicator.
+- [x] **UX-INBOX-002 [P0]:** Implement the `ConversationTimeline` with left/right bubble differentiation, warm amber `InternalNoteBubble`, and system event chips.
+- [x] **UX-INBOX-003 [P0]:** Implement the `MessageComposer` with auto-expanding textarea, slash-command template picker, and dual-mode Internal Note toggle.
+- [x] **UX-INBOX-004 [P0]:** Implement the collapsible `CustomerContextPanel` with identities, labels, custom fields, and linked tickets.
+- [x] **UX-INBOX-005 [P0]:** Wire keyboard shortcut chords (`J`, `K`, `C`, `A`, `E`, `Alt+N`, `Ctrl+Enter`) for the Unified Inbox operational loop.
+
+### Upcoming Next Steps (Secondary Modules & Outreach)
+
+1. **UX-CHANNELS-001 [P0]:** Design Connected Platforms Operational Cards & Health Telemetry (`/channels`).
+2. **UX-AI-001 [P0]:** Design AI Agent Supervisor Console & Sanitized Playground (`/ai-agent`).
+3. **UX-BROADCAST-001 [P0]:** Design 9-Step Guided Broadcast Workflow with Pre-flight Validation (`/campaigns`).
+4. **UX-BLAST-001 [P0]:** Design CSV Blast Dispatcher with Granular Syntax & Rejection Tables (`/blast`).
