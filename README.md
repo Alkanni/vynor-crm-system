@@ -99,6 +99,15 @@ pnpm format:check
 # Format code automatically
 pnpm format
 
+# Run unit and integration tests (Vitest)
+pnpm test
+
+# Run end-to-end browser smoke tests (Playwright)
+pnpm test:e2e
+
+# Verify infrastructure, Docker topology, and Caddy
+pnpm infra:verify
+
 # Build all applications and packages
 pnpm build
 ```
@@ -139,3 +148,9 @@ pnpm dev
 - **[Provider Event Journal & Deduplication (docs/provider-event-journal-and-deduplication.md)](docs/provider-event-journal-and-deduplication.md):** Raw webhook journal, fallback SHA-256 fingerprinting, unique constraints, and replay semantics.
 - **[Storage & Attachment Security (docs/storage-and-attachment-security.md)](docs/storage-and-attachment-security.md):** S3-compatible interface, object keys, attachment metadata, quarantine/scanning policy, and signed downloads.
 - **[Realtime Contracts & Resynchronization (docs/realtime-contracts-and-resynchronization.md)](docs/realtime-contracts-and-resynchronization.md):** Socket.IO authentication, room authorization, event envelopes, reconnect, and REST recovery.
+- **[Frontend State Management (docs/frontend-state-management.md)](docs/frontend-state-management.md):** Zustand UI store boundaries, ephemeral state guidelines, and strict server-state anti-duplication rules.
+- **[Infrastructure & Deployment (docs/infrastructure-and-deployment.md)](docs/infrastructure-and-deployment.md):** Multi-stage container builds, Docker Compose topology, service health ordering, and Caddy reverse proxy routing.
+- **[Supabase Connection Guide (docs/supabase-connection-guide.md)](docs/supabase-connection-guide.md):** Connection strategies for hosted Supabase, local Supabase CLI, and standalone Docker Compose in CI/test environments.
+- **[Container Security & Provenance (docs/container-security-and-provenance.md)](docs/container-security-and-provenance.md):** Trivy vulnerability scanning, Syft SBOM generation, and Cosign SLSA provenance attestation.
+- **[Testing Strategy & Conventions (docs/testing-strategy-and-conventions.md)](docs/testing-strategy-and-conventions.md):** 3-tier testing pyramid, naming conventions, deterministic test clocks, mock ID conventions, and builder factories.
+- **[Phase 0 Roadmap & Batches (docs/phase-0-roadmap-and-workstream-batches.md)](docs/phase-0-roadmap-and-workstream-batches.md):** Comprehensive workstream execution report across Batches 1 through 11, PR matrix, and Phase 1 readiness.
