@@ -19,8 +19,9 @@ const SIZE_MAP = {
 };
 
 /**
- * Authoritative VYNOR circular logomark with folded geometric 'V' and optional unread indicator badge.
- * Color: Brand Red #E5494D with crisp white geometric chevron.
+ * Authoritative VYNOR circular logomark with clean rounded chevron 'V' and optional unread indicator badge.
+ * Extracted directly from VYNOR/public/brand-assets/logo.svg and VYNOR/app/javascript/dashboard/components-next/icon/Logo.vue.
+ * Color: Brand Red #E5484D with crisp white rounded chevron.
  */
 export function VynorLogomark({
   size = 32,
@@ -41,22 +42,28 @@ export function VynorLogomark({
       aria-hidden="true"
     >
       <svg
-        viewBox="0 0 32 32"
+        viewBox="0 0 220 220"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="w-full h-full"
       >
         {/* Background Brand Red Circle */}
-        <circle cx="16" cy="16" r="16" fill="#E5494D" />
+        <circle cx="110" cy="110" r="110" fill="#E5484D" />
 
-        {/* Geometric Folded V Mark */}
-        <path d="M7.8 8.8H11.8L16 18.2L20.2 8.8H24.2L17.8 23.2H14.2L7.8 8.8Z" fill="white" />
+        {/* Authentic VYNOR Rounded 'V' Chevron */}
+        <path
+          d="M59 63L110 160L161 63"
+          stroke="white"
+          strokeWidth="30"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
 
       {/* Unread Alert Indicator Badge (Golden dot on Brand Red ring) */}
       {hasUnread && (
         <span
-          className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-[#E5494D] ring-2 ring-background"
+          className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-[#E5484D] ring-2 ring-background"
           style={{ width: Math.max(8, size * 0.35), height: Math.max(8, size * 0.35) }}
           title="Unassigned conversations waiting in queue"
         >
@@ -71,8 +78,8 @@ export function VynorLogomark({
 }
 
 /**
- * Authoritative VYNOR wordmark with stylized circular typography.
- * Adapts seamlessly between Light Mode (#1C2024) and Dark Mode (#FFFFFF).
+ * Authoritative VYNOR wordmark with authentic vector geometry from VYNOR/public/brand-assets/logo.svg.
+ * Adapts seamlessly to current text color (light #1C2024 / dark #FFFFFF) via currentColor.
  */
 export function VynorWordmark({
   size = 20,
@@ -81,37 +88,42 @@ export function VynorWordmark({
   size?: number | undefined;
   className?: string | undefined;
 }) {
+  // Original wordmark bounding box is ~660w x 140h (ratio ~ 4.7:1)
+  const width = size * 4.7;
+  const height = size;
+
   return (
-    <div
-      className={cn(
-        'font-bold tracking-tight text-foreground select-none inline-flex items-baseline',
-        className,
-      )}
-      style={{ fontSize: size, lineHeight: 1 }}
+    <svg
+      viewBox="280 35 660 150"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="VYNOR"
+      className={cn('inline-block select-none text-foreground shrink-0', className)}
+      style={{ width, height }}
     >
-      <span className="font-extrabold tracking-tight">VYN</span>
-      <span className="inline-block relative px-[0.5px]">
-        {/* Stylized rounded O */}
-        <svg
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="inline-block align-baseline"
-          style={{ width: size * 0.85, height: size * 0.85, marginBottom: size * -0.05 }}
-        >
-          <rect
-            x="2.5"
-            y="2.5"
-            width="15"
-            height="15"
-            rx="7.5"
-            stroke="currentColor"
-            strokeWidth="3.4"
-          />
-        </svg>
-      </span>
-      <span className="font-extrabold tracking-tight">R</span>
-    </div>
+      <g
+        stroke="currentColor"
+        strokeWidth="26"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      >
+        {/* Letter V */}
+        <path d="M300 50L354 170L408 50" />
+        {/* Letter Y */}
+        <path d="M436 50L490 116L544 50" />
+        <path d="M490 116V170" />
+        {/* Letter N */}
+        <path d="M572 170V50L668 170V50" />
+        {/* Letter O */}
+        <ellipse cx="750" cy="110" rx="41" ry="60" />
+        {/* Letter R */}
+        <path d="M832 170V50" />
+        <path d="M832 50H880A30 30 0 0 1 880 110H832" />
+        <path d="M876 110L928 170" />
+      </g>
+    </svg>
   );
 }
 
@@ -144,11 +156,11 @@ export function VynorLogo({
 
   return (
     <div
-      className={cn('inline-flex items-center gap-2 select-none', className)}
+      className={cn('inline-flex items-center gap-2.5 select-none', className)}
       aria-label="VYNOR CRM"
     >
       <VynorLogomark size={pixelSize} hasUnread={hasUnread} className={markClassName} />
-      <VynorWordmark size={pixelSize * 0.68} className={textClassName} />
+      <VynorWordmark size={pixelSize * 0.58} className={textClassName} />
     </div>
   );
 }

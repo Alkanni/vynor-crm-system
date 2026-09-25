@@ -1,5 +1,54 @@
 @import 'tailwindcss';
 
+/* VYNOR Authentic Font System (Inter Variable & InterDisplay) */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/Inter/InterVariable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/Inter/InterVariable-Italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'InterDisplay';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/InterDisplay/InterDisplay-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'InterDisplay';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/InterDisplay/InterDisplay-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'InterDisplay';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/InterDisplay/InterDisplay-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'InterDisplay';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/InterDisplay/InterDisplay-Bold.woff2') format('woff2');
+}
+
 @layer base {
   :root {
     /* 4px Base Grid Spacing Scale */
@@ -108,6 +157,15 @@
     --ruby-10: #dc3b5d;
     --ruby-11: #ce284f;
     --ruby-12: #651227;
+
+    /* VYNOR Next Solid & Alpha Tokens */
+    --solid-blue: #ffdbdc;
+    --solid-amber: #ffe4b5;
+    --solid-iris: #e6e7ff;
+    --solid-red: #fec8c9;
+    --n-alpha-1: rgba(215, 215, 215, 0.22);
+    --n-alpha-2: rgba(196, 197, 198, 0.22);
+    --n-alpha-black2: rgba(0, 0, 0, 0.04);
   }
 
   .dark {
@@ -193,6 +251,15 @@
     --ruby-10: #ec5a7b;
     --ruby-11: #ff859f;
     --ruby-12: #ffdce5;
+
+    /* VYNOR Next Solid & Alpha Tokens - Dark Mode */
+    --solid-blue: #58121f;
+    --solid-amber: #383229;
+    --solid-iris: #262a65;
+    --solid-red: #5a2122;
+    --n-alpha-1: rgba(35, 36, 42, 0.8);
+    --n-alpha-2: rgba(147, 153, 176, 0.12);
+    --n-alpha-black2: rgba(255, 255, 255, 0.03);
   }
 
   * {
@@ -273,4 +340,272 @@
   line-height: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
+}
+
+/* ============================================================================
+ * VYNOR AUTHENTIC TYPOGRAPHY & LAYOUT UTILITIES (from VYNOR/app/javascript)
+ * ============================================================================ */
+
+/* Custom VYNOR font weights */
+.font-420 {
+  font-weight: 420;
+}
+.font-440 {
+  font-weight: 440;
+}
+.font-460 {
+  font-weight: 460;
+}
+.font-520 {
+  font-weight: 520;
+}
+.font-620 {
+  font-weight: 620;
+}
+
+.font-inter {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+.font-interDisplay {
+  font-family:
+    'InterDisplay',
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+/* body-text-main: Main text style for general body text */
+.text-body-main {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 420;
+  line-height: 21px;
+  letter-spacing: -0.28px;
+}
+
+/* body-text-paragraph: For paragraphs or larger blocks of text */
+.text-body-para {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 420;
+  line-height: 21px;
+  letter-spacing: -0.21px;
+}
+
+/* heading-1: Large heading for pages and panels */
+.text-heading-1 {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 18px;
+  font-weight: 520;
+  line-height: 24px;
+  letter-spacing: -0.27px;
+}
+
+/* heading-2: Secondary heading for sections */
+.text-heading-2 {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.27px;
+}
+
+/* heading-3: For card headings, breadcrumbs, subsections */
+.text-heading-3 {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: -0.27px;
+}
+
+/* label: Standard label text for form fields */
+.text-label {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+/* label-small: Smallest font for labels, footnotes, tags */
+.text-label-small {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 12px;
+  font-weight: 440;
+  line-height: 16px;
+  letter-spacing: -0.24px;
+}
+
+/* button-text: Text for standard size buttons */
+.text-button {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 460;
+  line-height: 21px;
+  letter-spacing: -0.28px;
+}
+
+/* button-text-small: Text for smaller buttons */
+.text-button-small {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 12px;
+  font-weight: 440;
+  line-height: 18px;
+  letter-spacing: -0.24px;
+}
+
+/* VYNOR Next semantic color token classes */
+.bg-n-background {
+  background-color: hsl(var(--background));
+}
+.bg-n-surface-1 {
+  background-color: hsl(var(--surface));
+}
+.bg-n-surface-2 {
+  background-color: hsl(var(--surface-elevated));
+}
+.border-n-weak {
+  border-color: hsl(var(--border-subtle));
+}
+.border-n-strong {
+  border-color: hsl(var(--border-strong));
+}
+.text-n-slate-12 {
+  color: hsl(var(--foreground));
+}
+.text-n-slate-11 {
+  color: hsl(var(--muted-foreground));
+}
+.text-n-slate-10 {
+  color: hsl(var(--muted-foreground) / 0.75);
+}
+.bg-n-brand {
+  background-color: #e5484d;
+}
+.text-n-brand {
+  color: #e5484d;
+}
+.bg-n-solid-blue {
+  background-color: var(--solid-blue);
+}
+.bg-n-solid-amber {
+  background-color: var(--solid-amber);
+}
+.bg-n-solid-iris {
+  background-color: var(--solid-iris);
+}
+.bg-n-solid-red {
+  background-color: var(--solid-red);
+}
+.bg-n-alpha-1 {
+  background-color: var(--n-alpha-1);
+}
+.bg-n-alpha-2 {
+  background-color: var(--n-alpha-2);
+}
+.bg-n-alpha-black2 {
+  background-color: var(--n-alpha-black2);
+}
+
+/* VYNOR SVG dashed border */
+.custom-dashed-border {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23E2E3E7' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.dark .custom-dashed-border {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23343434' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* VYNOR form field base styles */
+.field-base {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 8px 12px;
+  background-color: var(--n-alpha-black2);
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border-subtle));
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+.field-base:hover {
+  border-color: hsl(var(--border-strong));
+}
+.field-base:focus {
+  border-color: #e5484d;
+  box-shadow: 0 0 0 2px rgba(229, 72, 77, 0.2);
+}
+.field-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.field-error {
+  border-color: #e54666 !important;
 }

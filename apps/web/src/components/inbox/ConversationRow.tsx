@@ -91,25 +91,37 @@ export function ConversationRow({ conversation, isSelected, onSelect }: Conversa
         </div>
       </div>
 
-      {/* Middle Line: Message Snippet & AI Assistant indicator */}
+      {/* Middle Line: Message Snippet & Circular Unread Badge */}
       <div className="flex items-center justify-between gap-2">
         <p
           className={cn(
-            'truncate text-xs text-muted-foreground leading-normal',
-            isUnread && 'text-foreground font-medium',
+            'truncate text-xs leading-normal text-body-main',
+            isUnread ? 'text-foreground font-medium' : 'text-muted-foreground',
           )}
         >
           {conversation.lastMessageSnippet}
         </p>
-        {conversation.isHandledByAi && (
-          <span
-            title="Handled autonomously by AI Assistant"
-            className="shrink-0 inline-flex items-center gap-1 rounded-xs border border-border bg-muted/60 px-1 py-0.2 text-[10px] text-muted-foreground font-medium"
-          >
-            <Bot className="h-3 w-3 text-sky-500" />
-            <span>AI</span>
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {conversation.isHandledByAi && (
+            <span
+              title="Handled autonomously by AI Assistant"
+              className="inline-flex items-center gap-1 rounded-xs border border-border bg-muted/60 px-1 py-0.2 text-[10px] text-muted-foreground font-medium"
+            >
+              <Bot className="h-3 w-3 text-sky-500" />
+              <span>AI</span>
+            </span>
+          )}
+          {isUnread && (
+            <div
+              className="inline-flex items-center justify-center shrink-0 rounded-full size-5 bg-[#E5484D] shadow-2xs"
+              title={`${conversation.unreadCount} unread message(s)`}
+            >
+              <span className="text-[11px] font-bold text-white leading-none">
+                {conversation.unreadCount}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom Line: Priority Chip, Assignment Chip, Tags & Delivery Failure Warning */}

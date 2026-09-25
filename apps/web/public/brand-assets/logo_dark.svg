@@ -1,0 +1,37 @@
+<svg
+  width="954"
+  height="220"
+  viewBox="0 0 954 220"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="VYNOR"
+>
+  <path
+    d="M110 220C170.751 220 220 170.751 220 110C220 49.2487 170.751 0 110 0C49.2487 0 0 49.2487 0 110C0 170.751 49.2487 220 110 220Z"
+    fill="#E5484D"
+  />
+  <path
+    d="M59 63L110 160L161 63"
+    stroke="white"
+    stroke-width="30"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <g
+    stroke="#FFFFFF"
+    stroke-width="26"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  >
+    <path d="M300 50L354 170L408 50" />
+    <path d="M436 50L490 116L544 50" />
+    <path d="M490 116V170" />
+    <path d="M572 170V50L668 170V50" />
+    <ellipse cx="750" cy="110" rx="41" ry="60" />
+    <path d="M832 170V50" />
+    <path d="M832 50H880A30 30 0 0 1 880 110H832" />
+    <path d="M876 110L928 170" />
+  </g>
+</svg>
