@@ -1,19 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Workflow,
-  Plus,
-  Play,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  Filter,
-  Zap,
-  Tag,
-  Shield,
-  Bot,
-} from 'lucide-react';
+import { Workflow, Plus, ArrowRight, Filter, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AutomationRule {

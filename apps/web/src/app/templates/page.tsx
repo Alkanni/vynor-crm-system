@@ -10,12 +10,8 @@ import {
   XCircle,
   Copy,
   Check,
-  Send,
-  Sparkles,
   FileText,
   Image as ImageIcon,
-  Languages,
-  Sliders,
   ChevronRight,
   ExternalLink,
 } from 'lucide-react';
@@ -58,8 +54,6 @@ interface MediaAsset {
   url: string;
   updatedAt: string;
 }
-
-type TemplateItem = CannedReply | HsmTemplate | MediaAsset;
 
 const INITIAL_QUICK_REPLIES: CannedReply[] = [
   {

@@ -12,13 +12,9 @@ import {
   Key,
   Copy,
   Check,
-  CheckCircle2,
-  AlertCircle,
   Eye,
   EyeOff,
-  Search,
   ExternalLink,
-  Lock,
 } from 'lucide-react';
 import { CANONICAL_PERMISSIONS } from '@vynor/contracts';
 import { cn } from '@/lib/utils';

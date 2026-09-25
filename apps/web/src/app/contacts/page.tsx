@@ -9,7 +9,6 @@ import {
   Phone,
   Mail,
   Tag,
-  ExternalLink,
   X,
   MessageSquare,
   Clock,

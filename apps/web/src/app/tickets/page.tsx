@@ -1,17 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Ticket,
-  Search,
-  Plus,
-  Clock,
-  User,
-  AlertCircle,
-  CheckCircle2,
-  ChevronRight,
-  Filter,
-} from 'lucide-react';
+import { Ticket, Search, Plus, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 

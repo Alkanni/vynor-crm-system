@@ -5,17 +5,15 @@ import {
   BarChart2,
   Calendar,
   Download,
-  Filter,
   Users,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Bot,
   Radio,
-  FileSpreadsheet,
-  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+type DateRangeType = 'today' | '7days' | '30days' | 'custom';
 
 type ReportTab = 'AGENT_SLA' | 'CHANNEL_TELEMETRY' | 'AI_PERFORMANCE' | 'HOURLY_VOLUME';
 
@@ -121,28 +119,27 @@ const MOCK_CHANNEL_TELEMETRY: ChannelTelemetryRow[] = [
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>('AGENT_SLA');
-  const [dateRange, setDateRange] = useState<'today' | '7days' | '30days' | 'custom'>('7days');
-  const [teamFilter, setTeamFilter] = useState('ALL');
+  const [dateRange, setDateRange] = useState<DateRangeType>('7days');
 
   const handleExportCsv = () => {
-    let csvHeader = '';
-    let csvRows: string[] = [];
-
-    if (activeTab === 'AGENT_SLA') {
-      csvHeader =
-        'Agent Name,Team,Conversations Handled,Avg First Response,Avg Resolution,SLA Adherence %,CSAT,Handoffs\n';
-      csvRows = MOCK_AGENT_PERFORMANCE.map(
-        (r) =>
-          `"${r.agentName}","${r.team}",${r.conversationsHandled},"${r.avgFirstResponseTime}","${r.avgResolutionTime}",${r.slaAdherenceRate},${r.csatScore},${r.handoffsToTier2}`,
-      );
-    } else {
-      csvHeader =
-        'Channel,Total Sent,Delivered,Delivery Rate %,Read Rate %,Failed Count,Avg Latency (ms)\n';
-      csvRows = MOCK_CHANNEL_TELEMETRY.map(
-        (r) =>
-          `"${r.channel}",${r.totalSent},${r.delivered},${r.deliveryRate},${r.readRate},${r.failedCount},${r.avgLatencyMs}`,
-      );
-    }
+    const { csvHeader, csvRows } =
+      activeTab === 'AGENT_SLA'
+        ? {
+            csvHeader:
+              'Agent Name,Team,Conversations Handled,Avg First Response,Avg Resolution,SLA Adherence %,CSAT,Handoffs\n',
+            csvRows: MOCK_AGENT_PERFORMANCE.map(
+              (r) =>
+                `"${r.agentName}","${r.team}",${r.conversationsHandled},"${r.avgFirstResponseTime}","${r.avgResolutionTime}",${r.slaAdherenceRate},${r.csatScore},${r.handoffsToTier2}`,
+            ),
+          }
+        : {
+            csvHeader:
+              'Channel,Total Sent,Delivered,Delivery Rate %,Read Rate %,Failed Count,Avg Latency (ms)\n',
+            csvRows: MOCK_CHANNEL_TELEMETRY.map(
+              (r) =>
+                `"${r.channel}",${r.totalSent},${r.delivered},${r.deliveryRate},${r.readRate},${r.failedCount},${r.avgLatencyMs}`,
+            ),
+          };
 
     const blob = new Blob([csvHeader + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -176,7 +173,7 @@ export default function ReportsPage() {
             <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
+              onChange={(e) => setDateRange(e.target.value as DateRangeType)}
               className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
             >
               <option value="today">Today (Shift Triage)</option>
