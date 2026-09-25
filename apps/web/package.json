@@ -9,10 +9,10 @@
     "dev": "next dev --port 3000",
     "lint": "eslint .",
     "start": "next start --port 3000",
-    "test": "tsx src/verify-frontend-foundation.ts && tsx src/verify-ui-foundation.ts",
+    "test": "tsx src/verify-frontend-foundation.ts && tsx src/verify-ui-foundation.ts && tsx src/verify-all-p0-modules.ts",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "verify": "tsx src/verify-frontend-foundation.ts && tsx src/verify-ui-foundation.ts"
+    "verify": "tsx src/verify-frontend-foundation.ts && tsx src/verify-ui-foundation.ts && tsx src/verify-all-p0-modules.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",

@@ -952,7 +952,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `CustomerContextPanel` component.
   - **Acceptance criteria:** Updating a tag or custom field updates server state optimistically without reloading chat.
 
-- [ ] **UX-CHANNELS-001 [P0]** Design Connected Platforms Operational Cards & Health Telemetry
+- [x] **UX-CHANNELS-001 [P0]** Design Connected Platforms Operational Cards & Health Telemetry
   - **Goal:** Monitor status and actionable errors across WhatsApp, Instagram, Telegram, and Email accounts.
   - **Inputs:** Section 24 specifications.
   - **Depends:** UX-SHELL-001.
@@ -961,7 +961,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `ChannelCard` and `ChannelHealthList` components.
   - **Acceptance criteria:** Provides immediate actionable error button when token expires.
 
-- [ ] **UX-AI-001 [P0]** Design AI Agent Supervisor Console & Sanitized Playground
+- [x] **UX-AI-001 [P0]** Design AI Agent Supervisor Console & Sanitized Playground
   - **Goal:** Configure bot prompts, monitor autonomous turns, and test responses in a risk-free sandbox.
   - **Inputs:** Section 25 specifications.
   - **Depends:** UX-SHELL-001.
@@ -970,7 +970,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `AIAgentConfig` and `AIPlayground` components.
   - **Acceptance criteria:** Playground clearly marks all mock interactions as non-customer-facing.
 
-- [ ] **UX-BROADCAST-001 [P0]** Design 9-Step Guided Broadcast Workflow with Pre-flight Validation
+- [x] **UX-BROADCAST-001 [P0]** Design 9-Step Guided Broadcast Workflow with Pre-flight Validation
   - **Goal:** Eliminate accidental broadcasts through audience validation, template checking, and dual confirmation.
   - **Inputs:** Section 27 specifications.
   - **Depends:** UX-SHELL-001.
@@ -979,7 +979,7 @@ The following granular P0 design tasks define the implementation requirements:
   - **Deliverable:** `BroadcastWizard` component.
   - **Acceptance criteria:** Prevents send action if Meta template is unapproved or quiet hours are violated.
 
-- [ ] **UX-BLAST-001 [P0]** Design CSV Blast Dispatcher with Granular Syntax & Rejection Tables
+- [x] **UX-BLAST-001 [P0]** Design CSV Blast Dispatcher with Granular Syntax & Rejection Tables
   - **Goal:** Provide instant client-side CSV parsing, duplicate filtering, and batch dispatch progress.
   - **Inputs:** Section 28 specifications.
   - **Depends:** UX-SHELL-001.
@@ -1043,14 +1043,14 @@ The following granular P0 design tasks define the implementation requirements:
 
 Every screen design must pass this 8-point gate prior to implementation sign-off:
 
-- [ ] **A. Hierarchy:** Can an operator identify where they are, what record is active, and the primary CTA within 2 seconds?
-- [ ] **B. Density:** Is screen space utilized efficiently without excessive padding or card nesting?
-- [ ] **C. Consistency:** Do identical actions (search, filter, assign, delete) look and behave identically across all modules?
-- [ ] **D. Operational Speed:** Can primary workflows be executed with <= 2 clicks or via direct keyboard shortcuts?
-- [ ] **E. State Clarity:** Are system, network, channel, and message states immediately obvious?
-- [ ] **F. Failure Clarity:** When an action fails, is the exact cause and recovery path clear without vague toasts?
-- [ ] **G. Accessibility:** Does the screen meet WCAG 2.2 Level AA contrast (>=4.5:1), keyboard navigation, and ARIA labels?
-- [ ] **H. Anti AI-Slop:** Are there zero decorative gradients, neon glows, glassmorphism, floating shapes, or fake charts?
+- [x] **A. Hierarchy:** Can an operator identify where they are, what record is active, and the primary CTA within 2 seconds?
+- [x] **B. Density:** Is screen space utilized efficiently without excessive padding or card nesting?
+- [x] **C. Consistency:** Do identical actions (search, filter, assign, delete) look and behave identically across all modules?
+- [x] **D. Operational Speed:** Can primary workflows be executed with <= 2 clicks or via direct keyboard shortcuts?
+- [x] **E. State Clarity:** Are system, network, channel, and message states immediately obvious?
+- [x] **F. Failure Clarity:** When an action fails, is the exact cause and recovery path clear without vague toasts?
+- [x] **G. Accessibility:** Does the screen meet WCAG 2.2 Level AA contrast (>=4.5:1), keyboard navigation, and ARIA labels?
+- [x] **H. Anti AI-Slop:** Are there zero decorative gradients, neon glows, glassmorphism, floating shapes, or fake charts?
 
 ---
 
