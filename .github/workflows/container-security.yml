@@ -26,6 +26,12 @@ concurrency:
   group: container-security-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+  security-events: write
+  actions: read
+
 jobs:
   build-scan-sbom:
     name: Build, Scan & SBOM (${{ matrix.app }})
@@ -74,6 +80,7 @@ jobs:
       - name: Upload Trivy Scan Results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: 'trivy-results-${{ matrix.app }}.sarif'
           category: 'container-${{ matrix.app }}'
