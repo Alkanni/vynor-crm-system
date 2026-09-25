@@ -243,35 +243,33 @@ export function BlastDispatcher() {
           }
         }}
         className={cn(
-          'border-2 border-dashed rounded-lg p-6 text-center transition-all bg-zinc-950',
-          isDragOver
-            ? 'border-emerald-500 bg-emerald-950/10'
-            : 'border-zinc-800 hover:border-zinc-700',
+          'border-2 border-dashed rounded-lg p-6 text-center transition-all bg-card',
+          isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-border-strong',
         )}
       >
         <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
+          <div className="w-12 h-12 rounded-full bg-surface border border-border flex items-center justify-center text-primary">
             <UploadCloud className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-100">
+            <h3 className="text-sm font-semibold text-foreground">
               Drag & Drop your CSV recipient list here
             </h3>
-            <p className="text-xs text-zinc-400 mt-1 max-w-md">
+            <p className="text-xs text-muted-foreground mt-1 max-w-md">
               CSV file must contain columns for phone number, recipient name, and optional custom
               variables. Phones are validated against international E.164 syntax.
             </p>
           </div>
 
           <div className="flex items-center space-x-3 pt-2">
-            <label className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded text-xs font-semibold cursor-pointer transition-colors shadow-sm">
+            <label className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded text-xs font-semibold cursor-pointer transition-colors shadow-2xs">
               <span>Browse CSV File</span>
               <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
             </label>
 
             <button
               onClick={handleLoadSample}
-              className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded text-xs font-medium border border-zinc-700 transition-colors"
+              className="px-3.5 py-2 bg-surface hover:bg-muted text-foreground rounded text-xs font-medium border border-border transition-colors cursor-pointer"
             >
               Reload Sample Data (with syntax & opt-out errors)
             </button>
@@ -284,49 +282,55 @@ export function BlastDispatcher() {
         <div className="space-y-4">
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-lg">
-              <div className="text-[10px] font-mono text-zinc-500 uppercase">Total Ingested</div>
-              <div className="text-xl font-bold font-mono text-zinc-100 mt-0.5">
+            <div className="bg-card border border-border p-3 rounded-lg shadow-2xs">
+              <div className="text-[10px] font-mono text-muted-foreground uppercase">
+                Total Ingested
+              </div>
+              <div className="text-xl font-bold font-mono text-foreground mt-0.5">
                 {summary.totalRows}
               </div>
             </div>
 
-            <div className="bg-zinc-900 border border-emerald-500/30 p-3 rounded-lg">
-              <div className="text-[10px] font-mono text-emerald-400 uppercase">Valid Rows</div>
-              <div className="text-xl font-bold font-mono text-emerald-400 mt-0.5">
+            <div className="bg-card border border-emerald-500/30 p-3 rounded-lg shadow-2xs">
+              <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase">
+                Valid Rows
+              </div>
+              <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {summary.validCount}
               </div>
             </div>
 
-            <div className="bg-zinc-900 border border-red-500/30 p-3 rounded-lg">
-              <div className="text-[10px] font-mono text-red-400 uppercase">Invalid Syntax</div>
-              <div className="text-xl font-bold font-mono text-red-400 mt-0.5">
+            <div className="bg-card border border-destructive/30 p-3 rounded-lg shadow-2xs">
+              <div className="text-[10px] font-mono text-destructive uppercase">Invalid Syntax</div>
+              <div className="text-xl font-bold font-mono text-destructive mt-0.5">
                 {summary.invalidSyntaxCount}
               </div>
             </div>
 
-            <div className="bg-zinc-900 border border-amber-500/30 p-3 rounded-lg">
-              <div className="text-[10px] font-mono text-amber-400 uppercase">Duplicates</div>
-              <div className="text-xl font-bold font-mono text-amber-400 mt-0.5">
+            <div className="bg-card border border-amber-500/30 p-3 rounded-lg shadow-2xs">
+              <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 uppercase">
+                Duplicates
+              </div>
+              <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">
                 {summary.duplicateCount}
               </div>
             </div>
 
-            <div className="bg-zinc-900 border border-purple-500/30 p-3 rounded-lg">
-              <div className="text-[10px] font-mono text-purple-400 uppercase">
+            <div className="bg-card border border-purple-500/30 p-3 rounded-lg shadow-2xs">
+              <div className="text-[10px] font-mono text-purple-600 dark:text-purple-400 uppercase">
                 Blocked / Opt-Out
               </div>
-              <div className="text-xl font-bold font-mono text-purple-400 mt-0.5">
+              <div className="text-xl font-bold font-mono text-purple-600 dark:text-purple-400 mt-0.5">
                 {summary.blockedCount}
               </div>
             </div>
           </div>
 
           {/* Rejection Export Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-zinc-900/70 border border-zinc-800 rounded-lg text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-surface border border-border rounded-lg text-xs shadow-2xs">
             <div className="flex items-center space-x-2">
-              <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="text-zinc-300">
+              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="text-foreground">
                 <strong>{rejectedRows.length} rows rejected</strong> across syntax, duplicates, and
                 opt-out suppression filters.
               </span>
@@ -336,7 +340,7 @@ export function BlastDispatcher() {
               {rejectedRows.length > 0 && (
                 <button
                   onClick={handleExportRejections}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-semibold text-xs border border-zinc-700 transition-colors shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-surface hover:bg-muted text-foreground rounded font-semibold text-xs border border-border transition-colors shadow-2xs cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Export Rejections as CSV ({rejectedRows.length})</span>
@@ -347,7 +351,7 @@ export function BlastDispatcher() {
                 <button
                   onClick={handleStartDispatch}
                   disabled={summary.validCount === 0}
-                  className="flex items-center space-x-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded font-bold text-xs transition-colors shadow-sm"
+                  className="flex items-center space-x-1.5 px-4 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground rounded font-bold text-xs transition-colors shadow-2xs cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Dispatch Valid Recipients ({summary.validCount})</span>
@@ -358,13 +362,13 @@ export function BlastDispatcher() {
 
           {/* Dispatch Progress (When active) */}
           {(state === 'DISPATCHING' || state === 'FINISHED') && (
-            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2">
-              <div className="flex justify-between text-xs text-zinc-300 font-mono">
+            <div className="p-4 bg-surface border border-border rounded-lg space-y-2">
+              <div className="flex justify-between text-xs text-foreground font-mono">
                 <span className="flex items-center space-x-2">
                   {state === 'DISPATCHING' ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
                   ) : (
-                    <Check className="w-4 h-4 text-emerald-400" />
+                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   )}
                   <span>
                     {state === 'DISPATCHING'
@@ -376,9 +380,9 @@ export function BlastDispatcher() {
                   {dispatchedCount} / {summary.validCount} msgs
                 </span>
               </div>
-              <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden border border-border">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-200"
+                  className="h-full bg-primary transition-all duration-200"
                   style={{
                     width: `${Math.round((dispatchedCount / summary.validCount) * 100)}%`,
                   }}
@@ -388,17 +392,17 @@ export function BlastDispatcher() {
           )}
 
           {/* Categorized Filter Tabs & Search */}
-          <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
-            <div className="p-3 bg-zinc-900/60 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-card border border-border rounded-lg overflow-hidden shadow-2xs">
+            <div className="p-3 bg-surface border-b border-border flex flex-wrap items-center justify-between gap-3">
               {/* Filter Tabs */}
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <button
                   onClick={() => setActiveTab('ALL')}
                   className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium',
+                    'px-2.5 py-1 rounded transition-colors font-medium cursor-pointer',
                     activeTab === 'ALL'
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-400 hover:text-zinc-200',
+                      ? 'bg-card text-foreground font-semibold shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   All Ingested ({summary.totalRows})
@@ -406,10 +410,10 @@ export function BlastDispatcher() {
                 <button
                   onClick={() => setActiveTab('VALID')}
                   className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1',
+                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
                     activeTab === 'VALID'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'text-zinc-400 hover:text-emerald-400',
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold'
+                      : 'text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400',
                   )}
                 >
                   <span>Valid</span>
@@ -418,10 +422,10 @@ export function BlastDispatcher() {
                 <button
                   onClick={() => setActiveTab('INVALID_SYNTAX')}
                   className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1',
+                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
                     activeTab === 'INVALID_SYNTAX'
-                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                      : 'text-zinc-400 hover:text-red-400',
+                      ? 'bg-destructive/10 text-destructive border border-destructive/30 font-semibold'
+                      : 'text-muted-foreground hover:text-destructive',
                   )}
                 >
                   <span>Invalid Syntax</span>
@@ -430,10 +434,10 @@ export function BlastDispatcher() {
                 <button
                   onClick={() => setActiveTab('DUPLICATE')}
                   className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1',
+                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
                     activeTab === 'DUPLICATE'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      : 'text-zinc-400 hover:text-amber-400',
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-semibold'
+                      : 'text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400',
                   )}
                 >
                   <span>Duplicates</span>
@@ -442,10 +446,10 @@ export function BlastDispatcher() {
                 <button
                   onClick={() => setActiveTab('BLOCKED')}
                   className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1',
+                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
                     activeTab === 'BLOCKED'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'text-zinc-400 hover:text-purple-400',
+                      ? 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/30 font-semibold'
+                      : 'text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400',
                   )}
                 >
                   <span>Blocked / Opt-Out</span>
@@ -455,21 +459,21 @@ export function BlastDispatcher() {
 
               {/* Search */}
               <div className="relative w-64">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Filter row contents..."
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded pl-8 pr-3 py-1 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700"
+                  className="w-full bg-background border border-border rounded pl-8 pr-3 py-1 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
             </div>
 
             {/* Granular Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-zinc-300">
-                <thead className="bg-zinc-900/90 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800 font-mono">
+              <table className="w-full text-left text-xs text-foreground">
+                <thead className="bg-surface text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border font-mono">
                   <tr>
                     <th className="py-2.5 px-3 w-16">Row #</th>
                     <th className="py-2.5 px-3">Phone (E.164)</th>
@@ -479,10 +483,10 @@ export function BlastDispatcher() {
                     <th className="py-2.5 px-3">Error / Rejection Reason</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/80 font-sans">
+                <tbody className="divide-y divide-border font-sans">
                   {filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-zinc-500">
+                      <td colSpan={6} className="py-6 text-center text-muted-foreground">
                         No rows found matching current tab and filter criteria.
                       </td>
                     </tr>
@@ -491,16 +495,18 @@ export function BlastDispatcher() {
                       <tr
                         key={row.rowNumber}
                         className={cn(
-                          'hover:bg-zinc-900/40 transition-colors',
-                          row.status !== 'VALID' && 'bg-zinc-950/40',
+                          'hover:bg-muted/40 transition-colors',
+                          row.status !== 'VALID' && 'bg-muted/10',
                         )}
                       >
-                        <td className="py-2.5 px-3 font-mono text-zinc-500">{row.rowNumber}</td>
-                        <td className="py-2.5 px-3 font-mono font-medium text-zinc-200">
+                        <td className="py-2.5 px-3 font-mono text-muted-foreground">
+                          {row.rowNumber}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-medium text-foreground">
                           {row.phone}
                         </td>
-                        <td className="py-2.5 px-3 font-medium text-zinc-300">{row.name}</td>
-                        <td className="py-2.5 px-3 font-mono text-zinc-400">
+                        <td className="py-2.5 px-3 font-medium text-foreground">{row.name}</td>
+                        <td className="py-2.5 px-3 font-mono text-muted-foreground">
                           {row.variable1 || '—'}
                         </td>
                         <td className="py-2.5 px-3">
@@ -508,13 +514,13 @@ export function BlastDispatcher() {
                             className={cn(
                               'px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider',
                               row.status === 'VALID' &&
-                                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
+                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30',
                               row.status === 'INVALID_SYNTAX' &&
-                                'bg-red-500/10 text-red-400 border border-red-500/30',
+                                'bg-destructive/10 text-destructive border border-destructive/30',
                               row.status === 'DUPLICATE' &&
-                                'bg-amber-500/10 text-amber-400 border border-amber-500/30',
+                                'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30',
                               row.status === 'BLOCKED' &&
-                                'bg-purple-500/10 text-purple-400 border border-purple-500/30',
+                                'bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/30',
                             )}
                           >
                             {row.status}
@@ -524,15 +530,15 @@ export function BlastDispatcher() {
                           {row.rejectionReason ? (
                             <span
                               className={cn(
-                                row.status === 'INVALID_SYNTAX' && 'text-red-400',
-                                row.status === 'DUPLICATE' && 'text-amber-400',
-                                row.status === 'BLOCKED' && 'text-purple-400',
+                                row.status === 'INVALID_SYNTAX' && 'text-destructive',
+                                row.status === 'DUPLICATE' && 'text-amber-700 dark:text-amber-400',
+                                row.status === 'BLOCKED' && 'text-purple-700 dark:text-purple-400',
                               )}
                             >
                               {row.rejectionReason}
                             </span>
                           ) : (
-                            <span className="text-zinc-500 italic">Validation passed</span>
+                            <span className="text-muted-foreground italic">Validation passed</span>
                           )}
                         </td>
                       </tr>

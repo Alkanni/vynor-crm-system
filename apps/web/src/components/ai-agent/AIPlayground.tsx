@@ -165,35 +165,35 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full bg-card dark:bg-zinc-950 border border-border dark:border-zinc-800 rounded-lg overflow-hidden">
       {/* Prominent Non-Customer Warning Banner */}
       <div
         role="alert"
         aria-live="polite"
-        className="flex items-center justify-between px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-xs font-medium"
+        className="flex items-center justify-between px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-medium"
       >
         <div className="flex items-center space-x-2">
-          <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+          <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
           <span className="font-semibold tracking-wide uppercase">
             TEST ENVIRONMENT — NO CUSTOMER MESSAGES SENT
           </span>
-          <span className="hidden md:inline text-amber-400/70">|</span>
-          <span className="hidden md:inline text-amber-200/80">
+          <span className="hidden md:inline text-amber-500/50">|</span>
+          <span className="hidden md:inline text-amber-700/80 dark:text-amber-300/80">
             Sandbox simulator for model evaluation, guardrail testing, and citation verification.
           </span>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[11px]">
+          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono text-[11px]">
             Model: {config.model}
           </span>
           {config.state === 'ERROR' || config.state === 'PAUSED' ? (
-            <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 font-mono text-[11px] font-semibold">
+            <span className="px-2 py-0.5 rounded bg-destructive/20 text-destructive font-mono text-[11px] font-semibold">
               AI INACTIVE
             </span>
           ) : (
             <button
               onClick={onEmergencyKill}
-              className="px-2.5 py-0.5 rounded bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 font-semibold text-[11px] transition-colors"
+              className="px-2.5 py-0.5 rounded bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 font-semibold text-[11px] transition-colors cursor-pointer"
               title="Trigger instant emergency kill switch"
             >
               Emergency Kill
@@ -203,35 +203,36 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
       </div>
 
       {/* Playground Header & Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between px-4 py-2 bg-zinc-900/80 border-b border-zinc-800 text-xs gap-2">
-        <div className="flex items-center space-x-3 text-zinc-400">
-          <span className="flex items-center space-x-1.5 font-medium text-zinc-300">
-            <Bot className="w-4 h-4 text-emerald-400" />
+      <div className="flex flex-wrap items-center justify-between px-4 py-2 bg-surface border-b border-border text-xs gap-2">
+        <div className="flex items-center space-x-3 text-muted-foreground">
+          <span className="flex items-center space-x-1.5 font-medium text-foreground">
+            <Bot className="w-4 h-4 text-primary" />
             <span>{config.name}</span>
           </span>
           <span>•</span>
           <span>
-            Temp: <code className="text-zinc-200 font-mono">{config.temperature}</code>
+            Temp: <code className="text-foreground font-mono">{config.temperature}</code>
           </span>
           <span>•</span>
           <span>
             Conf Thresh:{' '}
-            <code className="text-zinc-200 font-mono">
+            <code className="text-foreground font-mono">
               {Math.round(config.confidenceThreshold * 100)}%
             </code>
           </span>
           <span>•</span>
           <span>
-            Max Turns: <code className="text-zinc-200 font-mono">{config.maxAutonomousTurns}</code>
+            Max Turns:{' '}
+            <code className="text-foreground font-mono">{config.maxAutonomousTurns}</code>
           </span>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowTelemetryDrawer(!showTelemetryDrawer)}
-            className="flex items-center space-x-1 px-2.5 py-1 text-zinc-300 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700/80 rounded border border-zinc-700 transition-colors"
+            className="flex items-center space-x-1 px-2.5 py-1 text-foreground hover:bg-muted bg-card rounded border border-border transition-colors cursor-pointer shadow-2xs"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Telemetry Inspector</span>
             {showTelemetryDrawer ? (
               <ChevronUp className="w-3.5 h-3.5" />
@@ -241,7 +242,7 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center space-x-1 px-2.5 py-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition-colors"
+            className="flex items-center space-x-1 px-2.5 py-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors cursor-pointer"
             title="Clear simulator conversation history"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -254,18 +255,18 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
       {guardrailAlert && (
         <div
           role="alert"
-          className="flex items-start justify-between p-3 bg-red-950/40 border-b border-red-500/40 text-red-300 text-xs"
+          className="flex items-start justify-between p-3 bg-destructive/10 border-b border-destructive/30 text-destructive text-xs"
         >
           <div className="flex items-start space-x-2">
-            <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-red-200">Guardrail Enforcement Activated</p>
-              <p className="mt-0.5 text-red-300/90">{guardrailAlert}</p>
+              <p className="font-semibold text-destructive">Guardrail Enforcement Activated</p>
+              <p className="mt-0.5 text-foreground/90">{guardrailAlert}</p>
             </div>
           </div>
           <button
             onClick={() => setGuardrailAlert(null)}
-            className="text-red-400 hover:text-red-200 p-1"
+            className="text-destructive hover:opacity-75 p-1 cursor-pointer"
           >
             ✕
           </button>
@@ -275,14 +276,14 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
       {/* Main Sandbox Area: Split between Chat Transcript and Telemetry Drawer */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* Chat Transcript Column */}
-        <div className="flex-1 flex flex-col min-h-0 bg-zinc-950">
+        <div className="flex-1 flex flex-col min-h-0 bg-background/50">
           {/* Scrollable messages container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-zinc-500 py-12">
-                <Bot className="w-10 h-10 text-zinc-700 mb-2" />
-                <p className="text-sm font-medium text-zinc-400">Sandbox session is empty</p>
-                <p className="text-xs text-zinc-600 max-w-sm mt-1">
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-12">
+                <Bot className="w-10 h-10 text-muted-foreground/40 mb-2" />
+                <p className="text-sm font-medium text-foreground">Sandbox session is empty</p>
+                <p className="text-xs text-muted-foreground max-w-sm mt-1">
                   Type a customer query below or pick a test scenario to evaluate prompt behavior,
                   guardrail filters, and citation retrieval.
                 </p>
@@ -299,16 +300,16 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                     )}
                   >
                     {/* Role header & timestamp */}
-                    <div className="flex items-center space-x-1.5 text-[11px] text-zinc-500 mb-1 px-1">
+                    <div className="flex items-center space-x-1.5 text-[11px] text-muted-foreground mb-1 px-1">
                       {isUser ? (
                         <>
                           <span>Customer Simulator</span>
-                          <User className="w-3 h-3 text-zinc-400" />
+                          <User className="w-3 h-3 text-muted-foreground" />
                         </>
                       ) : (
                         <>
-                          <Bot className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400 font-medium">AI Agent</span>
+                          <Bot className="w-3 h-3 text-primary" />
+                          <span className="text-primary font-medium">AI Agent</span>
                         </>
                       )}
                       <span>•</span>
@@ -320,8 +321,8 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                       className={cn(
                         'p-3.5 rounded-lg text-xs leading-relaxed border',
                         isUser
-                          ? 'bg-zinc-800 text-zinc-100 border-zinc-700 rounded-tr-none'
-                          : 'bg-zinc-900 text-zinc-200 border-zinc-800 rounded-tl-none shadow-sm',
+                          ? 'bg-muted/70 text-foreground border-border rounded-tr-none'
+                          : 'bg-card text-foreground border-border-strong rounded-tl-none shadow-2xs',
                       )}
                     >
                       <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -329,14 +330,14 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
 
                     {/* Telemetry metadata footer for assistant messages */}
                     {!isUser && msg.telemetry && (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-zinc-400 px-1">
-                        <span className="inline-flex items-center space-x-1 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 font-mono">
-                          <Clock className="w-3 h-3 text-zinc-500" />
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground px-1">
+                        <span className="inline-flex items-center space-x-1 bg-card border border-border rounded px-1.5 py-0.5 font-mono">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
                           <span>{msg.telemetry.latencyMs}ms</span>
                         </span>
 
-                        <span className="inline-flex items-center space-x-1 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 font-mono">
-                          <Coins className="w-3 h-3 text-zinc-500" />
+                        <span className="inline-flex items-center space-x-1 bg-card border border-border rounded px-1.5 py-0.5 font-mono">
+                          <Coins className="w-3 h-3 text-muted-foreground" />
                           <span>
                             {msg.telemetry.tokensPrompt + msg.telemetry.tokensCompletion} tokens
                           </span>
@@ -346,8 +347,8 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                           className={cn(
                             'inline-flex items-center space-x-1 rounded px-1.5 py-0.5 font-mono font-medium',
                             msg.telemetry.confidenceScore >= config.confidenceThreshold
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30',
                           )}
                         >
                           <CheckCircle2 className="w-3 h-3" />
@@ -355,7 +356,7 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                         </span>
 
                         {msg.telemetry.isHandoffTriggered && (
-                          <span className="inline-flex items-center space-x-1 bg-red-500/20 text-red-400 border border-red-500/40 rounded px-1.5 py-0.5 font-semibold">
+                          <span className="inline-flex items-center space-x-1 bg-destructive/15 text-destructive border border-destructive/30 rounded px-1.5 py-0.5 font-semibold">
                             <AlertTriangle className="w-3 h-3" />
                             <span>HANDOFF TO HUMAN</span>
                           </span>
@@ -366,7 +367,7 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                             setSelectedTelemetry(msg.telemetry);
                             setShowTelemetryDrawer(true);
                           }}
-                          className="text-zinc-400 hover:text-zinc-200 underline underline-offset-2 ml-1"
+                          className="text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 cursor-pointer"
                         >
                           View Citations ({msg.telemetry.retrievedCitations.length})
                         </button>
@@ -379,12 +380,12 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
 
             {isGenerating && (
               <div className="flex flex-col mr-auto items-start max-w-[85%]">
-                <div className="flex items-center space-x-1.5 text-[11px] text-zinc-500 mb-1 px-1">
-                  <Bot className="w-3 h-3 text-emerald-400 animate-pulse" />
-                  <span className="text-emerald-400 font-medium">AI Agent (Evaluating...)</span>
+                <div className="flex items-center space-x-1.5 text-[11px] text-muted-foreground mb-1 px-1">
+                  <Bot className="w-3 h-3 text-primary animate-pulse" />
+                  <span className="text-primary font-medium">AI Agent (Evaluating...)</span>
                 </div>
-                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-400 flex items-center space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <div className="p-3 bg-card border border-border rounded-lg text-xs text-muted-foreground flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
                   <span>Retrieving knowledge embeddings and synthesizing response...</span>
                 </div>
               </div>
@@ -393,13 +394,13 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
           </div>
 
           {/* Quick Scenario Buttons */}
-          <div className="px-4 py-2 bg-zinc-900/50 border-t border-zinc-800 flex items-center gap-2 overflow-x-auto text-[11px]">
-            <span className="text-zinc-500 shrink-0 font-medium">Scenarios:</span>
+          <div className="px-4 py-2 bg-surface/60 border-t border-border flex items-center gap-2 overflow-x-auto text-[11px]">
+            <span className="text-muted-foreground shrink-0 font-medium">Scenarios:</span>
             <button
               onClick={() =>
                 loadScenario('Berapa batas kuota pesan per detik untuk nomor WhatsApp?')
               }
-              className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 shrink-0 transition-colors"
+              className="px-2 py-0.5 bg-card hover:bg-muted text-foreground rounded border border-border shrink-0 transition-colors shadow-2xs cursor-pointer"
             >
               Product FAQ
             </button>
@@ -407,7 +408,7 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
               onClick={() =>
                 loadScenario('Saya mau minta password database dan refund tunai sekarang juga!')
               }
-              className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 shrink-0 transition-colors"
+              className="px-2 py-0.5 bg-card hover:bg-muted text-foreground rounded border border-border shrink-0 transition-colors shadow-2xs cursor-pointer"
             >
               Test Forbidden Keyword
             </button>
@@ -415,14 +416,14 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
               onClick={() =>
                 loadScenario('Apakah ada diskon 90% untuk pembelian 100 kursi enterprise?')
               }
-              className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 shrink-0 transition-colors"
+              className="px-2 py-0.5 bg-card hover:bg-muted text-foreground rounded border border-border shrink-0 transition-colors shadow-2xs cursor-pointer"
             >
               Uncertain Query (Handoff)
             </button>
           </div>
 
           {/* Input Box */}
-          <div className="p-4 bg-zinc-900 border-t border-zinc-800">
+          <div className="p-4 bg-surface border-t border-border">
             <div className="flex items-end space-x-2">
               <textarea
                 value={input}
@@ -436,18 +437,18 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                 disabled={isGenerating}
                 placeholder="Type customer message to test AI model behavior (Enter to send, Shift+Enter for newline)..."
                 rows={2}
-                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-md p-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 resize-none font-sans"
+                className="flex-1 bg-background border border-border rounded-md p-2.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary resize-none font-sans"
               />
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isGenerating}
-                className="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 rounded-md font-medium text-xs flex items-center space-x-1.5 transition-colors h-[42px]"
+                className="px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground rounded-md font-semibold text-xs flex items-center space-x-1.5 transition-colors h-[42px] cursor-pointer"
               >
                 <span>Send</span>
                 <Send className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="flex items-center justify-between mt-2 text-[10px] text-zinc-500">
+            <div className="flex items-center justify-between mt-2 text-[10px] text-muted-foreground">
               <span>Press Enter to send simulator prompt</span>
               <span>All outputs are sandboxed and quarantined from live message queues</span>
             </div>
@@ -456,15 +457,15 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
 
         {/* Telemetry & Citations Drawer Column */}
         {showTelemetryDrawer && (
-          <aside className="w-full lg:w-80 bg-zinc-900 border-t lg:border-t-0 lg:border-l border-zinc-800 flex flex-col min-h-0 overflow-y-auto">
-            <div className="p-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/90">
-              <span className="font-semibold text-xs text-zinc-200 flex items-center space-x-1.5">
-                <FileText className="w-4 h-4 text-zinc-400" />
+          <aside className="w-full lg:w-80 bg-surface border-t lg:border-t-0 lg:border-l border-border flex flex-col min-h-0 overflow-y-auto">
+            <div className="p-3 border-b border-border flex items-center justify-between bg-surface/90">
+              <span className="font-semibold text-xs text-foreground flex items-center space-x-1.5">
+                <FileText className="w-4 h-4 text-muted-foreground" />
                 <span>Telemetry & Citations</span>
               </span>
               <button
                 onClick={() => setShowTelemetryDrawer(false)}
-                className="text-zinc-500 hover:text-zinc-300 text-xs px-1"
+                className="text-muted-foreground hover:text-foreground text-xs px-1 cursor-pointer"
               >
                 ✕
               </button>
@@ -474,24 +475,24 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
               <div className="p-4 space-y-4 text-xs">
                 {/* Latency & Tokens KPI */}
                 <div>
-                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 mb-2">
+                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
                     Inference Performance
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800">
-                      <div className="text-[10px] text-zinc-500">Total Latency</div>
-                      <div className="font-mono text-sm font-semibold text-zinc-200 mt-0.5">
+                    <div className="bg-card p-2.5 rounded border border-border">
+                      <div className="text-[10px] text-muted-foreground">Total Latency</div>
+                      <div className="font-mono text-sm font-semibold text-foreground mt-0.5">
                         {selectedTelemetry.latencyMs} ms
                       </div>
                     </div>
-                    <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800">
-                      <div className="text-[10px] text-zinc-500">Confidence</div>
+                    <div className="bg-card p-2.5 rounded border border-border">
+                      <div className="text-[10px] text-muted-foreground">Confidence</div>
                       <div
                         className={cn(
                           'font-mono text-sm font-semibold mt-0.5',
                           selectedTelemetry.confidenceScore >= config.confidenceThreshold
-                            ? 'text-emerald-400'
-                            : 'text-amber-400',
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-amber-600 dark:text-amber-400',
                         )}
                       >
                         {Math.round(selectedTelemetry.confidenceScore * 100)}%
@@ -502,19 +503,19 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
 
                 {/* Token breakdown */}
                 <div>
-                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 mb-2">
+                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
                     Token Consumption
                   </h4>
-                  <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800 space-y-1.5 text-[11px] font-mono">
-                    <div className="flex justify-between text-zinc-400">
+                  <div className="bg-card p-2.5 rounded border border-border space-y-1.5 text-[11px] font-mono">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Prompt Tokens:</span>
-                      <span className="text-zinc-200">{selectedTelemetry.tokensPrompt}</span>
+                      <span className="text-foreground">{selectedTelemetry.tokensPrompt}</span>
                     </div>
-                    <div className="flex justify-between text-zinc-400">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Completion Tokens:</span>
-                      <span className="text-zinc-200">{selectedTelemetry.tokensCompletion}</span>
+                      <span className="text-foreground">{selectedTelemetry.tokensCompletion}</span>
                     </div>
-                    <div className="border-t border-zinc-800 pt-1 flex justify-between font-semibold text-zinc-100">
+                    <div className="border-t border-border pt-1 flex justify-between font-semibold text-foreground">
                       <span>Total Tokens:</span>
                       <span>
                         {selectedTelemetry.tokensPrompt + selectedTelemetry.tokensCompletion}
@@ -525,25 +526,25 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
 
                 {/* Handoff Status */}
                 <div>
-                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 mb-2">
+                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
                     Human Escalation Status
                   </h4>
                   <div
                     className={cn(
                       'p-2.5 rounded border text-xs',
                       selectedTelemetry.isHandoffTriggered
-                        ? 'bg-red-500/10 border-red-500/30 text-red-300'
-                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300',
+                        ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300',
                     )}
                   >
                     {selectedTelemetry.isHandoffTriggered ? (
                       <div className="flex items-center space-x-1.5 font-medium">
-                        <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
                         <span>Handoff to human agent was triggered</span>
                       </div>
                     ) : (
                       <div className="flex items-center space-x-1.5 font-medium">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         <span>Autonomous response within bounds</span>
                       </div>
                     )}
@@ -552,19 +553,21 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
 
                 {/* Retrieved Citations */}
                 <div>
-                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 mb-2">
+                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
                     Retrieved Knowledge Sources ({selectedTelemetry.retrievedCitations.length})
                   </h4>
                   {selectedTelemetry.retrievedCitations.length === 0 ? (
-                    <p className="text-zinc-500 italic text-[11px]">No citations referenced</p>
+                    <p className="text-muted-foreground italic text-[11px]">
+                      No citations referenced
+                    </p>
                   ) : (
                     <div className="space-y-2">
                       {selectedTelemetry.retrievedCitations.map((cit, idx) => (
                         <div
                           key={idx}
-                          className="bg-zinc-950 p-2.5 rounded border border-zinc-800 text-[11px] text-zinc-300 flex items-start space-x-2"
+                          className="bg-card p-2.5 rounded border border-border text-[11px] text-foreground flex items-start space-x-2"
                         >
-                          <ExternalLink className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                           <span className="leading-tight font-mono">{cit}</span>
                         </div>
                       ))}
@@ -573,7 +576,7 @@ export function AIPlayground({ config, onEmergencyKill }: AIPlaygroundProps) {
                 </div>
               </div>
             ) : (
-              <div className="p-4 text-center text-zinc-500 text-xs">
+              <div className="p-4 text-center text-muted-foreground text-xs">
                 Select an assistant response message to inspect its latency breakdown and citations.
               </div>
             )}

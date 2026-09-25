@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Save, ShieldAlert, Sliders, Sparkles, Bot, RotateCcw, Check } from 'lucide-react';
+import { Save, ShieldAlert, Sliders, Terminal, Bot, RotateCcw, Check } from 'lucide-react';
 import type { AIAgentConfiguration, AIAgentState } from './types';
 import { cn } from '@/lib/utils';
 
@@ -246,7 +246,7 @@ export function AIAgentConfig({ config, onSave }: AIAgentConfigProps) {
       <div className="rounded-md border border-border bg-card p-4 shadow-2xs space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Terminal className="h-4 w-4 text-primary" />
             <h3 className="font-semibold text-foreground text-sm">System Instruction & Persona</h3>
           </div>
           <span className="text-[10px] text-muted-foreground font-mono">
@@ -258,7 +258,7 @@ export function AIAgentConfig({ config, onSave }: AIAgentConfigProps) {
           rows={5}
           value={form.systemPrompt}
           onChange={(e) => setForm((prev) => ({ ...prev, systemPrompt: e.target.value }))}
-          className="w-full rounded-xs border border-border bg-surface p-3 text-xs font-mono leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden"
+          className="w-full rounded-xs border border-border bg-surface p-3 text-xs font-mono leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
           placeholder="You are the official VYNOR Support AI Assistant..."
         />
       </div>

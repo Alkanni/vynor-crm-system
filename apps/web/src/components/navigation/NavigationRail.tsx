@@ -64,7 +64,7 @@ export function NavigationRail() {
 
   return (
     <nav
-      aria-label="Navigation Rail"
+      aria-label="Main Navigation"
       className={cn(
         'flex flex-col h-full bg-card select-none transition-all duration-200 border-r border-border',
         sidebarCollapsed ? 'w-14' : 'w-56',
@@ -87,7 +87,7 @@ export function NavigationRail() {
                   className={cn(
                     'flex h-9 w-9 items-center justify-center rounded-xs transition-colors relative group',
                     isActive
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      ? 'bg-primary/10 text-primary font-semibold shadow-xs ring-1 ring-primary/20'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
@@ -126,10 +126,10 @@ export function NavigationRail() {
                       <Link
                         href={item.href}
                         className={cn(
-                          'flex items-center justify-between rounded-xs px-2.5 py-1.5 text-xs font-medium transition-colors',
+                          'flex items-center justify-between rounded-xs px-2.5 py-1.5 text-xs font-medium transition-colors border-l-2',
                           isActive
-                            ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            ? 'bg-primary/10 text-primary border-l-primary font-semibold'
+                            : 'border-l-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
                         )}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">

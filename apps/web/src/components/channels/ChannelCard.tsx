@@ -49,7 +49,7 @@ export function ChannelCard({
     },
     DISCONNECTED: {
       label: 'Disconnected',
-      bg: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30',
+      bg: 'bg-destructive/10 text-destructive border-destructive/30',
       icon: XCircle,
     },
   };
@@ -87,15 +87,15 @@ export function ChannelCard({
 
       {/* Actionable Error Banner if broken (Acceptance Criteria: 1-click re-auth action) */}
       {isBroken && account.errorSnippet && (
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-xs border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-800 dark:text-rose-300">
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-xs border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
           <div className="flex items-center gap-1.5 truncate">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
             <span className="truncate">{account.errorSnippet}</span>
           </div>
           <button
             type="button"
             onClick={() => onReauthenticate(account.id)}
-            className="shrink-0 inline-flex items-center gap-1 rounded-xs bg-rose-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 transition-colors cursor-pointer"
+            className="shrink-0 inline-flex items-center gap-1 rounded-xs bg-destructive px-2 py-1 text-[11px] font-semibold text-destructive-foreground hover:bg-destructive-hover transition-colors cursor-pointer"
           >
             <RotateCcw className="h-3 w-3" />
             <span>Re-authenticate Now</span>

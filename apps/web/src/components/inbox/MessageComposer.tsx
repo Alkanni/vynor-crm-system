@@ -119,8 +119,10 @@ export const MessageComposer = forwardRef<MessageComposerHandle, MessageComposer
     return (
       <div
         className={cn(
-          'relative border-t transition-colors bg-card select-none',
-          isNote ? 'border-amber-500/40 bg-amber-500/5' : 'border-border bg-card',
+          'relative border-t transition-colors select-none',
+          isNote
+            ? 'border-amber-500/50 bg-amber-500/8 dark:bg-amber-950/25'
+            : 'border-border bg-card',
         )}
       >
         {/* Template Picker Popover */}
@@ -197,7 +199,14 @@ export const MessageComposer = forwardRef<MessageComposerHandle, MessageComposer
         </div>
 
         {/* Bottom Toolbar & Action Dispatch */}
-        <div className="flex items-center justify-between border-t border-border/40 px-3 py-2 bg-surface/50">
+        <div
+          className={cn(
+            'flex items-center justify-between border-t px-3 py-2 transition-colors',
+            isNote
+              ? 'border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/40'
+              : 'border-border/40 bg-surface/50',
+          )}
+        >
           <div className="flex items-center gap-2">
             {/* Attachment Button */}
             {!isNote && (
@@ -246,7 +255,7 @@ export const MessageComposer = forwardRef<MessageComposerHandle, MessageComposer
               'inline-flex items-center gap-1.5 rounded-xs px-3 py-1.5 text-xs font-semibold shadow-xs transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
               isNote
                 ? 'bg-amber-600 text-white hover:bg-amber-700'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90',
+                : 'bg-primary text-primary-foreground hover:bg-primary-hover',
             )}
           >
             {isNote ? (

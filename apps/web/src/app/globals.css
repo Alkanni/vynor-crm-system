@@ -26,91 +26,173 @@
     --elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --elevation-2: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
-    /* Neutral Canvas (Slate/Zinc) - Light Mode */
-    --background: 0 0% 100%;
-    --surface: 210 40% 98%;
-    --foreground: 222.2 47.4% 11.2%;
+    /* Neutral Canvas & Surfaces - Light Mode (Authoritative Baseline #F7F7F7) */
+    --background: 0 0% 96.9%;
+    --surface: 0 0% 100%;
+    --surface-muted: 0 0% 94.1%;
+    --surface-elevated: 0 0% 100%;
+    --foreground: 210 12.5% 12.5%;
+    --foreground-secondary: 219 9.3% 27.6%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 210 12.5% 12.5%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 210 12.5% 12.5%;
 
-    /* Semantic Signals */
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* VYNOR Primary Brand (Radix Red Scale Baseline #E5494D) */
+    --primary: 358.5 74.8% 59.2%;
+    --primary-hover: 358.2 68.3% 55.1%;
+    --primary-active: 358.1 63.8% 49.2%;
+    --primary-subtle: 360 88.9% 96.5%;
+    --primary-border: 356 70.7% 86.1%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary & Muted Controls */
+    --secondary: 0 0% 94.1%;
+    --secondary-foreground: 210 12.5% 12.5%;
+    --muted: 0 0% 94.1%;
+    --muted-foreground: 220 5.9% 40%;
+    --accent: 360 88.9% 96.5%;
+    --accent-foreground: 358.5 74.8% 59.2%;
 
     /* Success / Live (Emerald) */
     --success: 158 64% 42%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 0 0% 100%;
 
     /* Warning / Alert / Internal Note (Amber) */
     --warning: 38 92% 50%;
     --warning-foreground: 35 92% 15%;
 
-    /* Danger / Error / Rejection (Rose) */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* VYNOR Destructive Action (Radix Ruby Scale Baseline #E54666) */
+    --destructive: 347.9 74.6% 58.6%;
+    --destructive-hover: 347.3 68.5% 54.7%;
+    --destructive-active: 346 67.5% 48.2%;
+    --destructive-subtle: 349 100% 95.7%;
+    --destructive-border: 348 88.5% 84.3%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Info / System Event (Sky) */
     --info: 199 89% 48%;
-    --info-foreground: 210 40% 98%;
+    --info-foreground: 0 0% 100%;
 
     /* Border System */
-    --border: 214.3 31.8% 91.4%;
-    --border-subtle: 214.3 31.8% 94%;
-    --border-strong: 215 25% 75%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 0 0% 87.8%;
+    --border-subtle: 0 0% 92.2%;
+    --border-strong: 0 0% 76.9%;
+    --input: 0 0% 87.8%;
+    --ring: 358.5 74.8% 59.2%;
+
+    /* Radix Red Scale Variables (1-12) */
+    --brand-1: #fffdfd;
+    --brand-2: #fff7f7;
+    --brand-3: #feefef;
+    --brand-4: #fce3e4;
+    --brand-5: #fad4d6;
+    --brand-6: #f6c1c4;
+    --brand-7: #f0a7ac;
+    --brand-8: #e9838b;
+    --brand-9: #e5494d;
+    --brand-10: #dc3e42;
+    --brand-11: #ce2c31;
+    --brand-12: #641723;
+
+    /* Radix Ruby Scale Variables (1-12) */
+    --ruby-1: #fffdfe;
+    --ruby-2: #fff5f7;
+    --ruby-3: #ffe9ed;
+    --ruby-4: #ffdbe2;
+    --ruby-5: #ffc9d4;
+    --ruby-6: #fbb3c1;
+    --ruby-7: #f498a9;
+    --ruby-8: #ed758b;
+    --ruby-9: #e54666;
+    --ruby-10: #dc3b5d;
+    --ruby-11: #ce284f;
+    --ruby-12: #651227;
   }
 
   .dark {
-    /* Neutral Canvas - Dark Mode */
-    --background: 220 14% 4%;
-    --surface: 220 13% 7%;
-    --foreground: 210 40% 98%;
-    --card: 220 13% 7%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 13% 7%;
-    --popover-foreground: 210 40% 98%;
+    /* Neutral Canvas & Surfaces - Dark Mode (Authoritative Baseline #1C1E20) */
+    --background: 210 7.1% 12%;
+    --surface: 210 7.7% 15.3%;
+    --surface-muted: 216 7.5% 12.7%;
+    --surface-elevated: 210 7.9% 19.6%;
+    --foreground: 0 0% 100%;
+    --foreground-secondary: 222 12.2% 84.7%;
+    --card: 210 7.7% 15.3%;
+    --card-foreground: 0 0% 100%;
+    --popover: 210 7.9% 19.6%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Semantic Signals */
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* VYNOR Primary Brand - Dark Mode (Radix Red Dark Scale) */
+    --primary: 358.5 74.8% 59.2%;
+    --primary-hover: 358 78% 65%;
+    --primary-active: 358 100% 76%;
+    --primary-subtle: 350 53.4% 15.1%;
+    --primary-border: 350 43.6% 29.4%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary & Muted Controls */
+    --secondary: 210 7.5% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 7.5% 20%;
+    --muted-foreground: 218 8.1% 58.6%;
+    --accent: 350 53.4% 15.1%;
+    --accent-foreground: 0 0% 100%;
 
     /* Success / Live (Emerald) */
     --success: 160 84% 39%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 0 0% 100%;
 
     /* Warning / Alert / Internal Note (Amber) */
     --warning: 38 92% 50%;
     --warning-foreground: 38 92% 95%;
 
-    /* Danger / Error (Rose) */
-    --destructive: 0 62.8% 45.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* VYNOR Destructive Action - Dark Mode (Radix Ruby Dark Scale) */
+    --destructive: 347.9 74.6% 58.6%;
+    --destructive-hover: 347 78% 64%;
+    --destructive-active: 347 100% 76%;
+    --destructive-subtle: 340 42.9% 16.5%;
+    --destructive-border: 341 40.5% 31%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Info / System Event (Sky) */
     --info: 199 89% 48%;
-    --info-foreground: 210 40% 98%;
+    --info-foreground: 0 0% 100%;
 
     /* Border System */
-    --border: 217.2 19% 15%;
-    --border-subtle: 217.2 19% 12%;
-    --border-strong: 217.2 20% 30%;
-    --input: 217.2 19% 15%;
-    --ring: 224.3 76.3% 48%;
+    --border: 210 6.2% 22.7%;
+    --border-subtle: 210 8.3% 18.8%;
+    --border-strong: 215 7.6% 31.4%;
+    --input: 210 6.2% 22.7%;
+    --ring: 358.5 74.8% 59.2%;
+
+    /* Radix Red Dark Scale Variables (1-12) */
+    --brand-1: #191111;
+    --brand-2: #201314;
+    --brand-3: #3b1219;
+    --brand-4: #4c1721;
+    --brand-5: #5a1f29;
+    --brand-6: #6b2a35;
+    --brand-7: #843845;
+    --brand-8: #a84857;
+    --brand-9: #e5494d;
+    --brand-10: #ec5e62;
+    --brand-11: #ff8589;
+    --brand-12: #ffdcdd;
+
+    /* Radix Ruby Dark Scale Variables (1-12) */
+    --ruby-1: #1d0e13;
+    --ruby-2: #27141a;
+    --ruby-3: #3c1824;
+    --ruby-4: #4c1d2d;
+    --ruby-5: #5b2537;
+    --ruby-6: #6f2f43;
+    --ruby-7: #893c54;
+    --ruby-8: #ad4968;
+    --ruby-9: #e54666;
+    --ruby-10: #ec5a7b;
+    --ruby-11: #ff859f;
+    --ruby-12: #ffdce5;
   }
 
   * {

@@ -1,4 +1,5 @@
 import type { ChannelType } from '@vynor/contracts';
+export type { ChannelType };
 
 export type PriorityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 

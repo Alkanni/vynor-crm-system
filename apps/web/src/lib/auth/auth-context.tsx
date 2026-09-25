@@ -26,6 +26,7 @@ export interface AuthContextValue {
   isLoading: boolean;
   error: Error | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInDemo: (role?: 'SUPER_ADMIN' | 'AGENT') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -38,6 +39,7 @@ const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
   error: null,
   signIn: async () => ({ error: null }),
+  signInDemo: async () => ({ error: null }),
   signOut: async () => {},
   refreshSession: async () => {},
 });
@@ -208,10 +210,50 @@ export function AuthProvider({
     [supabase, resolveActorFromSession],
   );
 
+  const signInDemo = useCallback(
+    async (role: 'SUPER_ADMIN' | 'AGENT' = 'SUPER_ADMIN') => {
+      const mockSession: Session = {
+        access_token: `mock_jwt_demo_${Date.now()}`,
+        token_type: 'bearer',
+        expires_in: 86400,
+        expires_at: Math.floor(Date.now() / 1000) + 86400,
+        refresh_token: 'mock_refresh_token_demo',
+        user: {
+          id: 'usr_demo_admin',
+          app_metadata: { provider: 'email' },
+          user_metadata: {
+            displayName: role === 'SUPER_ADMIN' ? 'Demo Administrator' : 'Demo Agent',
+            workspaceId: 'ws_demo_vynor',
+            workspaceName: 'Vynor CRM Workspace',
+          },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          email: 'admin@vynor.io',
+          role: 'authenticated',
+        },
+      };
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('vynor_supabase_auth', JSON.stringify(mockSession));
+      }
+      setSession(mockSession);
+      await resolveActorFromSession(mockSession);
+      return { error: null };
+    },
+    [resolveActorFromSession],
+  );
+
   const signOut = useCallback(async () => {
     try {
       setIsLoading(true);
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Safe fallback in mock/preview mode
+      }
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('vynor_supabase_auth');
+      }
       setSession(null);
       setActor(null);
       syncAuthCookie(null);
@@ -237,10 +279,11 @@ export function AuthProvider({
       isLoading,
       error,
       signIn,
+      signInDemo,
       signOut,
       refreshSession,
     }),
-    [actor, session, isLoading, error, signIn, signOut, refreshSession],
+    [actor, session, isLoading, error, signIn, signInDemo, signOut, refreshSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -6,9 +6,9 @@
   "license": "MIT",
   "scripts": {
     "build": "next build",
-    "dev": "next dev --port 3000",
+    "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start --port 3000",
+    "start": "next start",
     "test": "tsx src/verify-frontend-foundation.ts && tsx src/verify-ui-foundation.ts && tsx src/verify-all-p0-modules.ts",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",

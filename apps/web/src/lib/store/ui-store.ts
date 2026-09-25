@@ -95,8 +95,24 @@ export const useUiStore = create<UiState>((set) => ({
   selectedConversationId: null,
   setSelectedConversationId: (id) => set({ selectedConversationId: id }),
 
-  theme: 'system',
-  setTheme: (theme) => set({ theme }),
+  theme:
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('vynor_theme') as 'light' | 'dark' | 'system') || 'system'
+      : 'system',
+  setTheme: (theme) => {
+    set({ theme });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vynor_theme', theme);
+      const isDark =
+        theme === 'dark' ||
+        (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  },
 
   activeModal: null,
   openModal: (modalId) => set({ activeModal: modalId }),

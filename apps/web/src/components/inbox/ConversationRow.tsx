@@ -18,22 +18,24 @@ export function ConversationRow({ conversation, isSelected, onSelect }: Conversa
   const priorityConfig: Record<PriorityLevel, { label: string; className: string }> = {
     URGENT: {
       label: 'Urgent',
-      className: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30',
+      className: 'bg-destructive/10 text-destructive border-destructive/30 font-semibold',
     },
     HIGH: {
       label: 'High',
-      className: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30',
+      className:
+        'bg-warning/10 text-warning-foreground dark:text-amber-400 border-warning/30 font-medium',
     },
     MEDIUM: {
       label: 'Medium',
-      className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
+      className: 'bg-muted text-muted-foreground border-border',
     },
     LOW: {
       label: 'Low',
-      className: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30',
+      className: 'bg-muted/50 text-muted-foreground/80 border-border/50',
     },
   };
 
+  const showPriorityChip = conversation.priority === 'URGENT' || conversation.priority === 'HIGH';
   const priority = priorityConfig[conversation.priority];
 
   return (
@@ -113,10 +115,12 @@ export function ConversationRow({ conversation, isSelected, onSelect }: Conversa
       {/* Bottom Line: Priority Chip, Assignment Chip, Tags & Delivery Failure Warning */}
       <div className="flex items-center justify-between gap-1 text-[10px] pt-0.5">
         <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Priority */}
-          <span className={cn('rounded-xs border px-1.5 py-0.2 font-medium', priority.className)}>
-            {priority.label}
-          </span>
+          {/* Priority - Only displayed for Urgent/High to prevent visual fatigue */}
+          {showPriorityChip && (
+            <span className={cn('rounded-xs border px-1.5 py-0.2 font-medium', priority.className)}>
+              {priority.label}
+            </span>
+          )}
 
           {/* Assignment Status */}
           {conversation.assignedAgentName ? (
@@ -143,13 +147,13 @@ export function ConversationRow({ conversation, isSelected, onSelect }: Conversa
           {conversation.hasDeliveryFailure ? (
             <span
               title={`Delivery failure: ${conversation.failureReason || 'Provider error'}`}
-              className="inline-flex items-center gap-1 rounded-xs bg-rose-500/10 px-1.5 py-0.5 text-rose-700 dark:text-rose-400 font-semibold"
+              className="inline-flex items-center gap-1 rounded-xs bg-destructive/10 border border-destructive/20 px-1.5 py-0.5 text-destructive font-semibold"
             >
               <AlertCircle className="h-3 w-3" />
               <span>Failed</span>
             </span>
           ) : isUnread ? (
-            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-600 px-1 font-mono text-[10px] font-bold text-white">
+            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold text-primary-foreground">
               {conversation.unreadCount}
             </span>
           ) : null}

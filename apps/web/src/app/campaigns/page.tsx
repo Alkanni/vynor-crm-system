@@ -65,11 +65,11 @@ export default function CampaignsPage() {
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-zinc-100" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Megaphone className="h-5 w-5 text-primary" />
             <span>Outbound Broadcast Operations</span>
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Deploy compliant, high-throughput outbound campaigns across WhatsApp Cloud API and
             integrated channels with pre-flight safety gates.
           </p>
@@ -79,7 +79,7 @@ export default function CampaignsPage() {
           {!isWizardOpen ? (
             <button
               onClick={() => setIsWizardOpen(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded font-semibold text-xs transition-colors shadow-sm"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>New Broadcast Campaign</span>
@@ -87,7 +87,7 @@ export default function CampaignsPage() {
           ) : (
             <button
               onClick={() => setIsWizardOpen(false)}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded font-medium text-xs transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-2 bg-surface hover:bg-muted text-foreground border border-border rounded font-medium text-xs transition-colors cursor-pointer"
             >
               <span>Back to Overview</span>
             </button>
@@ -108,56 +108,70 @@ export default function CampaignsPage() {
         <>
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg">
-              <div className="text-[11px] font-mono text-zinc-500 uppercase">30-Day Dispatched</div>
-              <div className="text-2xl font-bold font-mono text-zinc-100 mt-1">42,850</div>
-              <div className="text-[11px] text-zinc-400 mt-1">Across 18 campaigns</div>
+            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                30-Day Dispatched
+              </div>
+              <div className="text-2xl font-bold font-mono text-foreground mt-1">42,850</div>
+              <div className="text-[11px] text-muted-foreground mt-1">Across 18 campaigns</div>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg">
-              <div className="text-[11px] font-mono text-zinc-500 uppercase">Avg Delivery Rate</div>
-              <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">98.9%</div>
-              <div className="text-[11px] text-zinc-400 mt-1">Meta Tier High Quality</div>
+            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                Avg Delivery Rate
+              </div>
+              <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                98.9%
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1">Meta Tier High Quality</div>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg">
-              <div className="text-[11px] font-mono text-zinc-500 uppercase">Current WABA Tier</div>
-              <div className="text-2xl font-bold font-mono text-zinc-100 mt-1">Tier 2</div>
-              <div className="text-[11px] text-zinc-400 mt-1">10,000 unique recipients / 24h</div>
+            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                Current WABA Tier
+              </div>
+              <div className="text-2xl font-bold font-mono text-foreground mt-1">Tier 2</div>
+              <div className="text-[11px] text-muted-foreground mt-1">
+                10,000 unique recipients / 24h
+              </div>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg">
-              <div className="text-[11px] font-mono text-zinc-500 uppercase">Opt-Out Rate</div>
-              <div className="text-2xl font-bold font-mono text-zinc-100 mt-1">0.14%</div>
-              <div className="text-[11px] text-emerald-400 mt-1">Well below 1.0% danger zone</div>
+            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
+              <div className="text-[11px] font-mono text-muted-foreground uppercase">
+                Opt-Out Rate
+              </div>
+              <div className="text-2xl font-bold font-mono text-foreground mt-1">0.14%</div>
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+                Well below 1.0% danger zone
+              </div>
             </div>
           </div>
 
           {/* Campaign Table Section */}
-          <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
+          <div className="bg-card border border-border rounded-lg overflow-hidden shadow-2xs">
             {/* Table Search & Toolbar */}
-            <div className="p-4 bg-zinc-900/60 border-b border-zinc-800 flex items-center justify-between gap-3">
+            <div className="p-4 bg-surface border-b border-border flex items-center justify-between gap-3">
               <div className="relative flex-1 max-w-sm">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Filter campaigns by title or template..."
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                  className="w-full bg-background border border-border rounded pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
 
-              <div className="text-xs text-zinc-400">
-                Showing <strong className="text-zinc-200">{filteredCampaigns.length}</strong>{' '}
+              <div className="text-xs text-muted-foreground">
+                Showing <strong className="text-foreground">{filteredCampaigns.length}</strong>{' '}
                 campaigns
               </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-zinc-300">
-                <thead className="bg-zinc-900/90 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800 font-mono">
+              <table className="w-full text-left text-xs text-foreground">
+                <thead className="bg-surface text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border font-mono">
                   <tr>
                     <th className="py-3 px-4">Campaign Name</th>
                     <th className="py-3 px-4">Target Channel</th>
@@ -168,24 +182,24 @@ export default function CampaignsPage() {
                     <th className="py-3 px-4">Dispatched At</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/80 font-sans">
+                <tbody className="divide-y divide-border font-sans">
                   {filteredCampaigns.map((camp) => (
-                    <tr key={camp.id} className="hover:bg-zinc-900/40 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-zinc-200">{camp.name}</td>
-                      <td className="py-3 px-4 text-zinc-400">{camp.channel}</td>
-                      <td className="py-3 px-4 font-mono text-[11px] text-zinc-400">
+                    <tr key={camp.id} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-foreground">{camp.name}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{camp.channel}</td>
+                      <td className="py-3 px-4 font-mono text-[11px] text-muted-foreground">
                         {camp.templateName}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono font-medium text-zinc-200">
+                      <td className="py-3 px-4 text-right font-mono font-medium text-foreground">
                         {camp.recipients.toLocaleString()}
                       </td>
                       <td className="py-3 px-4 text-right font-mono">
                         {camp.status === 'COMPLETED' ? (
-                          <span className="text-emerald-400 font-semibold">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                             {camp.deliveredPercent}%
                           </span>
                         ) : (
-                          <span className="text-zinc-500">—</span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -193,19 +207,19 @@ export default function CampaignsPage() {
                           className={cn(
                             'px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider',
                             camp.status === 'COMPLETED' &&
-                              'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
+                              'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30',
                             camp.status === 'DISPATCHING' &&
-                              'bg-blue-500/10 text-blue-400 border border-blue-500/30',
+                              'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/30',
                             camp.status === 'SCHEDULED' &&
-                              'bg-amber-500/10 text-amber-400 border border-amber-500/30',
+                              'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30',
                             camp.status === 'DRAFT' &&
-                              'bg-zinc-800 text-zinc-400 border border-zinc-700',
+                              'bg-muted text-muted-foreground border border-border',
                           )}
                         >
                           {camp.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-zinc-500">{camp.createdAt}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{camp.createdAt}</td>
                     </tr>
                   ))}
                 </tbody>
