@@ -16,6 +16,7 @@ on:
       - 'packages/**'
       - 'infrastructure/**'
       - 'Dockerfile*'
+      - '.github/workflows/container-security.yml'
   schedule:
     # Run weekly scan on Sundays at 00:00 UTC
     - cron: '0 0 * * 0'
