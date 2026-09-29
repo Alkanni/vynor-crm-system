@@ -1,26 +1,41 @@
-import type { ChannelType } from '@vynor/contracts';
+import type { ChannelProviderType } from '@vynor/contracts';
 
-export type ChannelHealthStatus = 'OPERATIONAL' | 'WARNING' | 'DISCONNECTED' | 'RATE_LIMITED';
+export type ChatDistributionMethod = 'LEAST_ASSIGNED' | 'ROUND_ROBIN' | 'MANUAL';
 
-export interface ChannelAccount {
+export interface InboxAgent {
   id: string;
   name: string;
-  channel: ChannelType;
-  accountIdentifier: string;
-  status: ChannelHealthStatus;
-  inbound24h: number;
-  outbound24h: number;
-  webhookLatencyMs: number;
-  lastMessageAt: string;
-  errorSnippet?: string | undefined;
-  assignedTeam: string;
-  isAiBotActive: boolean;
 }
 
-export interface ChannelHealthSummary {
-  total: number;
-  operational: number;
-  warning: number;
-  disconnected: number;
-  averageLatencyMs: number;
+export interface InboxSettings {
+  maxConversationsEnabled: boolean;
+  maxConversationsPerAgent: number;
+  preferredAgent: boolean;
+  csatEnabled: boolean;
+  reassignWhenOffline: boolean;
 }
+
+/**
+ * A connected platform account as the team sees it: who answers it and how
+ * chats are routed. Provider telemetry stays out of this view on purpose.
+ */
+export interface InboxAccount {
+  id: string;
+  name: string;
+  description: string;
+  provider: ChannelProviderType;
+  /** Human-readable handle: phone number, @username, email address or domain. */
+  identifier: string;
+  aiAgentId: string | null;
+  humanAgentIds: string[];
+  distributionMethod: ChatDistributionMethod;
+  settings: InboxSettings;
+  /** Set when the provider revoked access and the owner must sign in again. */
+  needsReconnect: boolean;
+}
+
+/** Fields the settings panel edits before the user presses Save. */
+export type InboxDraft = Pick<
+  InboxAccount,
+  'name' | 'description' | 'aiAgentId' | 'humanAgentIds' | 'distributionMethod' | 'settings'
+>;

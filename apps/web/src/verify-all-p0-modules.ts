@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CHANNEL_PROVIDER_TYPES } from '@vynor/contracts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,49 +12,86 @@ console.info('--- Verifying VYNOR All Remaining P0 Modules & Section 47 Gate ---
 console.info('================================================================');
 
 // -------------------------------------------------------------
-// 1. Verify UX-CHANNELS-001 [P0]: Connected Platforms Operational Cards & Health Telemetry
+// 1. Verify UX-CHANNELS-001 [P0]: Simplified Channels Inboxes & Icon-Based Platform Picker
 // -------------------------------------------------------------
 console.info(
-  '\n1. Checking UX-CHANNELS-001: Connected Platforms Operational Cards & Health Telemetry...',
+  '\n1. Checking UX-CHANNELS-001: Simplified Channels Inboxes & Icon-Based Platform Picker...',
 );
-const channelCardSource = fs.readFileSync(
-  path.join(__dirname, 'components/channels/ChannelCard.tsx'),
-  'utf-8',
-);
-const channelHealthListSource = fs.readFileSync(
-  path.join(__dirname, 'components/channels/ChannelHealthList.tsx'),
-  'utf-8',
-);
+const readChannelsFile = (name: string) =>
+  fs.readFileSync(path.join(__dirname, 'components/channels', name), 'utf-8');
+const inboxCardSource = readChannelsFile('InboxCard.tsx');
+const inboxListSource = readChannelsFile('InboxList.tsx');
+const inboxSettingsSource = readChannelsFile('InboxSettingsPanel.tsx');
+const connectModalSource = readChannelsFile('ConnectPlatformModal.tsx');
+const platformsSource = readChannelsFile('platforms.tsx');
+const channelsUiSource = readChannelsFile('ui.tsx');
+const channelTypesSource = readChannelsFile('types.ts');
 const channelsPageSource = fs.readFileSync(path.join(__dirname, 'app/channels/page.tsx'), 'utf-8');
-const channelTypesSource = fs.readFileSync(
-  path.join(__dirname, 'components/channels/types.ts'),
-  'utf-8',
-);
+const channelsModuleText = [
+  inboxCardSource,
+  inboxListSource,
+  inboxSettingsSource,
+  connectModalSource,
+  platformsSource,
+  channelsUiSource,
+  channelTypesSource,
+  channelsPageSource,
+].join('\n');
 
+for (const telemetry of [
+  'Operational',
+  'Degraded',
+  'Avg Webhook Latency',
+  'Inbound (24h)',
+  'Outbound (24h)',
+  'webhookLatencyMs',
+  'Refresh Telemetry',
+  'onTestWebhook',
+  'Team: {',
+]) {
+  assert.ok(
+    !channelsModuleText.includes(telemetry),
+    `Channels must not surface system telemetry ("${telemetry}")`,
+  );
+}
 assert.ok(
-  channelTypesSource.includes('ChannelHealthStatus') &&
-    channelTypesSource.includes('OPERATIONAL') &&
-    channelTypesSource.includes('DISCONNECTED') &&
-    channelTypesSource.includes('RATE_LIMITED'),
-  'ChannelHealthStatus must support OPERATIONAL, DEGRADED, DISCONNECTED, RATE_LIMITED',
+  channelTypesSource.includes('InboxAccount') && channelTypesSource.includes('needsReconnect'),
+  'Channel types must model inboxes (InboxAccount) with a needsReconnect flag',
 );
 assert.ok(
-  channelCardSource.includes('onReauthenticate'),
-  'ChannelCard must provide 1-click re-authenticate callback',
+  inboxCardSource.includes('PlatformIcon') && inboxCardSource.includes('AgentAvatarStack'),
+  'InboxCard must show only the platform icon, name, identifier, AI agent and agent avatars',
 );
 assert.ok(
-  channelCardSource.includes('webhookLatencyMs'),
-  'ChannelCard must display webhook latency telemetry',
+  inboxListSource.includes('Search by name') &&
+    inboxListSource.includes('Click to Connect A Platform'),
+  'InboxList must provide name search and a connect-a-platform card',
+);
+for (const provider of CHANNEL_PROVIDER_TYPES) {
+  assert.ok(
+    platformsSource.includes(`${provider}: {`),
+    `Platform catalog must define an icon for provider ${provider}`,
+  );
+}
+assert.ok(
+  connectModalSource.includes('PLATFORMS.map') &&
+    connectModalSource.includes('<PlatformIcon') &&
+    connectModalSource.includes('Select the platform you wish to establish your new inbox'),
+  'ConnectPlatformModal must render an icon tile for every platform',
 );
 assert.ok(
-  channelHealthListSource.includes('ChannelHealthList'),
-  'ChannelHealthList component must be exported',
+  inboxSettingsSource.includes('AI Agent') &&
+    inboxSettingsSource.includes('Human Agent') &&
+    inboxSettingsSource.includes('Chat Distribution Method'),
+  'InboxSettingsPanel must expose AI agent, human agent and distribution settings',
 );
 assert.ok(
-  channelsPageSource.includes('handleReauthenticate'),
-  'Channels page must implement 1-click re-auth handler restoring operational status',
+  channelsPageSource.includes('handleReconnect') && channelsPageSource.includes('handleConnect'),
+  'Channels page must implement reconnect and connect handlers',
 );
-console.info('   ✓ UX-CHANNELS-001: ChannelCard, ChannelHealthList, and 1-click re-auth verified.');
+console.info(
+  '   ✓ UX-CHANNELS-001: Telemetry-free inbox cards, settings panel, and icon platform picker verified.',
+);
 
 // -------------------------------------------------------------
 // 2. Verify UX-AI-001 [P0]: AI Agent Supervisor Console & Sanitized Playground
@@ -204,8 +242,8 @@ console.info('\n5. Checking Section 47 Visual Quality Gate (8-Point Checklist)..
 
 // 1. Hierarchy: Visual anchor per screen, scannable in 3 seconds, no competing primaries
 assert.ok(
-  channelCardSource.includes('font-semibold') && channelCardSource.includes('text-xs'),
-  'Gate 1 (Hierarchy): Operational identity must have clear typography hierarchy',
+  inboxCardSource.includes('font-semibold') && inboxCardSource.includes('text-xs'),
+  'Gate 1 (Hierarchy): Inbox identity must have clear typography hierarchy',
 );
 assert.ok(
   aiPlaygroundSource.includes('role="alert"'),
@@ -213,10 +251,6 @@ assert.ok(
 );
 
 // 2. Density: Information-dense without clutter, compact enterprise layout, monospace for technical data
-assert.ok(
-  channelCardSource.includes('font-mono'),
-  'Gate 2 (Density): Channel telemetry must use monospace formatting',
-);
 assert.ok(
   aiPlaygroundSource.includes('font-mono'),
   'Gate 2 (Density): AI tokens and latency must use monospace formatting',
@@ -232,8 +266,8 @@ assert.ok(
 
 // 3. Consistency: Standard tokens, semantic card borders and palette
 assert.ok(
-  channelCardSource.includes('bg-card') && channelCardSource.includes('border-border'),
-  'Gate 3 (Consistency): Channel card must adhere to semantic tokens bg-card and border-border',
+  inboxCardSource.includes('hsl(var(--surface))') && inboxCardSource.includes('hsl(var(--border))'),
+  'Gate 3 (Consistency): Inbox card must use the semantic surface and border tokens',
 );
 assert.ok(
   aiPlaygroundSource.includes('bg-zinc-950') && aiPlaygroundSource.includes('border-zinc-800'),
@@ -259,12 +293,16 @@ assert.ok(
   blastDispatcherSource.includes('No rows found'),
   'Gate 5 (State Completeness): CSV table must have an explicit empty filter state',
 );
+assert.ok(
+  inboxListSource.includes('No channels match') && channelsPageSource.includes('No channels yet'),
+  'Gate 5 (State Completeness): Channels must have explicit empty search and no-inbox states',
+);
 
 // 6. Failure clarity: Actionable error messages with clear next steps
 assert.ok(
-  channelsPageSource.includes('OAuth token expired') &&
-    channelCardSource.includes('Re-authenticate Now'),
-  'Gate 6 (Failure Clarity): Channel disconnect must give actionable re-auth prompt',
+  inboxSettingsSource.includes('Reconnect it to keep receiving messages') &&
+    inboxSettingsSource.includes('onReconnect(inbox.id)'),
+  'Gate 6 (Failure Clarity): Channel disconnect must give an actionable reconnect prompt',
 );
 assert.ok(
   broadcastWizardSource.includes('Gate Blocker:') &&
@@ -285,11 +323,14 @@ assert.ok(
   aiPlaygroundSource.includes('role="alert"'),
   'Gate 7 (Accessibility): Critical guardrails must include role="alert"',
 );
+assert.ok(
+  connectModalSource.includes('aria-modal="true"') && channelsUiSource.includes('role="switch"'),
+  'Gate 7 (Accessibility): Connect dialog must be modal and settings toggles must be switches',
+);
 
 // 8. Anti-AI Slop: Zero gratuitous gradients, zero neon glow, authentic CRM tool aesthetic
 const allComponentsText = [
-  channelCardSource,
-  channelHealthListSource,
+  channelsModuleText,
   aiPlaygroundSource,
   aiConfigSource,
   broadcastWizardSource,
