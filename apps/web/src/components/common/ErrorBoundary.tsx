@@ -46,21 +46,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <div className="flex min-h-[400px] w-full flex-col items-center justify-center p-6 text-center">
-          <div className="mb-4 rounded-full bg-destructive/10 p-4 text-destructive">
+          <div className="mb-4 rounded-full bg-n-ruby-9/10 p-4 text-n-ruby-11">
             <AlertCircle className="h-10 w-10" />
           </div>
-          <h2 className="mb-2 text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="mb-2 text-2xl font-semibold tracking-tight text-n-slate-12">
             Something went wrong
           </h2>
-          <p className="mb-4 max-w-md text-sm text-muted-foreground">{message}</p>
+          <p className="mb-4 max-w-md text-sm text-n-slate-11">{message}</p>
 
-          <div className="mb-6 rounded-md bg-muted p-3 text-xs text-muted-foreground">
+          <div className="mb-6 rounded-md bg-n-alpha-2 p-3 text-xs text-n-slate-11">
             <div>
-              <span className="font-semibold text-foreground">Code: </span>
+              <span className="font-semibold text-n-slate-12">Code: </span>
               <code>{code}</code>
             </div>
             <div>
-              <span className="font-semibold text-foreground">Correlation ID: </span>
+              <span className="font-semibold text-n-slate-12">Correlation ID: </span>
               <code>{correlationId}</code>
             </div>
           </div>
@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <button
             type="button"
             onClick={this.handleReset}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex items-center gap-2 rounded-md bg-n-brand px-4 py-2 text-sm font-medium text-white shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-brand"
           >
             <RefreshCw className="h-4 w-4" />
             <span>Try Again</span>

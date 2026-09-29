@@ -101,59 +101,46 @@ export function TemplatePickerPopover({
   return (
     <div
       ref={containerRef}
-      className="absolute bottom-full mb-2 left-0 z-50 w-80 max-w-sm rounded-md border border-border bg-card p-1 shadow-xl animate-in fade-in slide-in-from-bottom-2 select-none"
+      role="listbox"
+      aria-label="Canned responses"
+      className="absolute bottom-full left-0 z-50 mb-2 w-80 max-w-[calc(100vw-2rem)] select-none rounded-xl border border-n-weak bg-n-alpha-3 p-2 text-sm shadow-sm backdrop-blur-[100px] animate-in fade-in slide-in-from-bottom-2 duration-150"
     >
-      <div className="flex items-center gap-1.5 border-b border-border px-2 py-1 text-[11px] font-semibold text-muted-foreground">
-        <Search className="h-3 w-3" />
-        <span>Select Template ({filtered.length})</span>
+      <div className="mb-2 mt-1 flex items-center gap-1.5 px-2 text-xs font-medium tracking-[0.2px] text-n-slate-10">
+        <Search className="size-3" />
+        <span>Canned responses ({filtered.length})</span>
       </div>
 
-      <div className="max-h-56 overflow-y-auto py-1">
+      <div className="grid max-h-56 gap-1 overflow-y-auto">
         {filtered.map((item, index) => {
           const isSelected = index === selectedIndex;
           return (
             <div
               key={item.trigger}
-              role="button"
-              tabIndex={0}
+              role="option"
+              aria-selected={isSelected}
+              tabIndex={-1}
               onClick={() => onSelect(item.content)}
               onMouseEnter={() => setSelectedIndex(index)}
               className={cn(
-                'flex flex-col gap-0.5 rounded-xs px-2.5 py-1.5 cursor-pointer text-left transition-colors',
-                isSelected
-                  ? 'bg-primary text-primary-foreground font-medium'
-                  : 'text-foreground hover:bg-muted',
+                'flex cursor-pointer flex-col gap-0.5 rounded-lg p-2 text-left text-n-slate-12 transition-colors',
+                isSelected && 'bg-n-alpha-2',
               )}
             >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] font-semibold">{item.trigger}</span>
-                <span
-                  className={cn(
-                    'text-[10px] rounded-xs px-1',
-                    isSelected
-                      ? 'bg-primary-foreground/20 text-primary-foreground'
-                      : 'bg-muted text-muted-foreground',
-                  )}
-                >
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-medium">{item.trigger}</span>
+                <span className="shrink-0 rounded-md bg-n-alpha-2 px-1.5 text-xs text-n-slate-11">
                   {item.category}
                 </span>
               </div>
-              <span
-                className={cn(
-                  'text-[11px] truncate',
-                  isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground',
-                )}
-              >
-                {item.title}
-              </span>
+              <span className="truncate text-xs text-n-slate-11">{item.title}</span>
             </div>
           );
         })}
       </div>
 
-      <div className="border-t border-border px-2 py-1 text-[10px] text-muted-foreground flex justify-between">
-        <span>↑↓ Navigate</span>
-        <span>↵ Insert Template</span>
+      <div className="mt-2 flex justify-between border-t border-n-weak px-2 pt-2 text-xs text-n-slate-10">
+        <span>↑↓ navigate</span>
+        <span>↵ insert</span>
       </div>
     </div>
   );

@@ -8,7 +8,16 @@ import type {
   BlastDispatcherState,
   RowValidationStatus,
 } from './types';
+import { MetricCard, StatusBadge, TH_CLASS, TD_CLASS } from '@/components/layout/Section';
+import { Banner, Button, Input, TabBar } from '@/components/ui';
 import { cn } from '@/lib/utils';
+
+const ROW_STATUS_TONE = {
+  VALID: 'teal',
+  INVALID_SYNTAX: 'ruby',
+  DUPLICATE: 'amber',
+  BLOCKED: 'iris',
+} as const;
 
 // Known blacklist of opted-out numbers for validation
 const MOCK_OPT_OUT_BLOCKLIST = new Set(['+6281299990001', '+6281100000000', '+6281988887777']);
@@ -243,36 +252,37 @@ export function BlastDispatcher() {
           }
         }}
         className={cn(
-          'border-2 border-dashed rounded-lg p-6 text-center transition-all bg-card',
-          isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-border-strong',
+          'rounded-xl border-2 border-dashed p-6 text-center transition-all',
+          isDragOver ? 'border-n-brand bg-n-brand/5' : 'border-n-strong hover:border-n-slate-7',
         )}
       >
         <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-surface border border-border flex items-center justify-center text-primary">
-            <UploadCloud className="w-6 h-6" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-n-alpha-2 text-n-blue-11">
+            <UploadCloud className="size-6" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="m-0 text-heading-3 text-n-slate-12">
               Drag & Drop your CSV recipient list here
             </h3>
-            <p className="text-xs text-muted-foreground mt-1 max-w-md">
+            <p className="m-0 mt-1 max-w-md text-sm text-n-slate-11">
               CSV file must contain columns for phone number, recipient name, and optional custom
               variables. Phones are validated against international E.164 syntax.
             </p>
           </div>
 
           <div className="flex items-center space-x-3 pt-2">
-            <label className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded text-xs font-semibold cursor-pointer transition-colors shadow-2xs">
+            <label className="inline-flex h-8 cursor-pointer items-center rounded-lg bg-n-brand px-3 text-sm text-white transition-all hover:brightness-110 focus-within:brightness-110">
               <span>Browse CSV File</span>
-              <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
+              <input type="file" accept=".csv" className="sr-only" onChange={handleFileUpload} />
             </label>
 
-            <button
+            <Button
+              size="sm"
+              color="slate"
+              variant="faded"
               onClick={handleLoadSample}
-              className="px-3.5 py-2 bg-surface hover:bg-muted text-foreground rounded text-xs font-medium border border-border transition-colors cursor-pointer"
-            >
-              Reload Sample Data (with syntax & opt-out errors)
-            </button>
+              label="Reload Sample Data (with syntax & opt-out errors)"
+            />
           </div>
         </div>
       </div>
@@ -281,94 +291,54 @@ export function BlastDispatcher() {
       {rows.length > 0 && (
         <div className="space-y-4">
           {/* KPI Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-card border border-border p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-muted-foreground uppercase">
-                Total Ingested
-              </div>
-              <div className="text-xl font-bold font-mono text-foreground mt-0.5">
-                {summary.totalRows}
-              </div>
-            </div>
-
-            <div className="bg-card border border-emerald-500/30 p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase">
-                Valid Rows
-              </div>
-              <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
-                {summary.validCount}
-              </div>
-            </div>
-
-            <div className="bg-card border border-destructive/30 p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-destructive uppercase">Invalid Syntax</div>
-              <div className="text-xl font-bold font-mono text-destructive mt-0.5">
-                {summary.invalidSyntaxCount}
-              </div>
-            </div>
-
-            <div className="bg-card border border-amber-500/30 p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 uppercase">
-                Duplicates
-              </div>
-              <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">
-                {summary.duplicateCount}
-              </div>
-            </div>
-
-            <div className="bg-card border border-purple-500/30 p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] font-mono text-purple-600 dark:text-purple-400 uppercase">
-                Blocked / Opt-Out
-              </div>
-              <div className="text-xl font-bold font-mono text-purple-600 dark:text-purple-400 mt-0.5">
-                {summary.blockedCount}
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <MetricCard label="Total ingested" value={summary.totalRows} />
+            <MetricCard label="Valid rows" value={summary.validCount} tone="teal" />
+            <MetricCard label="Invalid syntax" value={summary.invalidSyntaxCount} tone="ruby" />
+            <MetricCard label="Duplicates" value={summary.duplicateCount} tone="amber" />
+            <MetricCard label="Blocked / opt-out" value={summary.blockedCount} />
           </div>
 
           {/* Rejection Export Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-surface border border-border rounded-lg text-xs shadow-2xs">
-            <div className="flex items-center space-x-2">
-              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span className="text-foreground">
-                <strong>{rejectedRows.length} rows rejected</strong> across syntax, duplicates, and
-                opt-out suppression filters.
+          <Banner color="amber" icon={<ShieldAlert className="size-4" />} className="flex-wrap">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                <strong className="font-medium">{rejectedRows.length} rows rejected</strong> across
+                syntax, duplicates, and opt-out suppression filters.
               </span>
             </div>
-
-            <div className="flex items-center space-x-2">
-              {rejectedRows.length > 0 && (
-                <button
-                  onClick={handleExportRejections}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-surface hover:bg-muted text-foreground rounded font-semibold text-xs border border-border transition-colors shadow-2xs cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Export Rejections as CSV ({rejectedRows.length})</span>
-                </button>
-              )}
-
-              {state !== 'DISPATCHING' && state !== 'FINISHED' && (
-                <button
-                  onClick={handleStartDispatch}
-                  disabled={summary.validCount === 0}
-                  className="flex items-center space-x-1.5 px-4 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground rounded font-bold text-xs transition-colors shadow-2xs cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Dispatch Valid Recipients ({summary.validCount})</span>
-                </button>
-              )}
-            </div>
+          </Banner>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {rejectedRows.length > 0 && (
+              <Button
+                size="sm"
+                color="slate"
+                variant="faded"
+                icon={Download}
+                onClick={handleExportRejections}
+                label={`Export Rejections as CSV (${rejectedRows.length})`}
+              />
+            )}
+            {state !== 'DISPATCHING' && state !== 'FINISHED' && (
+              <Button
+                size="sm"
+                icon={Send}
+                onClick={handleStartDispatch}
+                disabled={summary.validCount === 0}
+                label={`Dispatch Valid Recipients (${summary.validCount})`}
+              />
+            )}
           </div>
 
           {/* Dispatch Progress (When active) */}
           {(state === 'DISPATCHING' || state === 'FINISHED') && (
-            <div className="p-4 bg-surface border border-border rounded-lg space-y-2">
-              <div className="flex justify-between text-xs text-foreground font-mono">
+            <div className="space-y-2 rounded-xl bg-n-solid-2 p-4 outline outline-1 -outline-offset-1 outline-n-container">
+              <div className="flex justify-between text-sm text-n-slate-12">
                 <span className="flex items-center space-x-2">
                   {state === 'DISPATCHING' ? (
-                    <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                    <span className="w-2 h-2 rounded-full bg-n-brand animate-ping" />
                   ) : (
-                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Check className="w-4 h-4 text-n-teal-11" />
                   )}
                   <span>
                     {state === 'DISPATCHING'
@@ -380,9 +350,9 @@ export function BlastDispatcher() {
                   {dispatchedCount} / {summary.validCount} msgs
                 </span>
               </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden border border-border">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-n-alpha-2">
                 <div
-                  className="h-full bg-primary transition-all duration-200"
+                  className="h-full bg-n-brand transition-all duration-200"
                   style={{
                     width: `${Math.round((dispatchedCount / summary.validCount) * 100)}%`,
                   }}
@@ -392,101 +362,55 @@ export function BlastDispatcher() {
           )}
 
           {/* Categorized Filter Tabs & Search */}
-          <div className="bg-card border border-border rounded-lg overflow-hidden shadow-2xs">
-            <div className="p-3 bg-surface border-b border-border flex flex-wrap items-center justify-between gap-3">
-              {/* Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <button
-                  onClick={() => setActiveTab('ALL')}
-                  className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium cursor-pointer',
-                    activeTab === 'ALL'
-                      ? 'bg-card text-foreground font-semibold shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  All Ingested ({summary.totalRows})
-                </button>
-                <button
-                  onClick={() => setActiveTab('VALID')}
-                  className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
-                    activeTab === 'VALID'
-                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold'
-                      : 'text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400',
-                  )}
-                >
-                  <span>Valid</span>
-                  <span className="font-mono text-[10px]">({summary.validCount})</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('INVALID_SYNTAX')}
-                  className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
-                    activeTab === 'INVALID_SYNTAX'
-                      ? 'bg-destructive/10 text-destructive border border-destructive/30 font-semibold'
-                      : 'text-muted-foreground hover:text-destructive',
-                  )}
-                >
-                  <span>Invalid Syntax</span>
-                  <span className="font-mono text-[10px]">({summary.invalidSyntaxCount})</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('DUPLICATE')}
-                  className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
-                    activeTab === 'DUPLICATE'
-                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-semibold'
-                      : 'text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400',
-                  )}
-                >
-                  <span>Duplicates</span>
-                  <span className="font-mono text-[10px]">({summary.duplicateCount})</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('BLOCKED')}
-                  className={cn(
-                    'px-2.5 py-1 rounded transition-colors font-medium flex items-center space-x-1 cursor-pointer',
-                    activeTab === 'BLOCKED'
-                      ? 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/30 font-semibold'
-                      : 'text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400',
-                  )}
-                >
-                  <span>Blocked / Opt-Out</span>
-                  <span className="font-mono text-[10px]">({summary.blockedCount})</span>
-                </button>
-              </div>
-
-              {/* Search */}
-              <div className="relative w-64">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Filter row contents..."
-                  className="w-full bg-background border border-border rounded pl-8 pr-3 py-1 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
+              <div className="max-w-full overflow-x-auto">
+                <TabBar
+                  ariaLabel="Filter rows by validation status"
+                  value={activeTab}
+                  onChange={(value) => setActiveTab(value as typeof activeTab)}
+                  tabs={[
+                    { value: 'ALL', label: 'All Ingested', count: summary.totalRows },
+                    { value: 'VALID', label: 'Valid', count: summary.validCount },
+                    {
+                      value: 'INVALID_SYNTAX',
+                      label: 'Invalid Syntax',
+                      count: summary.invalidSyntaxCount,
+                    },
+                    { value: 'DUPLICATE', label: 'Duplicates', count: summary.duplicateCount },
+                    { value: 'BLOCKED', label: 'Blocked / Opt-Out', count: summary.blockedCount },
+                  ]}
                 />
               </div>
+              <Input
+                size="sm"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter row contents..."
+                aria-label="Filter row contents"
+                prefix={<Search className="size-3.5" />}
+                containerClassName="w-full sm:w-64"
+              />
             </div>
 
             {/* Granular Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-foreground">
-                <thead className="bg-surface text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border font-mono">
+              <table className="min-w-full table-auto divide-y divide-n-weak text-left">
+                <thead className="border-t border-n-weak">
                   <tr>
-                    <th className="py-2.5 px-3 w-16">Row #</th>
-                    <th className="py-2.5 px-3">Phone (E.164)</th>
-                    <th className="py-2.5 px-3">Recipient Name</th>
-                    <th className="py-2.5 px-3">Variable 1</th>
-                    <th className="py-2.5 px-3">Validation Status</th>
-                    <th className="py-2.5 px-3">Error / Rejection Reason</th>
+                    <th className={cn(TH_CLASS, 'w-16')}>Row</th>
+                    <th className={TH_CLASS}>Phone (E.164)</th>
+                    <th className={TH_CLASS}>Recipient</th>
+                    <th className={TH_CLASS}>Variable 1</th>
+                    <th className={TH_CLASS}>Status</th>
+                    <th className={TH_CLASS}>Rejection Reason</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border font-sans">
+                <tbody className="divide-y divide-n-weak text-n-slate-11">
                   {filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                      <td colSpan={6} className="py-20 text-center text-body-main text-n-slate-11">
                         No rows found matching current tab and filter criteria.
                       </td>
                     </tr>
@@ -494,51 +418,30 @@ export function BlastDispatcher() {
                     filteredRows.map((row) => (
                       <tr
                         key={row.rowNumber}
-                        className={cn(
-                          'hover:bg-muted/40 transition-colors',
-                          row.status !== 'VALID' && 'bg-muted/10',
-                        )}
+                        className={cn(row.status !== 'VALID' && 'bg-n-alpha-1')}
                       >
-                        <td className="py-2.5 px-3 font-mono text-muted-foreground">
-                          {row.rowNumber}
+                        <td className={cn(TD_CLASS, 'tabular-nums')}>{row.rowNumber}</td>
+                        <td className={cn(TD_CLASS, 'font-mono text-n-slate-12')}>{row.phone}</td>
+                        <td className={cn(TD_CLASS, 'text-n-slate-12')}>{row.name}</td>
+                        <td className={cn(TD_CLASS, 'font-mono')}>{row.variable1 || '—'}</td>
+                        <td className={TD_CLASS}>
+                          <StatusBadge tone={ROW_STATUS_TONE[row.status]}>
+                            {row.status.replace('_', ' ').toLowerCase()}
+                          </StatusBadge>
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-medium text-foreground">
-                          {row.phone}
-                        </td>
-                        <td className="py-2.5 px-3 font-medium text-foreground">{row.name}</td>
-                        <td className="py-2.5 px-3 font-mono text-muted-foreground">
-                          {row.variable1 || '—'}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={cn(
-                              'px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider',
-                              row.status === 'VALID' &&
-                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30',
-                              row.status === 'INVALID_SYNTAX' &&
-                                'bg-destructive/10 text-destructive border border-destructive/30',
-                              row.status === 'DUPLICATE' &&
-                                'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30',
-                              row.status === 'BLOCKED' &&
-                                'bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/30',
-                            )}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-[11px]">
+                        <td className={cn(TD_CLASS, 'text-sm')}>
                           {row.rejectionReason ? (
                             <span
                               className={cn(
-                                row.status === 'INVALID_SYNTAX' && 'text-destructive',
-                                row.status === 'DUPLICATE' && 'text-amber-700 dark:text-amber-400',
-                                row.status === 'BLOCKED' && 'text-purple-700 dark:text-purple-400',
+                                row.status === 'INVALID_SYNTAX' && 'text-n-ruby-11',
+                                row.status === 'DUPLICATE' && 'text-n-amber-11',
+                                row.status === 'BLOCKED' && 'text-n-iris-11',
                               )}
                             >
                               {row.rejectionReason}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground italic">Validation passed</span>
+                            <span className="text-n-slate-11 italic">Validation passed</span>
                           )}
                         </td>
                       </tr>

@@ -1,9 +1,9 @@
 import React from 'react';
-import { MessageSquare, Mail, Send, Globe, MessageCircle } from 'lucide-react';
+import { Globe, Mail, MessageCircle, MessageSquare, Send } from 'lucide-react';
 import type { ChannelType } from '@vynor/contracts';
 import { cn } from '@/lib/utils';
 
-function InstagramIcon({ className }: { className?: string }) {
+function InstagramIcon({ className }: { className?: string | undefined }) {
   return (
     <svg
       className={className}
@@ -13,6 +13,7 @@ function InstagramIcon({ className }: { className?: string }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
@@ -21,68 +22,62 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-interface ChannelBadgeProps {
-  channel: ChannelType;
-  showLabel?: boolean;
-  className?: string;
+type IconComponent = React.ComponentType<{ className?: string | undefined }>;
+
+export const CHANNEL_META: Record<string, { label: string; icon: IconComponent }> = {
+  WHATSAPP: { label: 'WhatsApp', icon: MessageCircle },
+  INSTAGRAM: { label: 'Instagram', icon: InstagramIcon },
+  TELEGRAM: { label: 'Telegram', icon: Send },
+  EMAIL: { label: 'Email', icon: Mail },
+  MESSENGER: { label: 'Messenger', icon: MessageSquare },
+  LINE: { label: 'Line', icon: MessageSquare },
+  WEBCHAT: { label: 'Webchat', icon: Globe },
+};
+
+export function channelMeta(channel: ChannelType | string) {
+  return CHANNEL_META[channel] ?? { label: String(channel), icon: Globe };
 }
 
-export function ChannelBadge({ channel, showLabel = false, className }: ChannelBadgeProps) {
-  const config = {
-    WHATSAPP: {
-      label: 'WhatsApp',
-      icon: MessageCircle,
-      bg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
-    },
-    INSTAGRAM: {
-      label: 'Instagram',
-      icon: InstagramIcon,
-      bg: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30',
-    },
-    TELEGRAM: {
-      label: 'Telegram',
-      icon: Send,
-      bg: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30',
-    },
-    EMAIL: {
-      label: 'Email',
-      icon: Mail,
-      bg: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/30',
-    },
-    MESSENGER: {
-      label: 'Messenger',
-      icon: MessageSquare,
-      bg: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    },
-    LINE: {
-      label: 'Line',
-      icon: MessageSquare,
-      bg: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30',
-    },
-    WEBCHAT: {
-      label: 'Webchat',
-      icon: Globe,
-      bg: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30',
-    },
-  }[channel] || {
-    label: channel,
-    icon: Globe,
-    bg: 'bg-muted text-muted-foreground border-border',
-  };
+interface ChannelBadgeProps {
+  channel: ChannelType;
+  /** Inbox-name pill (icon + label) instead of the round icon. */
+  showLabel?: boolean | undefined;
+  className?: string | undefined;
+}
 
-  const Icon = config.icon;
+/**
+ * Inbox/channel indicator. Default: VYNOR ConversationCard inbox icon —
+ * `rounded-full bg-n-alpha-2 size-5` with a `size-3 text-n-slate-11` glyph.
+ * With `showLabel`: VYNOR `InboxName` pill.
+ */
+export function ChannelBadge({ channel, showLabel = false, className }: ChannelBadgeProps) {
+  const { label, icon: Icon } = channelMeta(channel);
+
+  if (showLabel) {
+    return (
+      <span
+        title={`Inbox: ${label}`}
+        className={cn(
+          'inline-flex h-6 shrink-0 select-none items-center gap-1.5 rounded-md bg-n-alpha-2 px-2 text-xs text-n-slate-11',
+          className,
+        )}
+      >
+        <Icon className="size-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
+      </span>
+    );
+  }
 
   return (
     <span
+      title={label}
+      aria-label={`Inbox: ${label}`}
       className={cn(
-        'inline-flex items-center gap-1 rounded-xs border px-1.5 py-0.5 text-[10px] font-medium leading-none select-none',
-        config.bg,
+        'flex size-5 shrink-0 items-center justify-center rounded-full bg-n-alpha-2',
         className,
       )}
-      title={`Channel: ${config.label}`}
     >
-      <Icon className="h-3 w-3 shrink-0" />
-      {showLabel && <span>{config.label}</span>}
+      <Icon className="size-3 shrink-0 text-n-slate-11" />
     </span>
   );
 }

@@ -1,38 +1,43 @@
 'use client';
 
 import React from 'react';
-import { Eye, Edit3 } from 'lucide-react';
+import { Eye, PenLine } from 'lucide-react';
+import { Banner } from '@/components/ui';
 
 interface CollisionBannerProps {
-  viewingAgentName?: string | null;
-  typingAgentName?: string | null;
+  viewingAgentName?: string | null | undefined;
+  typingAgentName?: string | null | undefined;
 }
 
+/** Realtime Collision Shield — shown on top of the messages as a VYNOR amber `Banner`. */
 export function CollisionBanner({ viewingAgentName, typingAgentName }: CollisionBannerProps) {
   if (!viewingAgentName && !typingAgentName) return null;
 
   return (
-    <div className="shrink-0 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between animate-in fade-in select-none">
-      <div className="flex items-center gap-2">
+    <div className="shrink-0 px-3 pt-3">
+      <Banner
+        color="amber"
+        role="status"
+        icon={
+          typingAgentName ? (
+            <PenLine className="size-4 animate-loader-pulse" />
+          ) : (
+            <Eye className="size-4" />
+          )
+        }
+        className="animate-in fade-in duration-200"
+      >
         {typingAgentName ? (
-          <>
-            <Edit3 className="h-3.5 w-3.5 animate-pulse text-amber-600" />
-            <span className="font-medium">
-              <strong className="font-semibold">{typingAgentName}</strong> is typing a reply...
-            </span>
-          </>
+          <span>
+            <strong className="font-medium">{typingAgentName}</strong> is typing a reply…
+          </span>
         ) : (
-          <>
-            <Eye className="h-3.5 w-3.5 text-amber-600" />
-            <span>
-              Agent <strong className="font-semibold">{viewingAgentName}</strong> is currently
-              viewing this conversation.
-            </span>
-          </>
+          <span>
+            <strong className="font-medium">{viewingAgentName}</strong> is also viewing this
+            conversation · Collision Shield
+          </span>
         )}
-      </div>
-
-      <span className="text-[10px] text-amber-700/80 font-mono">Realtime Collision Shield</span>
+      </Banner>
     </div>
   );
 }

@@ -141,8 +141,8 @@ export function RichTextEditor({ html, onChange, onError }: RichTextEditorProps)
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => run(command)}
       className={cn(
-        'inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-n-slate-11 transition-colors hover:bg-[hsl(var(--muted))]',
-        active[command] && 'bg-[var(--brand-2)] text-[var(--brand-11)]',
+        'inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-n-slate-11 transition-colors hover:bg-n-slate-3',
+        active[command] && 'bg-n-blue-2 text-n-blue-11',
       )}
     >
       <Icon className="size-4" />
@@ -150,25 +150,25 @@ export function RichTextEditor({ html, onChange, onError }: RichTextEditorProps)
   );
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))]">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-n-weak bg-n-solid-2">
       <div
         role="toolbar"
         aria-label="Formatting"
-        className="flex flex-wrap items-center gap-1 border-b border-[hsl(var(--border))] px-3 py-2"
+        className="flex flex-wrap items-center gap-1 border-b border-n-weak px-3 py-2"
       >
         {tool('undo', 'Undo', Undo2)}
         {tool('redo', 'Redo', Redo2)}
-        <span className="mx-1 h-5 w-px bg-[hsl(var(--border))]" />
+        <span className="mx-1 h-5 w-px bg-n-slate-4" />
         {tool('bold', 'Bold', Bold)}
         {tool('italic', 'Italic', Italic)}
-        <span className="mx-1 h-5 w-px bg-[hsl(var(--border))]" />
+        <span className="mx-1 h-5 w-px bg-n-slate-4" />
         <button
           type="button"
           aria-label="Insert image"
           title="Insert image"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => imageInput.current?.click()}
-          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-n-slate-11 hover:bg-[hsl(var(--muted))]"
+          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-n-slate-11 hover:bg-n-slate-3"
         >
           <ImagePlus className="size-4" />
         </button>
@@ -182,7 +182,7 @@ export function RichTextEditor({ html, onChange, onError }: RichTextEditorProps)
             e.target.value = '';
           }}
         />
-        <span className="mx-1 h-5 w-px bg-[hsl(var(--border))]" />
+        <span className="mx-1 h-5 w-px bg-n-slate-4" />
         {tool('justifyLeft', 'Align left', AlignLeft)}
         {tool('justifyCenter', 'Align center', AlignCenter)}
         {tool('justifyRight', 'Align right', AlignRight)}
@@ -205,10 +205,10 @@ export function RichTextEditor({ html, onChange, onError }: RichTextEditorProps)
           run('insertText', e.clipboardData.getData('text/plain'));
         }}
         onDrop={(e) => e.preventDefault()}
-        className="min-h-[420px] overflow-y-auto px-5 py-4 text-sm leading-relaxed text-[hsl(var(--foreground))] outline-none empty:before:text-[hsl(var(--muted-foreground))] empty:before:content-['Write_what_the_AI_should_know,_for_example_opening_hours,_address,_and_policies.'] [&_img]:my-2 [&_img]:max-h-64 [&_img]:rounded-lg"
+        className="min-h-[420px] overflow-y-auto px-5 py-4 text-sm leading-relaxed text-n-slate-12 outline-none empty:before:text-n-slate-11 empty:before:content-['Write_what_the_AI_should_know,_for_example_opening_hours,_address,_and_policies.'] [&_img]:my-2 [&_img]:max-h-64 [&_img]:rounded-lg"
       />
 
-      <div className="border-t border-[hsl(var(--border))] px-5 py-2.5 text-sm tabular-nums text-n-slate-11">
+      <div className="border-t border-n-weak px-5 py-2.5 text-sm tabular-nums text-n-slate-11">
         {htmlToText(html).length.toLocaleString('en-US')} Characters
       </div>
     </div>

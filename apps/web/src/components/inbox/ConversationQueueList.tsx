@@ -1,168 +1,182 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Search, Inbox } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Inbox, ListFilter, Menu, Search } from 'lucide-react';
 import type { ConversationSummary } from './types';
 import { ConversationRow } from './ConversationRow';
 import { useUiStore } from '@/lib/store/ui-store';
+import { EmptyState } from '@/components/common/EmptyState';
+import { Button, Input, Select, UnderlineTabs } from '@/components/ui';
 import { cn } from '@/lib/utils';
+
+export type QueueTab = 'mine' | 'unassigned' | 'all';
+
+export interface QueueFilters {
+  tab: QueueTab;
+  channel: string;
+  query: string;
+  currentUserId: string;
+}
+
+/** Filters the queue exactly like the list renders it (shared with J/K navigation). */
+export function filterQueue(
+  conversations: ConversationSummary[],
+  { tab, channel, query, currentUserId }: QueueFilters,
+): ConversationSummary[] {
+  const q = query.trim().toLowerCase();
+  return conversations.filter((c) => {
+    if (tab === 'unassigned' && (c.assignedAgentId || c.status === 'RESOLVED')) return false;
+    if (tab === 'mine' && (c.assignedAgentId !== currentUserId || c.status === 'RESOLVED')) {
+      return false;
+    }
+    if (channel !== 'ALL' && c.channel !== channel) return false;
+    if (q) {
+      const haystack = [c.customerName, c.lastMessageSnippet, c.customerIdentifier, ...c.tags]
+        .join(' ')
+        .toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+}
 
 interface ConversationQueueListProps {
   conversations: ConversationSummary[];
   selectedId: string | null;
   onSelectConversation: (id: string) => void;
-  currentUserId?: string;
+  currentUserId?: string | undefined;
+  channel: string;
+  onChannelChange: (channel: string) => void;
+  query: string;
+  onQueryChange: (query: string) => void;
 }
 
+/**
+ * Conversation list panel — port of VYNOR `components/ChatList.vue`:
+ * `ChatListHeader` (`h-[3.25rem]`, `text-base font-medium` title + status chip),
+ * `ChatTypeTabs` (Mine / Unassigned / All) and the scrolling card list.
+ */
 export function ConversationQueueList({
   conversations,
   selectedId,
   onSelectConversation,
   currentUserId = 'usr_agent_01',
+  channel,
+  onChannelChange,
+  query,
+  onQueryChange,
 }: ConversationQueueListProps) {
-  const { activeQueueTab, setActiveQueueTab } = useUiStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
+  const { activeQueueTab, setActiveQueueTab, toggleSidebar } = useUiStore();
+  const [showFilters, setShowFilters] = useState(false);
+  const hasActiveFilters = channel !== 'ALL' || query.trim().length > 0;
 
-  // Counts for each tab
-  const unassignedCount = useMemo(
-    () => conversations.filter((c) => !c.assignedAgentId && c.status !== 'RESOLVED').length,
-    [conversations],
+  const counts = useMemo(() => {
+    const open = conversations.filter((c) => c.status !== 'RESOLVED');
+    return {
+      mine: open.filter((c) => c.assignedAgentId === currentUserId).length,
+      unassigned: open.filter((c) => !c.assignedAgentId).length,
+      all: open.length,
+    };
+  }, [conversations, currentUserId]);
+
+  const filteredConversations = useMemo(
+    () => filterQueue(conversations, { tab: activeQueueTab, channel, query, currentUserId }),
+    [conversations, activeQueueTab, channel, query, currentUserId],
   );
-  const myCount = useMemo(
-    () =>
-      conversations.filter((c) => c.assignedAgentId === currentUserId && c.status !== 'RESOLVED')
-        .length,
-    [conversations],
-  );
-  const allCount = useMemo(
-    () => conversations.filter((c) => c.status !== 'RESOLVED').length,
-    [conversations],
-  );
-
-  // Filter conversations according to active tab, channel, and search query
-  const filteredConversations = useMemo(() => {
-    return conversations.filter((c) => {
-      // Tab filter
-      if (activeQueueTab === 'unassigned') {
-        if (c.assignedAgentId || c.status === 'RESOLVED') return false;
-      } else if (activeQueueTab === 'mine') {
-        if (c.assignedAgentId !== currentUserId || c.status === 'RESOLVED') return false;
-      }
-
-      // Channel filter
-      if (selectedChannel !== 'ALL' && c.channel !== selectedChannel) {
-        return false;
-      }
-
-      // Search query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = c.customerName.toLowerCase().includes(q);
-        const matchesSnippet = c.lastMessageSnippet.toLowerCase().includes(q);
-        const matchesPhone = c.customerIdentifier.toLowerCase().includes(q);
-        const matchesTag = c.tags.some((t) => t.toLowerCase().includes(q));
-        if (!matchesName && !matchesSnippet && !matchesPhone && !matchesTag) return false;
-      }
-
-      return true;
-    });
-  }, [conversations, activeQueueTab, selectedChannel, searchQuery, currentUserId]);
 
   return (
-    <div className="flex h-full w-full flex-col border-r border-border bg-card">
-      {/* Top Header: Queue Tabs */}
-      <div className="border-b border-border p-2">
-        <div className="grid grid-cols-3 gap-1 rounded-xs bg-muted/60 p-0.5 text-xs font-medium">
-          <button
-            type="button"
-            onClick={() => setActiveQueueTab('unassigned')}
-            className={cn(
-              'flex items-center justify-center gap-1.5 rounded-xs py-1.5 text-xs transition-all select-none',
-              activeQueueTab === 'unassigned'
-                ? 'bg-card text-foreground font-semibold shadow-xs'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <span>Unassigned</span>
-            {unassignedCount > 0 && (
-              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500/20 px-1 font-mono text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                {unassignedCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveQueueTab('mine')}
-            className={cn(
-              'flex items-center justify-center gap-1.5 rounded-xs py-1.5 text-xs transition-all select-none',
-              activeQueueTab === 'mine'
-                ? 'bg-card text-foreground font-semibold shadow-xs'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <span>Mine</span>
-            {myCount > 0 && (
-              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary/20 px-1 font-mono text-[10px] font-bold text-primary">
-                {myCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveQueueTab('all')}
-            className={cn(
-              'flex items-center justify-center gap-1.5 rounded-xs py-1.5 text-xs transition-all select-none',
-              activeQueueTab === 'all'
-                ? 'bg-card text-foreground font-semibold shadow-xs'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <span>All</span>
-            <span className="font-mono text-[10px] text-muted-foreground">({allCount})</span>
-          </button>
+    <div className="flex h-full w-full flex-col bg-n-surface-1">
+      {/* ChatListHeader */}
+      <div
+        className={cn(
+          'flex h-[3.25rem] shrink-0 items-center justify-between gap-2 px-3',
+          hasActiveFilters && 'border-b border-n-strong',
+        )}
+      >
+        <div className="flex min-w-0 items-center justify-center">
+          <Button
+            variant="ghost"
+            color="slate"
+            size="sm"
+            icon={Menu}
+            aria-label="Open navigation"
+            onClick={toggleSidebar}
+            className="-ms-1 me-1 md:hidden"
+          />
+          <h1 className="truncate text-base font-medium text-n-slate-12" title="Conversations">
+            Conversations
+          </h1>
+          <span className="mx-1 my-0.5 shrink-0 rounded-md bg-n-slate-3 px-2 py-1 text-xxs capitalize text-n-slate-12">
+            {hasActiveFilters ? filteredConversations.length : 'Open'}
+          </span>
         </div>
+        <div className="relative flex items-center gap-1">
+          <Button
+            variant="faded"
+            color="slate"
+            size="xs"
+            icon={ListFilter}
+            aria-label="Filter conversations"
+            aria-expanded={showFilters}
+            title="Filter conversations (/ to search)"
+            onClick={() => setShowFilters((open) => !open)}
+          />
+          {hasActiveFilters && (
+            <span className="pointer-events-none absolute right-0 top-0 size-2 rounded-full bg-n-brand" />
+          )}
+        </div>
+      </div>
 
-        {/* Search & Channel Filter Bar */}
-        <div className="mt-2 flex items-center gap-1.5">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search queue... (/ to filter)"
-              className="h-8 w-full rounded-xs border border-border bg-surface pl-8 pr-2.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:border-primary"
-            />
-          </div>
+      {/* ChatTypeTabs */}
+      <UnderlineTabs<QueueTab>
+        ariaLabel="Conversation queues"
+        className="-mt-1 h-10 w-full shrink-0 px-3"
+        value={activeQueueTab}
+        onChange={setActiveQueueTab}
+        tabs={[
+          { value: 'mine', label: 'Mine', count: counts.mine },
+          { value: 'unassigned', label: 'Unassigned', count: counts.unassigned },
+          { value: 'all', label: 'All', count: counts.all },
+        ]}
+      />
 
-          <select
-            value={selectedChannel}
-            onChange={(e) => setSelectedChannel(e.target.value)}
+      {showFilters && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-n-weak px-3 py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+          <Input
+            size="sm"
+            type="search"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Search conversations…"
+            aria-label="Search conversations"
+            prefix={<Search className="size-3.5" />}
+            containerClassName="flex-1"
+          />
+          <Select
+            size="sm"
+            value={channel}
+            onChange={(e) => onChannelChange(e.target.value)}
             aria-label="Filter queue by channel"
-            className="h-8 rounded-xs border border-border bg-surface px-2 text-[11px] text-muted-foreground focus-visible:outline-hidden"
+            containerClassName="w-32 shrink-0"
           >
-            <option value="ALL">All Channels</option>
+            <option value="ALL">All inboxes</option>
             <option value="WHATSAPP">WhatsApp</option>
             <option value="INSTAGRAM">Instagram</option>
             <option value="TELEGRAM">Telegram</option>
             <option value="EMAIL">Email</option>
-          </select>
+          </Select>
         </div>
-      </div>
+      )}
 
-      {/* Conversation List Scroll Area */}
-      <div className="flex-1 overflow-y-auto divide-y divide-border/30">
+      {/* Conversation cards */}
+      <div role="listbox" aria-label="Conversations" className="min-h-0 flex-1 overflow-y-auto">
         {filteredConversations.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center p-4 text-center">
-            <Inbox className="h-8 w-8 text-muted-foreground/60 mb-2" />
-            <p className="text-xs font-medium text-foreground">No conversations</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              All messages in this queue are currently resolved or filtered out.
-            </p>
-          </div>
+          <EmptyState
+            compact
+            icon={<Inbox className="size-5" />}
+            title="No conversations"
+            description="Every conversation in this queue is resolved or filtered out."
+          />
         ) : (
           filteredConversations.map((conv) => (
             <ConversationRow

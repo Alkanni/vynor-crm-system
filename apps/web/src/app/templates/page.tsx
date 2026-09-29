@@ -1,20 +1,22 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  FileCode,
-  Search,
-  Plus,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Copy,
   Check,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Copy,
+  ExternalLink,
   FileText,
   Image as ImageIcon,
-  ChevronRight,
-  ExternalLink,
+  Plus,
+  Search,
+  XCircle,
 } from 'lucide-react';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { SectionCard, StatusBadge } from '@/components/layout/Section';
+import { Button, CardLayout, Input, Label, TabBar, useToast } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 type TemplateCategory = 'QUICK_REPLY' | 'WHATSAPP_HSM' | 'MEDIA_ASSET';
@@ -206,6 +208,15 @@ const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
   },
 ];
 
+const APPROVAL_BADGE: Record<
+  ApprovalStatus,
+  { tone: 'teal' | 'amber' | 'ruby'; icon: React.ReactNode }
+> = {
+  APPROVED: { tone: 'teal', icon: <CheckCircle2 className="size-3" /> },
+  PENDING: { tone: 'amber', icon: <Clock className="size-3" /> },
+  REJECTED: { tone: 'ruby', icon: <XCircle className="size-3" /> },
+};
+
 export default function TemplatesPage() {
   const [activeTab, setActiveTab] = useState<TemplateCategory>('WHATSAPP_HSM');
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,6 +224,7 @@ export default function TemplatesPage() {
     INITIAL_HSM_TEMPLATES[0] as HsmTemplate,
   );
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const toast = useToast();
 
   // Live variable preview replacement
   const livePreviewBody = useMemo(() => {
@@ -224,364 +236,254 @@ export default function TemplatesPage() {
   }, [selectedHsm]);
 
   const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard?.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1800);
   };
 
+  const q = searchQuery.toLowerCase();
   const filteredQuickReplies = INITIAL_QUICK_REPLIES.filter(
     (qr) =>
-      qr.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      qr.shortcut.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      qr.content.toLowerCase().includes(searchQuery.toLowerCase()),
+      qr.title.toLowerCase().includes(q) ||
+      qr.shortcut.toLowerCase().includes(q) ||
+      qr.content.toLowerCase().includes(q),
   );
-
   const filteredHsm = INITIAL_HSM_TEMPLATES.filter(
     (hsm) =>
-      hsm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hsm.bodyText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hsm.status.toLowerCase().includes(searchQuery.toLowerCase()),
+      hsm.name.toLowerCase().includes(q) ||
+      hsm.bodyText.toLowerCase().includes(q) ||
+      hsm.status.toLowerCase().includes(q),
+  );
+  const filteredMedia = INITIAL_MEDIA_ASSETS.filter(
+    (med) => med.title.toLowerCase().includes(q) || med.fileName.toLowerCase().includes(q),
   );
 
-  const filteredMedia = INITIAL_MEDIA_ASSETS.filter(
-    (med) =>
-      med.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      med.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
+  const copyButton = (id: string, text: string) => (
+    <Button
+      variant="ghost"
+      color="slate"
+      size="xs"
+      icon={copiedId === id ? Check : Copy}
+      label={copiedId === id ? 'Copied' : 'Copy'}
+      onClick={() => handleCopy(id, text)}
+      className={cn(copiedId === id && '!text-n-teal-11')}
+    />
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <FileCode className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Templates & Canned Responses
-            </h1>
+    <PageLayout
+      title="Templates"
+      width="wide"
+      actions={
+        <Button
+          size="sm"
+          icon={Plus}
+          label="New template"
+          onClick={() =>
+            toast.show('The template editor opens in the production workspace.', 'info')
+          }
+        />
+      }
+      toolbar={
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-full overflow-x-auto">
+            <TabBar<TemplateCategory>
+              ariaLabel="Template categories"
+              value={activeTab}
+              onChange={setActiveTab}
+              tabs={[
+                { value: 'WHATSAPP_HSM', label: 'Meta HSM', count: INITIAL_HSM_TEMPLATES.length },
+                {
+                  value: 'QUICK_REPLY',
+                  label: 'Canned responses',
+                  count: INITIAL_QUICK_REPLIES.length,
+                },
+                { value: 'MEDIA_ASSET', label: 'Media', count: INITIAL_MEDIA_ASSETS.length },
+              ]}
+            />
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Meta WhatsApp HSM templates library, slash-command canned shortcuts, and verified media
-            assets
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary-hover transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Template</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="inline-flex items-center rounded-sm border border-border bg-muted/40 p-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('WHATSAPP_HSM')}
-            className={cn(
-              'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
-              activeTab === 'WHATSAPP_HSM'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Meta HSM Templates ({INITIAL_HSM_TEMPLATES.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('QUICK_REPLY')}
-            className={cn(
-              'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
-              activeTab === 'QUICK_REPLY'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Canned Quick Replies ({INITIAL_QUICK_REPLIES.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('MEDIA_ASSET')}
-            className={cn(
-              'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
-              activeTab === 'MEDIA_ASSET'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Media Assets ({INITIAL_MEDIA_ASSETS.length})
-          </button>
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search templates (/shortcut, text)..."
+          <Input
+            size="sm"
+            type="search"
+            placeholder="Search templates"
+            aria-label="Search templates"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xs border border-border bg-background pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            prefix={<Search className="size-3.5" />}
+            containerClassName="w-full sm:w-64"
           />
         </div>
-      </div>
-
-      {/* Main Content Areas */}
+      }
+    >
       {activeTab === 'WHATSAPP_HSM' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* HSM Templates List (7 cols) */}
-          <div className="lg:col-span-7 flex flex-col gap-3">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
-              Registered WhatsApp Cloud API Templates
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              {filteredHsm.map((hsm) => {
-                const isSelected = selectedHsm.id === hsm.id;
-                return (
-                  <div
-                    key={hsm.id}
-                    onClick={() => setSelectedHsm(hsm)}
-                    className={cn(
-                      'cursor-pointer rounded-lg border p-4 transition-all duration-150',
-                      isSelected
-                        ? 'border-primary/50 bg-primary/5 shadow-2xs'
-                        : 'border-border bg-card hover:border-border-strong',
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-foreground">
-                          {hsm.name}
-                        </span>
-                        <span className="rounded-xs border border-border px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                          {hsm.language}
-                        </span>
-                        <span className="rounded-xs bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {hsm.metaCategory}
-                        </span>
-                      </div>
-
-                      {/* Approval Status Badge */}
-                      <div>
-                        {hsm.status === 'APPROVED' && (
-                          <span className="inline-flex items-center gap-1 rounded-xs border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>APPROVED</span>
-                          </span>
-                        )}
-                        {hsm.status === 'PENDING' && (
-                          <span className="inline-flex items-center gap-1 rounded-xs border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                            <Clock className="h-3 w-3" />
-                            <span>PENDING</span>
-                          </span>
-                        )}
-                        {hsm.status === 'REJECTED' && (
-                          <span className="inline-flex items-center gap-1 rounded-xs border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                            <XCircle className="h-3 w-3" />
-                            <span>REJECTED</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                      {hsm.bodyText}
-                    </p>
-
-                    <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50 pt-2">
-                      <span>Updated {hsm.updatedAt}</span>
-                      <span className="text-primary font-medium flex items-center gap-1">
-                        View live simulator <ChevronRight className="h-3 w-3" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="flex flex-col gap-3 lg:col-span-7">
+            {filteredHsm.map((hsm) => {
+              const isSelected = selectedHsm.id === hsm.id;
+              const badge = APPROVAL_BADGE[hsm.status];
+              return (
+                <CardLayout
+                  key={hsm.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedHsm(hsm)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedHsm(hsm);
+                    }
+                  }}
+                  className={cn(
+                    'cursor-pointer transition-colors',
+                    isSelected
+                      ? '!bg-n-slate-3 outline-n-weak dark:!bg-n-solid-3'
+                      : 'hover:bg-n-alpha-1',
+                  )}
+                  bodyClassName="gap-2"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="truncate font-mono text-sm font-medium text-n-slate-12">
+                        {hsm.name}
                       </span>
+                      <Label compact label={hsm.language} />
+                      <Label
+                        compact
+                        color="iris"
+                        label={hsm.metaCategory.toLowerCase()}
+                        className="capitalize"
+                      />
                     </div>
+                    <StatusBadge tone={badge.tone} icon={badge.icon}>
+                      {hsm.status.charAt(0) + hsm.status.slice(1).toLowerCase()}
+                    </StatusBadge>
                   </div>
-                );
-              })}
-            </div>
+                  <p className="m-0 line-clamp-2 text-sm text-n-slate-11">{hsm.bodyText}</p>
+                  <div className="flex items-center justify-between text-xs text-n-slate-10">
+                    <span>Updated {hsm.updatedAt}</span>
+                    <span className="inline-flex items-center gap-1 text-n-blue-11">
+                      Preview <ChevronRight className="size-3" />
+                    </span>
+                  </div>
+                </CardLayout>
+              );
+            })}
           </div>
 
-          {/* HSM Live Simulator Drawer (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col gap-3">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
-              Real-time WhatsApp Device Preview
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-5 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-bold text-foreground">
-                    WhatsApp Business API Simulator
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(selectedHsm.id, livePreviewBody)}
-                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-                >
-                  {copiedId === selectedHsm.id ? (
-                    <>
-                      <Check className="h-3 w-3 text-emerald-500" />
-                      <span className="text-emerald-500 font-semibold">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3 w-3" />
-                      <span>Copy Text</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Simulated WhatsApp Chat Bubble */}
-              <div className="rounded-lg bg-[#efeae2] dark:bg-[#111b21] p-4 shadow-inner min-h-[260px] flex flex-col justify-end">
-                <div className="max-w-[90%] self-start rounded-lg bg-white dark:bg-[#202c33] p-3 shadow-xs text-foreground border border-neutral-200 dark:border-neutral-800">
+          <div className="lg:col-span-5">
+            <SectionCard
+              title="WhatsApp preview"
+              actions={copyButton(selectedHsm.id, livePreviewBody)}
+              className="lg:sticky lg:top-0"
+            >
+              {/* WhatsApp chat surface keeps the provider's own colors. */}
+              <div className="flex min-h-[260px] flex-col justify-end rounded-lg bg-[#efeae2] p-4 dark:bg-[#111b21]">
+                <div className="max-w-[90%] self-start rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-[#202c33]">
                   {selectedHsm.headerText && (
-                    <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1.5 pb-1 border-b border-neutral-100 dark:border-neutral-800">
+                    <div className="mb-1.5 border-b border-neutral-100 pb-1 text-sm font-semibold text-neutral-900 dark:border-neutral-800 dark:text-neutral-100">
                       {selectedHsm.headerText}
                     </div>
                   )}
-                  <p className="text-xs leading-relaxed text-neutral-800 dark:text-neutral-200 whitespace-pre-line">
+                  <p className="m-0 whitespace-pre-line text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
                     {livePreviewBody}
                   </p>
                   {selectedHsm.footerText && (
-                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-2 italic">
+                    <div className="mt-2 text-xs italic text-neutral-500 dark:text-neutral-400">
                       {selectedHsm.footerText}
                     </div>
                   )}
-                  <div className="mt-1 flex justify-end text-[9px] text-neutral-400 dark:text-neutral-500">
-                    14:40 • Sent
+                  <div className="mt-1 flex justify-end text-xxs text-neutral-400 dark:text-neutral-500">
+                    14:40 · Sent
                   </div>
                 </div>
               </div>
 
-              {/* Variable Replacement Controls */}
               <div className="mt-4 flex flex-col gap-2">
-                <span className="text-xs font-bold text-foreground">
-                  Placeholder Variable Values:
-                </span>
-                <div className="grid grid-cols-1 gap-1.5">
+                <span className="text-heading-3 text-n-slate-12">Variables</span>
+                <dl className="m-0 grid gap-1.5">
                   {Object.entries(selectedHsm.sampleVariables).map(([token, val]) => (
                     <div
                       key={token}
-                      className="flex items-center justify-between text-xs bg-muted/30 p-2 rounded-xs border border-border"
+                      className="flex items-center justify-between gap-3 rounded-lg bg-n-alpha-1 px-3 py-1.5 text-sm"
                     >
-                      <span className="font-mono text-primary font-bold">{token}</span>
-                      <span className="font-medium text-foreground">{val}</span>
+                      <dt className="font-mono text-n-blue-11">{token}</dt>
+                      <dd className="m-0 truncate text-n-slate-12">{val}</dd>
                     </div>
                   ))}
-                </div>
+                </dl>
               </div>
-            </div>
+            </SectionCard>
           </div>
         </div>
       )}
 
-      {/* Canned Quick Replies Tab */}
       {activeTab === 'QUICK_REPLY' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filteredQuickReplies.map((qr) => (
-            <div
-              key={qr.id}
-              className="rounded-lg border border-border bg-card p-4 shadow-2xs hover:border-border-strong transition-colors flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-foreground">{qr.title}</span>
-                    <span className="rounded-xs bg-primary/10 border border-primary/20 px-1.5 py-0.5 font-mono text-[11px] font-bold text-primary">
-                      {qr.shortcut}
+            <CardLayout key={qr.id} bodyClassName="h-full justify-between gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-base font-medium text-n-slate-12">
+                      {qr.title}
                     </span>
+                    <Label compact color="blue" label={qr.shortcut} />
                   </div>
-                  <span className="text-[10px] text-muted-foreground">
-                    Used {qr.usageCount} times
-                  </span>
+                  <span className="text-xs text-n-slate-10">Used {qr.usageCount}×</span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{qr.content}</p>
+                <p className="m-0 text-sm leading-relaxed text-n-slate-11">{qr.content}</p>
               </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-2.5">
-                <div className="flex gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {qr.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-xs bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                    >
-                      #{tag}
-                    </span>
+                    <Label key={tag} compact label={`#${tag}`} />
                   ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(qr.id, qr.content)}
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-hover font-medium"
-                >
-                  {copiedId === qr.id ? (
-                    <>
-                      <Check className="h-3 w-3 text-emerald-500" />
-                      <span className="text-emerald-500">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3 w-3" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
+                {copyButton(qr.id, qr.content)}
               </div>
-            </div>
+            </CardLayout>
           ))}
         </div>
       )}
 
-      {/* Media Assets Tab */}
       {activeTab === 'MEDIA_ASSET' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredMedia.map((med) => (
-            <div
-              key={med.id}
-              className="rounded-lg border border-border bg-card p-4 shadow-2xs hover:border-border-strong transition-colors flex flex-col justify-between"
-            >
+            <CardLayout key={med.id} bodyClassName="h-full justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-md bg-muted p-2.5 text-muted-foreground">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-n-alpha-2 text-n-slate-11">
                   {med.mimeType.includes('image') ? (
-                    <ImageIcon className="h-5 w-5 text-primary" />
+                    <ImageIcon className="size-5" />
                   ) : (
-                    <FileText className="h-5 w-5 text-primary" />
+                    <FileText className="size-5" />
                   )}
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-xs text-foreground">{med.title}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground mt-0.5 truncate max-w-[200px]">
-                    {med.fileName}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground mt-1">
-                    {med.size} • {med.mimeType}
+                </span>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium text-n-slate-12">{med.title}</span>
+                  <span className="truncate font-mono text-xs text-n-slate-11">{med.fileName}</span>
+                  <span className="mt-1 text-xs text-n-slate-10">
+                    {med.size} · {med.mimeType}
                   </span>
                 </div>
               </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-2.5 text-xs">
-                <span className="text-[11px] text-muted-foreground">{med.updatedAt}</span>
+              <div className="flex items-center justify-between text-xs text-n-slate-10">
+                <span>{med.updatedAt}</span>
                 <a
                   href={med.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-[11px]"
+                  className="inline-flex items-center gap-1 font-medium text-n-blue-11 hover:underline"
                 >
-                  <span>Preview</span>
-                  <ExternalLink className="h-3 w-3" />
+                  Preview
+                  <ExternalLink className="size-3" />
                 </a>
               </div>
-            </div>
+            </CardLayout>
           ))}
         </div>
       )}
-    </div>
+      {toast.element}
+    </PageLayout>
   );
 }

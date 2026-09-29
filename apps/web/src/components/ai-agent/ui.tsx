@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, CircleHelp, TriangleAlert } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, CircleHelp } from 'lucide-react';
 import { FIELD_CLASS, Toggle } from '@/components/common/form-controls';
+import { buttonVariants, Dialog } from '@/components/ui';
 import { cn } from '@/lib/utils';
+
+export { useToast } from '@/components/ui';
 
 /** Centered title + description used by every General setting, as in the reference layout. */
 export function SettingHeading({
@@ -72,12 +75,12 @@ export function CountedTextarea({
         className={cn(
           FIELD_CLASS,
           'min-h-24 resize-y py-2.5 leading-relaxed',
-          over && 'border-[#e54666] focus:border-[#e54666]',
+          over && 'border-n-ruby-9 focus:border-n-ruby-9',
           className,
         )}
       />
       <span
-        className={cn('self-end text-xs tabular-nums', over ? 'text-[#e54666]' : 'text-n-slate-10')}
+        className={cn('self-end text-xs tabular-nums', over ? 'text-n-ruby-9' : 'text-n-slate-10')}
       >
         {value.length.toLocaleString('en-US')}/{max.toLocaleString('en-US')}
       </span>
@@ -179,7 +182,7 @@ export function CollapsibleCard({
         aria-expanded={open}
         aria-controls={bodyId}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-[hsl(var(--border))] bg-[var(--n-alpha-black2)] px-4 py-3.5 text-left transition-colors hover:border-[hsl(var(--border-strong))]"
+        className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-n-weak bg-n-alpha-black2 px-4 py-3.5 text-left transition-colors hover:border-n-strong"
       >
         <span
           className={cn(
@@ -201,10 +204,7 @@ export function CollapsibleCard({
         />
       </button>
       {open && (
-        <div
-          id={bodyId}
-          className="flex flex-col gap-5 rounded-xl border border-[hsl(var(--border))] p-4 sm:p-5"
-        >
+        <div id={bodyId} className="flex flex-col gap-5 rounded-xl border border-n-weak p-4 sm:p-5">
           {children}
         </div>
       )}
@@ -212,11 +212,15 @@ export function CollapsibleCard({
   );
 }
 
-export const PRIMARY_BUTTON_CLASS =
-  'inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#e5484d] px-4 text-sm font-medium text-white transition-colors hover:bg-[#dc3e42] disabled:cursor-not-allowed disabled:bg-[hsl(var(--muted))] disabled:text-[hsl(var(--muted-foreground))]';
+/** VYNOR solid (brand) button — `components/ui/Button` classes for links and legacy buttons. */
+export const PRIMARY_BUTTON_CLASS = buttonVariants({ size: 'md' });
 
-export const SECONDARY_BUTTON_CLASS =
-  'inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-4 text-sm font-medium text-[hsl(var(--foreground))] transition-colors hover:bg-[hsl(var(--muted))] disabled:cursor-not-allowed disabled:opacity-50';
+/** VYNOR faded slate button. */
+export const SECONDARY_BUTTON_CLASS = buttonVariants({
+  size: 'md',
+  color: 'slate',
+  variant: 'faded',
+});
 
 export function ConfirmDialog({
   title,
@@ -234,78 +238,16 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onCancel}
-      onKeyDown={(e) => e.key === 'Escape' && onCancel()}
-    >
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="confirm-dialog-title"
-        aria-describedby="confirm-dialog-description"
-        className="w-full max-w-sm rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-5 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 id="confirm-dialog-title" className="text-base font-semibold text-n-slate-12">
-          {title}
-        </h2>
-        <p id="confirm-dialog-description" className="mt-2 text-sm text-n-slate-11">
-          {description}
-        </p>
-        <div className="mt-5 flex justify-end gap-2">
-          <button type="button" autoFocus onClick={onCancel} className={SECONDARY_BUTTON_CLASS}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={cn(PRIMARY_BUTTON_CLASS, destructive && 'bg-[#e54666] hover:bg-[#dc3b5d]')}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+    <Dialog
+      open
+      role="alertdialog"
+      type={destructive ? 'alert' : 'edit'}
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      onConfirm={onConfirm}
+      onClose={onCancel}
+      width="sm"
+    />
   );
-}
-
-type ToastTone = 'success' | 'error';
-
-export function useToast() {
-  const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
-
-  const show = useCallback((message: string, tone: ToastTone = 'success') => {
-    if (timer.current) clearTimeout(timer.current);
-    setToast({ message, tone });
-    timer.current = setTimeout(() => setToast(null), 3500);
-  }, []);
-
-  const element = toast ? (
-    <div
-      role={toast.tone === 'error' ? 'alert' : 'status'}
-      aria-live="polite"
-      className={cn(
-        'fixed right-4 top-14 z-[60] flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-lg border bg-[hsl(var(--surface))] px-3 py-2.5 text-sm text-n-slate-12 shadow-lg',
-        toast.tone === 'error' ? 'border-[#e54666]/50' : 'border-emerald-500/40',
-      )}
-    >
-      {toast.tone === 'error' ? (
-        <TriangleAlert className="size-4 shrink-0 text-[#e54666]" />
-      ) : (
-        <Check className="size-4 shrink-0 text-emerald-600" />
-      )}
-      <span>{toast.message}</span>
-    </div>
-  ) : null;
-
-  return { show, element };
 }

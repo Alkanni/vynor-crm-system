@@ -10,10 +10,10 @@ import {
   useDeleteAiAgent,
   useDuplicateAiAgent,
 } from '@/lib/ai-agents/queries';
-import { FIELD_CLASS } from '@/components/common/form-controls';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { Button, Dialog, Input } from '@/components/ui';
 import { AgentCard } from './AgentCard';
-import { ConfirmDialog, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, useToast } from './ui';
-import { cn } from '@/lib/utils';
+import { ConfirmDialog, SECONDARY_BUTTON_CLASS, useToast } from './ui';
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
@@ -38,8 +38,8 @@ export function AgentListView() {
     return (agents ?? []).filter((a) => !q || a.name.toLowerCase().includes(q));
   }, [agents, search]);
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = (e?: React.FormEvent) => {
+    e?.preventDefault();
     const name = newName.trim();
     if (!name) return;
     createAgent.mutate(name, {
@@ -64,33 +64,34 @@ export function AgentListView() {
     setDeleting(null);
   };
 
+  const openCreate = () => {
+    setNewName('');
+    setCreating(true);
+  };
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-6 pb-8 pt-2 sm:pt-6">
-      {toast.element}
-
-      <header className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-n-slate-12">AI Agents</h1>
-        <p className="max-w-lg text-sm text-n-slate-11">
-          This is the page where you can revisit the AI agents you created earlier. Feel free to
-          make changes and create as many agents as you want anytime!
-        </p>
-      </header>
-
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-n-slate-10" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search AI agents..."
-          aria-label="Search AI agents"
-          className={cn(FIELD_CLASS, 'h-11 rounded-full pl-10')}
-        />
-      </div>
-
+    <PageLayout
+      title="AI Agents"
+      description="Revisit the AI agents you created earlier, change them, and create as many as you need."
+      actions={
+        <>
+          <Input
+            size="sm"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search AI agents..."
+            aria-label="Search AI agents"
+            prefix={<Search className="size-3.5" />}
+            containerClassName="w-full sm:w-56"
+          />
+          <Button size="sm" icon={Plus} label="Create New" onClick={openCreate} />
+        </>
+      }
+    >
       {agentsQuery.isError ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-[hsl(var(--border))] px-6 py-10 text-center">
-          <p className="text-sm text-n-slate-11">{errorMessage(agentsQuery.error)}</p>
+        <div className="flex flex-col items-center gap-3 rounded-xl px-6 py-10 text-center outline outline-1 -outline-offset-1 outline-n-weak">
+          <p className="m-0 text-sm text-n-slate-11">{errorMessage(agentsQuery.error)}</p>
           <button
             type="button"
             onClick={() => agentsQuery.refetch()}
@@ -100,13 +101,13 @@ export function AgentListView() {
           </button>
         </div>
       ) : (
-        <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {agentsQuery.isPending &&
             [0, 1].map((i) => (
               <div
                 key={i}
                 aria-hidden="true"
-                className="min-h-[232px] animate-pulse rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]"
+                className="min-h-[216px] animate-loader-pulse rounded-xl bg-n-alpha-2"
               />
             ))}
 
@@ -120,79 +121,44 @@ export function AgentListView() {
           ))}
 
           {agents && search.trim() && filtered.length === 0 && (
-            <p className="flex min-h-[232px] items-center justify-center rounded-2xl border border-dashed border-[hsl(var(--border-strong))] px-6 text-center text-sm text-n-slate-11">
+            <p className="m-0 flex min-h-[216px] items-center justify-center rounded-xl border border-dashed border-n-strong px-6 text-center text-sm text-n-slate-11">
               No AI agents match &ldquo;{search.trim()}&rdquo;.
             </p>
           )}
 
           <button
             type="button"
-            onClick={() => {
-              setNewName('');
-              setCreating(true);
-            }}
-            className="flex min-h-[232px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl bg-[#e5484d] text-white shadow-sm transition-colors hover:bg-[#dc3e42]"
+            onClick={openCreate}
+            className="flex min-h-[216px] cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-n-strong text-n-blue-11 transition-colors hover:border-n-brand hover:bg-n-alpha-1"
           >
-            <span className="inline-flex size-12 items-center justify-center rounded-full bg-white text-[#dc3e42]">
-              <Plus className="size-6" />
+            <span className="inline-flex size-10 items-center justify-center rounded-full bg-n-alpha-2">
+              <Plus className="size-5" />
             </span>
-            <span className="text-xl font-medium">Create New</span>
+            <span className="text-sm font-medium">Create New</span>
           </button>
         </div>
       )}
 
-      {creating && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setCreating(false)}
-          onKeyDown={(e) => e.key === 'Escape' && setCreating(false)}
-        >
-          <form
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-agent-title"
-            onSubmit={handleCreate}
-            onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-6 shadow-2xl"
-          >
-            <div>
-              <h2 id="create-agent-title" className="text-lg font-semibold text-n-slate-12">
-                Create AI agent
-              </h2>
-              <p className="mt-1 text-sm text-n-slate-11">
-                Give it a name. You can set its behavior and knowledge next.
-              </p>
-            </div>
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-n-slate-12">Agent name</span>
-              <input
-                autoFocus
-                value={newName}
-                maxLength={AI_AGENT_LIMITS.nameMax}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="e.g. Customer Service AI"
-                className={cn(FIELD_CLASS, 'h-11')}
-              />
-            </label>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                className={SECONDARY_BUTTON_CLASS}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!newName.trim() || createAgent.isPending}
-                className={PRIMARY_BUTTON_CLASS}
-              >
-                Create
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <Dialog
+        open={creating}
+        title="Create AI agent"
+        description="Give it a name. You can set its behavior and knowledge next."
+        confirmLabel="Create"
+        disableConfirm={!newName.trim() || createAgent.isPending}
+        isLoading={createAgent.isPending}
+        onClose={() => setCreating(false)}
+        onConfirm={() => handleCreate()}
+        width="md"
+      >
+        <Input
+          label="Agent name"
+          autoFocus
+          value={newName}
+          maxLength={AI_AGENT_LIMITS.nameMax}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="e.g. Customer Service AI"
+        />
+      </Dialog>
 
       {deleting && (
         <ConfirmDialog
@@ -204,6 +170,7 @@ export function AgentListView() {
           onCancel={() => setDeleting(null)}
         />
       )}
-    </div>
+      {toast.element}
+    </PageLayout>
   );
 }

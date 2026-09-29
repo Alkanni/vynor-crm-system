@@ -1,22 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Settings,
-  Users,
-  Shield,
-  Plug,
-  History,
-  Building,
-  Plus,
-  Key,
-  Copy,
-  Check,
-  Eye,
-  EyeOff,
-  ExternalLink,
-} from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Check, Copy, ExternalLink, Eye, EyeOff, Key, Plus } from 'lucide-react';
 import { CANONICAL_PERMISSIONS } from '@vynor/contracts';
+import { PageLayout } from '@/components/layout/PageLayout';
+import {
+  SectionCard,
+  StatusBadge,
+  TABLE_CLASS,
+  TBODY_CLASS,
+  TD_CLASS,
+  TH_CLASS,
+  THEAD_CLASS,
+} from '@/components/layout/Section';
+import { Avatar, Button, Input, Label, Select, Switch, TabBar, useToast } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 type SettingsTab = 'team' | 'roles' | 'integrations' | 'audit' | 'workspace';
@@ -128,8 +126,57 @@ const MOCK_AUDIT_LOGS: AuditLogRow[] = [
   },
 ];
 
+const SECTION_BY_PATH: Record<string, SettingsTab> = {
+  '/settings': 'workspace',
+  '/settings/teams': 'team',
+  '/settings/roles': 'roles',
+  '/settings/integrations': 'integrations',
+  '/settings/audit': 'audit',
+};
+
+const SECTION_HEADERS: Record<SettingsTab, { title: string; description: string }> = {
+  workspace: {
+    title: 'Account settings',
+    description: 'Organization profile, workspace slug, and localization defaults for this tenant.',
+  },
+  team: {
+    title: 'Team members',
+    description: 'Manage active seats and operator invitations for this workspace.',
+  },
+  roles: {
+    title: 'Roles & access',
+    description: 'Canonical RBAC permission matrix (resource:action) enforced for every role.',
+  },
+  integrations: {
+    title: 'API & integrations',
+    description: 'Secret tokens and programmatic ingestion endpoints.',
+  },
+  audit: {
+    title: 'Audit logs',
+    description: 'Immutable compliance log of every sensitive action in the workspace.',
+  },
+};
+
+const ROLE_TONE: Record<TeamMember['role'], 'blue' | 'iris' | 'teal' | 'slate'> = {
+  OWNER: 'blue',
+  ADMIN: 'iris',
+  SUPERVISOR: 'teal',
+  AGENT: 'slate',
+};
+
+const AUDIT_TONE: Record<AuditLogRow['status'], 'teal' | 'amber' | 'ruby'> = {
+  SUCCESS: 'teal',
+  WARNING: 'amber',
+  FAILED: 'ruby',
+};
+
+function titleCase(value: string): string {
+  return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('team');
+  const pathname = usePathname();
+  const activeTab: SettingsTab = SECTION_BY_PATH[pathname] ?? 'workspace';
   const [showApiKey, setShowApiKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'AGENT' | 'SUPERVISOR' | 'ADMIN'>('AGENT');
@@ -144,6 +191,7 @@ export default function SettingsPage() {
     'contact:write': true,
     'workspace:read': true,
   });
+  const toast = useToast();
 
   const handleTogglePermission = (action: string) => {
     setRolePermissions((prev) => ({
@@ -153,447 +201,234 @@ export default function SettingsPage() {
   };
 
   const handleCopyApiKey = () => {
-    navigator.clipboard.writeText('vynor_live_994821a8d02e4822fa981');
+    void navigator.clipboard?.writeText('vynor_live_994821a8d02e4822fa981');
     setCopiedKey(true);
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
+  const header = SECTION_HEADERS[activeTab];
+
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Settings & Governance
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Identity and Access Management (IAM), 24 canonical RBAC permissions, integrations, and
-            audit trail
-          </p>
-        </div>
-      </div>
-
-      {/* 2-Column Administrative Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Left Subnav Index (3 cols) */}
-        <div className="md:col-span-3 flex flex-col gap-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('team')}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
-              activeTab === 'team'
-                ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
-          >
-            <Users className="h-4 w-4" />
-            <span>Team Members ({MOCK_MEMBERS.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('roles')}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
-              activeTab === 'roles'
-                ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
-          >
-            <Shield className="h-4 w-4" />
-            <span>Roles & Permissions (24 RBAC)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('integrations')}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
-              activeTab === 'integrations'
-                ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
-          >
-            <Plug className="h-4 w-4" />
-            <span>API & Integrations</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('audit')}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
-              activeTab === 'audit'
-                ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
-          >
-            <History className="h-4 w-4" />
-            <span>Audit Trail Log</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('workspace')}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xs text-left transition-colors',
-              activeTab === 'workspace'
-                ? 'bg-primary/10 text-primary border-l-2 border-primary font-bold'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
-          >
-            <Building className="h-4 w-4" />
-            <span>Workspace Profile</span>
-          </button>
-        </div>
-
-        {/* Right Content Panel (9 cols) */}
-        <div className="md:col-span-9 flex flex-col gap-4">
-          {/* Section 1: Team Members */}
-          {activeTab === 'team' && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div>
-                  <h2 className="text-sm font-bold text-foreground">Workspace Team Members</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Manage active seats and operator invitations
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary-hover transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Invite Member</span>
-                </button>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase text-[10px] font-semibold tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3">Member</th>
-                      <th className="px-4 py-3">Role</th>
-                      <th className="px-4 py-3">Department</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Last Active</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {MOCK_MEMBERS.map((m) => (
-                      <tr key={m.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="font-semibold text-foreground">{m.name}</div>
-                          <div className="font-mono text-[11px] text-muted-foreground">
-                            {m.email}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-xs bg-muted text-foreground border border-border">
-                            {m.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">{m.department}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs font-semibold text-[10px]',
-                              m.status === 'ACTIVE'
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-                            )}
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                            <span>{m.status}</span>
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right text-muted-foreground font-mono text-[11px]">
-                          {m.lastActive}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Section 2: Roles & Permissions Matrix */}
-          {activeTab === 'roles' && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div>
-                  <h2 className="text-sm font-bold text-foreground">
-                    Granular RBAC Permission Matrix
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Canonical 24-permission enforcement engine (`resource:action`)
-                  </p>
-                </div>
-
-                <div className="inline-flex rounded-xs border border-border bg-muted/40 p-0.5 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole('AGENT')}
-                    className={cn(
-                      'px-2.5 py-1 font-semibold rounded-xs transition-colors',
-                      selectedRole === 'AGENT'
-                        ? 'bg-card text-foreground shadow-2xs'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Agent
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole('SUPERVISOR')}
-                    className={cn(
-                      'px-2.5 py-1 font-semibold rounded-xs transition-colors',
-                      selectedRole === 'SUPERVISOR'
-                        ? 'bg-card text-foreground shadow-2xs'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Supervisor
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole('ADMIN')}
-                    className={cn(
-                      'px-2.5 py-1 font-semibold rounded-xs transition-colors',
-                      selectedRole === 'ADMIN'
-                        ? 'bg-card text-foreground shadow-2xs'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Admin
-                  </button>
-                </div>
-              </div>
-
-              {/* Permissions List Grid */}
-              <div className="rounded-lg border border-border bg-card divide-y divide-border/60 shadow-2xs">
-                {CANONICAL_PERMISSIONS.map((perm) => {
-                  const isEnabled = rolePermissions[perm.action] ?? selectedRole === 'ADMIN';
-                  return (
-                    <div
-                      key={perm.action}
-                      className="p-3.5 flex items-center justify-between hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-foreground">
-                            {perm.action}
-                          </span>
-                          <span className="rounded-xs bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase text-muted-foreground">
-                            {perm.category}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground mt-0.5">
-                          {perm.description}
-                        </span>
+    <PageLayout
+      title={header.title}
+      description={header.description}
+      actions={
+        activeTab === 'team' ? (
+          <Button
+            size="sm"
+            icon={Plus}
+            label="Invite member"
+            onClick={() =>
+              toast.show('Invitations are sent from the production workspace.', 'info')
+            }
+          />
+        ) : activeTab === 'roles' ? (
+          <TabBar<'AGENT' | 'SUPERVISOR' | 'ADMIN'>
+            ariaLabel="Role"
+            value={selectedRole}
+            onChange={setSelectedRole}
+            tabs={[
+              { value: 'AGENT', label: 'Agent' },
+              { value: 'SUPERVISOR', label: 'Supervisor' },
+              { value: 'ADMIN', label: 'Admin' },
+            ]}
+          />
+        ) : undefined
+      }
+    >
+      {activeTab === 'team' && (
+        <div className="overflow-x-auto">
+          <table className={TABLE_CLASS}>
+            <thead className={THEAD_CLASS}>
+              <tr>
+                <th className={TH_CLASS}>Member</th>
+                <th className={TH_CLASS}>Role</th>
+                <th className={TH_CLASS}>Department</th>
+                <th className={TH_CLASS}>Status</th>
+                <th className={cn(TH_CLASS, 'text-end')}>Last active</th>
+              </tr>
+            </thead>
+            <tbody className={TBODY_CLASS}>
+              {MOCK_MEMBERS.map((m) => (
+                <tr key={m.id}>
+                  <td className={TD_CLASS}>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={m.name} size={32} roundedFull />
+                      <div className="min-w-0">
+                        <div className="truncate text-n-slate-12">{m.name}</div>
+                        <div className="truncate text-xs text-n-slate-11">{m.email}</div>
                       </div>
-
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isEnabled}
-                          disabled={selectedRole === 'ADMIN'}
-                          onChange={() => handleTogglePermission(perm.action)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-8 h-4 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Section 3: Integrations & API */}
-          {activeTab === 'integrations' && (
-            <div className="flex flex-col gap-4">
-              <div className="border-b border-border pb-3">
-                <h2 className="text-sm font-bold text-foreground">
-                  Developer API & Webhook Subscriptions
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Secret tokens and programmatic ingestion endpoints
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3 shadow-2xs">
-                <span className="text-xs font-bold text-foreground">Active Production API Key</span>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 flex items-center rounded-xs border border-border bg-background px-3 py-1.5 font-mono text-xs text-foreground">
-                    <Key className="h-3.5 w-3.5 text-muted-foreground mr-2 shrink-0" />
-                    <span>
-                      {showApiKey
-                        ? 'vynor_live_994821a8d02e4822fa981'
-                        : 'vynor_live_••••••••••••••••••••'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="p-1.5 rounded-xs border border-border hover:bg-muted text-muted-foreground hover:text-foreground"
-                    title={showApiKey ? 'Hide Secret' : 'Reveal Secret'}
-                  >
-                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCopyApiKey}
-                    className="inline-flex items-center gap-1.5 rounded-xs bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/80 text-foreground border border-border"
-                  >
-                    {copiedKey ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                    <span>{copiedKey ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-foreground">
-                      Inbound Webhook Subscription URL
-                    </span>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Real-time event notification delivery target
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-                  >
-                    <span>Test Ping</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </button>
-                </div>
-                <div className="rounded-xs border border-border bg-background px-3 py-1.5 font-mono text-xs text-muted-foreground">
-                  https://api.vynor.io/v1/webhooks/ingress/wh_live_8832901a
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Section 4: Audit Logs */}
-          {activeTab === 'audit' && (
-            <div className="flex flex-col gap-4">
-              <div className="border-b border-border pb-3">
-                <h2 className="text-sm font-bold text-foreground">Immutable Audit Log</h2>
-                <p className="text-xs text-muted-foreground">
-                  Enterprise compliance log recording all sensitive actions
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase text-[10px] font-semibold tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3">Timestamp</th>
-                      <th className="px-4 py-3">Actor</th>
-                      <th className="px-4 py-3">Action</th>
-                      <th className="px-4 py-3">Resource Target</th>
-                      <th className="px-4 py-3 text-right">IP Address</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {MOCK_AUDIT_LOGS.map((log) => (
-                      <tr key={log.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 font-mono text-muted-foreground text-[11px]">
-                          {log.timestamp}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-foreground">{log.actor}</td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono font-bold text-[10px] px-1.5 py-0.5 rounded-xs bg-primary/10 text-primary border border-primary/20">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">{log.resource}</td>
-                        <td className="px-4 py-3 text-right font-mono text-[11px] text-muted-foreground">
-                          {log.ipAddress}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Section 5: Workspace Profile */}
-          {activeTab === 'workspace' && (
-            <div className="flex flex-col gap-4">
-              <div className="border-b border-border pb-3">
-                <h2 className="text-sm font-bold text-foreground">
-                  Workspace Profile & Localization
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Tenant organizational attributes and timezone defaults
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Organization Legal Name
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="VYNOR Indonesia Operations"
-                    className="rounded-xs border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">Workspace Slug</label>
-                  <input
-                    type="text"
-                    defaultValue="vynor-hq"
-                    disabled
-                    className="rounded-xs border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground font-mono"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">Default Timezone</label>
-                  <select
-                    defaultValue="Asia/Jakarta"
-                    className="rounded-xs border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
-                  >
-                    <option value="Asia/Jakarta">Asia/Jakarta (WIB - UTC+7)</option>
-                    <option value="Asia/Makassar">Asia/Makassar (WITA - UTC+8)</option>
-                    <option value="Asia/Jayapura">Asia/Jayapura (WIT - UTC+9)</option>
-                    <option value="UTC">Coordinated Universal Time (UTC)</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Default Accounting Currency
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="IDR (Rp)"
-                    disabled
-                    className="rounded-xs border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+                  </td>
+                  <td className={TD_CLASS}>
+                    <StatusBadge tone={ROLE_TONE[m.role]}>{titleCase(m.role)}</StatusBadge>
+                  </td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap')}>{m.department}</td>
+                  <td className={TD_CLASS}>
+                    <StatusBadge
+                      tone={m.status === 'ACTIVE' ? 'teal' : 'amber'}
+                      icon={<span className="size-1.5 rounded-full bg-current" />}
+                    >
+                      {titleCase(m.status)}
+                    </StatusBadge>
+                  </td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap text-end')}>{m.lastActive}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
-    </div>
+      )}
+
+      {activeTab === 'roles' && (
+        <SectionCard bodyClassName="p-0">
+          <ul className="m-0 list-none divide-y divide-n-weak p-0">
+            {CANONICAL_PERMISSIONS.map((perm) => {
+              const isEnabled = rolePermissions[perm.action] ?? selectedRole === 'ADMIN';
+              return (
+                <li
+                  key={perm.action}
+                  className="flex items-center justify-between gap-4 px-5 py-3.5"
+                >
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-sm text-n-slate-12">{perm.action}</span>
+                      <Label compact label={perm.category} className="capitalize" />
+                    </div>
+                    <span className="text-sm text-n-slate-11">{perm.description}</span>
+                  </div>
+                  <Switch
+                    checked={selectedRole === 'ADMIN' ? true : isEnabled}
+                    disabled={selectedRole === 'ADMIN'}
+                    onChange={() => handleTogglePermission(perm.action)}
+                    label={`Toggle ${perm.action}`}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </SectionCard>
+      )}
+
+      {activeTab === 'integrations' && (
+        <div className="flex flex-col gap-4">
+          <SectionCard
+            title="Production API key"
+            description="Use this key to authenticate server-to-server requests."
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex h-10 min-w-0 flex-1 items-center rounded-lg bg-n-alpha-black2 px-3 font-mono text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak">
+                <Key className="mr-2 size-4 shrink-0 text-n-slate-11" />
+                <span className="truncate">
+                  {showApiKey
+                    ? 'vynor_live_994821a8d02e4822fa981'
+                    : 'vynor_live_••••••••••••••••••••'}
+                </span>
+              </div>
+              <Button
+                variant="faded"
+                color="slate"
+                icon={showApiKey ? EyeOff : Eye}
+                aria-label={showApiKey ? 'Hide secret' : 'Reveal secret'}
+                title={showApiKey ? 'Hide secret' : 'Reveal secret'}
+                onClick={() => setShowApiKey(!showApiKey)}
+              />
+              <Button
+                variant="faded"
+                color="slate"
+                icon={copiedKey ? Check : Copy}
+                label={copiedKey ? 'Copied' : 'Copy'}
+                onClick={handleCopyApiKey}
+                className={cn(copiedKey && '!text-n-teal-11')}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Inbound webhook URL"
+            description="Real-time event notification delivery target."
+            actions={
+              <Button
+                variant="link"
+                size="sm"
+                icon={ExternalLink}
+                trailingIcon
+                label="Test ping"
+                onClick={() => toast.show('Ping delivered to the webhook endpoint.')}
+              />
+            }
+          >
+            <div className="rounded-lg bg-n-alpha-black2 px-3 py-2.5 font-mono text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak">
+              https://api.vynor.io/v1/webhooks/ingress/wh_live_8832901a
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {activeTab === 'audit' && (
+        <div className="overflow-x-auto">
+          <table className={TABLE_CLASS}>
+            <thead className={THEAD_CLASS}>
+              <tr>
+                <th className={TH_CLASS}>Time</th>
+                <th className={TH_CLASS}>Actor</th>
+                <th className={TH_CLASS}>Action</th>
+                <th className={TH_CLASS}>Resource</th>
+                <th className={TH_CLASS}>Result</th>
+                <th className={cn(TH_CLASS, 'text-end')}>IP address</th>
+              </tr>
+            </thead>
+            <tbody className={TBODY_CLASS}>
+              {MOCK_AUDIT_LOGS.map((log) => (
+                <tr key={log.id}>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap tabular-nums')}>
+                    {log.timestamp}
+                  </td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap text-n-slate-12')}>{log.actor}</td>
+                  <td className={TD_CLASS}>
+                    <Label compact color="blue" label={log.action} className="font-mono" />
+                  </td>
+                  <td className={TD_CLASS}>{log.resource}</td>
+                  <td className={TD_CLASS}>
+                    <StatusBadge tone={AUDIT_TONE[log.status]}>{titleCase(log.status)}</StatusBadge>
+                  </td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap text-end font-mono text-xs')}>
+                    {log.ipAddress}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === 'workspace' && (
+        <div className="flex max-w-2xl flex-col gap-5">
+          <Input label="Organization legal name" defaultValue="VYNOR Indonesia Operations" />
+          <Input
+            label="Workspace slug"
+            defaultValue="vynor-hq"
+            disabled
+            message="The slug is used in URLs and cannot be changed."
+            className="font-mono"
+          />
+          <Select label="Default timezone" defaultValue="Asia/Jakarta">
+            <option value="Asia/Jakarta">Asia/Jakarta (WIB · UTC+7)</option>
+            <option value="Asia/Makassar">Asia/Makassar (WITA · UTC+8)</option>
+            <option value="Asia/Jayapura">Asia/Jayapura (WIT · UTC+9)</option>
+            <option value="UTC">Coordinated Universal Time (UTC)</option>
+          </Select>
+          <Input label="Default accounting currency" defaultValue="IDR (Rp)" disabled />
+          <div>
+            <Button
+              size="sm"
+              label="Update settings"
+              onClick={() => toast.show('Workspace settings saved')}
+            />
+          </div>
+        </div>
+      )}
+      {toast.element}
+    </PageLayout>
   );
 }

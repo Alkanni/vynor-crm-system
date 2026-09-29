@@ -1,6 +1,28 @@
 @import 'tailwindcss';
 
-/* VYNOR Authentic Font System (Inter Variable & InterDisplay) */
+/*
+ * ============================================================================
+ * VYNOR DESIGN TOKEN ENGINE (Tailwind v4)
+ * ----------------------------------------------------------------------------
+ * Port of the initial VYNOR application's design system:
+ *   - dashboard/assets/scss/_next-colors.scss  (color scales, light + dark)
+ *   - theme/colors.js + tailwind.config.js     (n-* utilities, fonts, screens,
+ *                                                keyframes, animations)
+ *   - dashboard/assets/scss/_woot.scss          (typography utilities)
+ *   - dashboard/assets/scss/_base.scss          (element base styles)
+ *
+ * VYNOR CRM uses the red brand (#E5484D). The VYNOR "blue" scale therefore
+ * carries the brand-red ramp so that every VYNOR class (`bg-n-solid-blue`,
+ * `text-n-blue-11`, `bg-n-brand`, ...) can be used verbatim.
+ * ============================================================================
+ */
+
+/* Dark mode follows the `.dark` class on <html>, exactly like VYNOR (darkMode: 'class'). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+ * Fonts (Inter Variable + InterDisplay, copied from VYNOR/shared/assets/fonts)
+ * ------------------------------------------------------------------------- */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -49,563 +71,961 @@
   src: url('/fonts/InterDisplay/InterDisplay-Bold.woff2') format('woff2');
 }
 
+/* ---------------------------------------------------------------------------
+ * Runtime color variables (_next-colors.scss). Values are RGB channel triplets
+ * (or RGBA tuples for alpha tokens) so they can be composed with opacity.
+ * ------------------------------------------------------------------------- */
 @layer base {
   :root {
-    /* 4px Base Grid Spacing Scale */
-    --space-0: 0px;
-    --space-0-5: 2px;
-    --space-1: 4px;
-    --space-1-5: 6px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 20px;
-    --space-6: 24px;
-    --space-8: 32px;
+    --slate-1: 252 252 253;
+    --slate-2: 249 249 251;
+    --slate-3: 240 240 243;
+    --slate-4: 232 232 236;
+    --slate-5: 224 225 230;
+    --slate-6: 217 217 224;
+    --slate-7: 205 206 214;
+    --slate-8: 185 187 198;
+    --slate-9: 139 141 152;
+    --slate-10: 128 131 141;
+    --slate-11: 96 100 108;
+    --slate-12: 28 32 36;
 
-    /* Radius Tokens (Strict max 8px rule, default 4px) */
-    --radius-none: 0px;
-    --radius-sm: 2px;
-    --radius-md: 4px;
-    --radius-lg: 6px;
-    --radius: 4px;
+    --iris-1: 253 253 255;
+    --iris-2: 248 248 255;
+    --iris-3: 240 241 254;
+    --iris-4: 230 231 255;
+    --iris-5: 218 220 255;
+    --iris-6: 203 205 255;
+    --iris-7: 184 186 248;
+    --iris-8: 155 158 240;
+    --iris-9: 91 91 214;
+    --iris-10: 81 81 205;
+    --iris-11: 87 83 198;
+    --iris-12: 39 41 98;
 
-    /* Elevation Tokens */
-    --elevation-0: none;
-    --elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --elevation-2: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    /* VYNOR brand ramp (Radix red) — served through the VYNOR `blue` slot. */
+    --blue-1: 255 252 252;
+    --blue-2: 255 247 247;
+    --blue-3: 254 235 236;
+    --blue-4: 255 219 220;
+    --blue-5: 255 205 206;
+    --blue-6: 253 189 190;
+    --blue-7: 244 169 170;
+    --blue-8: 235 142 144;
+    --blue-9: 229 72 77;
+    --blue-10: 220 62 66;
+    --blue-11: 206 44 49;
+    --blue-12: 100 23 35;
 
-    /* Neutral Canvas & Surfaces - Light Mode (Authoritative Baseline #F7F7F7) */
-    --background: 0 0% 96.9%;
-    --surface: 0 0% 100%;
-    --surface-muted: 0 0% 94.1%;
-    --surface-elevated: 0 0% 100%;
-    --foreground: 210 12.5% 12.5%;
-    --foreground-secondary: 219 9.3% 27.6%;
-    --card: 0 0% 100%;
-    --card-foreground: 210 12.5% 12.5%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 12.5% 12.5%;
+    --ruby-1: 255 252 253;
+    --ruby-2: 255 247 248;
+    --ruby-3: 254 234 237;
+    --ruby-4: 255 220 225;
+    --ruby-5: 255 206 214;
+    --ruby-6: 248 191 200;
+    --ruby-7: 239 172 184;
+    --ruby-8: 229 146 163;
+    --ruby-9: 229 70 102;
+    --ruby-10: 220 59 93;
+    --ruby-11: 202 36 77;
+    --ruby-12: 100 23 43;
 
-    /* VYNOR Primary Brand (Radix Red Scale Baseline #E5494D) */
-    --primary: 358.5 74.8% 59.2%;
-    --primary-hover: 358.2 68.3% 55.1%;
-    --primary-active: 358.1 63.8% 49.2%;
-    --primary-subtle: 360 88.9% 96.5%;
-    --primary-border: 356 70.7% 86.1%;
-    --primary-foreground: 0 0% 100%;
+    --amber-1: 254 253 251;
+    --amber-2: 254 251 233;
+    --amber-3: 255 247 194;
+    --amber-4: 255 238 156;
+    --amber-5: 251 229 119;
+    --amber-6: 243 214 115;
+    --amber-7: 233 193 98;
+    --amber-8: 226 163 54;
+    --amber-9: 255 197 61;
+    --amber-10: 255 186 24;
+    --amber-11: 171 100 0;
+    --amber-12: 79 52 34;
 
-    /* Secondary & Muted Controls */
-    --secondary: 0 0% 94.1%;
-    --secondary-foreground: 210 12.5% 12.5%;
-    --muted: 0 0% 94.1%;
-    --muted-foreground: 220 5.9% 40%;
-    --accent: 360 88.9% 96.5%;
-    --accent-foreground: 358.5 74.8% 59.2%;
+    --teal-1: 250 254 253;
+    --teal-2: 243 251 249;
+    --teal-3: 224 248 243;
+    --teal-4: 204 243 234;
+    --teal-5: 184 234 224;
+    --teal-6: 161 222 210;
+    --teal-7: 131 205 193;
+    --teal-8: 83 185 171;
+    --teal-9: 18 165 148;
+    --teal-10: 13 155 138;
+    --teal-11: 0 133 115;
+    --teal-12: 13 61 56;
 
-    /* Success / Live (Emerald) */
-    --success: 158 64% 42%;
-    --success-foreground: 0 0% 100%;
+    --gray-1: 252 252 252;
+    --gray-2: 249 249 249;
+    --gray-3: 240 240 240;
+    --gray-4: 232 232 232;
+    --gray-5: 224 224 224;
+    --gray-6: 217 217 217;
+    --gray-7: 206 206 206;
+    --gray-8: 187 187 187;
+    --gray-9: 141 141 141;
+    --gray-10: 131 131 131;
+    --gray-11: 100 100 100;
+    --gray-12: 32 32 32;
 
-    /* Warning / Alert / Internal Note (Amber) */
-    --warning: 38 92% 50%;
-    --warning-foreground: 35 92% 15%;
+    --violet-1: 253 252 254;
+    --violet-2: 250 248 255;
+    --violet-3: 244 240 254;
+    --violet-4: 235 228 255;
+    --violet-5: 225 217 255;
+    --violet-6: 212 202 254;
+    --violet-7: 194 178 248;
+    --violet-8: 169 153 236;
+    --violet-9: 110 86 207;
+    --violet-10: 100 84 196;
+    --violet-11: 101 85 183;
+    --violet-12: 47 38 95;
 
-    /* VYNOR Destructive Action (Radix Ruby Scale Baseline #E54666) */
-    --destructive: 347.9 74.6% 58.6%;
-    --destructive-hover: 347.3 68.5% 54.7%;
-    --destructive-active: 346 67.5% 48.2%;
-    --destructive-subtle: 349 100% 95.7%;
-    --destructive-border: 348 88.5% 84.3%;
-    --destructive-foreground: 0 0% 100%;
+    --background-color: 247 247 247;
+    --surface-1: 254 254 254;
+    --surface-2: 255 255 255;
+    --surface-active: 255 255 255;
+    --background-input-box: 0, 0, 0, 0.03;
+    --text-blue: 80 15 28;
+    --text-purple: 2 4 49;
+    --text-amber: 37 24 1;
+    --border-container: 236, 236, 236, 1;
+    --border-strong: 226 227 231;
+    --border-weak: 234 234 234;
+    --border-blue-strong: 97 22 35;
+    --solid-1: 255 255 255;
+    --solid-2: 255 255 255;
+    --solid-3: 255 255 255;
+    --solid-active: 255 255 255;
+    --solid-amber: 255 228 181;
+    --solid-blue: 255 219 220;
+    --solid-blue-2: 255 252 252;
+    --solid-iris: 230 231 255;
+    --solid-purple: 230 231 255;
+    --solid-red: 254 200 201;
+    --solid-amber-button: 255 221 141;
+    --card-color: 255 255 255;
+    --overlay: 0, 0, 0, 0.12;
+    --overlay-avatar: 255, 255, 255, 0.67;
+    --button-color: 255 255 255;
+    --button-hover-color: 255, 255, 255, 0.2;
+    --label-background: 247 247 247;
+    --label-border: 0, 0, 0, 0.04;
 
-    /* Info / System Event (Sky) */
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-
-    /* Border System */
-    --border: 0 0% 87.8%;
-    --border-subtle: 0 0% 92.2%;
-    --border-strong: 0 0% 76.9%;
-    --input: 0 0% 87.8%;
-    --ring: 358.5 74.8% 59.2%;
-
-    /* Radix Red Scale Variables (1-12) */
-    --brand-1: #fffdfd;
-    --brand-2: #fff7f7;
-    --brand-3: #feefef;
-    --brand-4: #fce3e4;
-    --brand-5: #fad4d6;
-    --brand-6: #f6c1c4;
-    --brand-7: #f0a7ac;
-    --brand-8: #e9838b;
-    --brand-9: #e5494d;
-    --brand-10: #dc3e42;
-    --brand-11: #ce2c31;
-    --brand-12: #641723;
-
-    /* Radix Ruby Scale Variables (1-12) */
-    --ruby-1: #fffdfe;
-    --ruby-2: #fff5f7;
-    --ruby-3: #ffe9ed;
-    --ruby-4: #ffdbe2;
-    --ruby-5: #ffc9d4;
-    --ruby-6: #fbb3c1;
-    --ruby-7: #f498a9;
-    --ruby-8: #ed758b;
-    --ruby-9: #e54666;
-    --ruby-10: #dc3b5d;
-    --ruby-11: #ce284f;
-    --ruby-12: #651227;
-
-    /* VYNOR Next Solid & Alpha Tokens */
-    --solid-blue: #ffdbdc;
-    --solid-amber: #ffe4b5;
-    --solid-iris: #e6e7ff;
-    --solid-red: #fec8c9;
-    --n-alpha-1: rgba(215, 215, 215, 0.22);
-    --n-alpha-2: rgba(196, 197, 198, 0.22);
-    --n-alpha-black2: rgba(0, 0, 0, 0.04);
+    --alpha-1: 215, 215, 215, 0.22;
+    --alpha-2: 196, 197, 198, 0.22;
+    --alpha-3: 255, 255, 255, 0.96;
+    --black-alpha-1: 0, 0, 0, 0.12;
+    --black-alpha-2: 0, 0, 0, 0.04;
+    --border-blue: 229, 72, 77, 0.5;
+    --white-alpha: 255, 255, 255, 0.8;
   }
 
   .dark {
-    /* Neutral Canvas & Surfaces - Dark Mode (Authoritative Baseline #1C1E20) */
-    --background: 210 7.1% 12%;
-    --surface: 210 7.7% 15.3%;
-    --surface-muted: 216 7.5% 12.7%;
-    --surface-elevated: 210 7.9% 19.6%;
-    --foreground: 0 0% 100%;
-    --foreground-secondary: 222 12.2% 84.7%;
-    --card: 210 7.7% 15.3%;
-    --card-foreground: 0 0% 100%;
-    --popover: 210 7.9% 19.6%;
-    --popover-foreground: 0 0% 100%;
+    --slate-1: 17 17 19;
+    --slate-2: 24 25 27;
+    --slate-3: 33 34 37;
+    --slate-4: 39 42 45;
+    --slate-5: 46 49 53;
+    --slate-6: 54 58 63;
+    --slate-7: 67 72 78;
+    --slate-8: 90 97 105;
+    --slate-9: 105 110 119;
+    --slate-10: 119 123 132;
+    --slate-11: 176 180 186;
+    --slate-12: 237 238 240;
 
-    /* VYNOR Primary Brand - Dark Mode (Radix Red Dark Scale) */
-    --primary: 358.5 74.8% 59.2%;
-    --primary-hover: 358 78% 65%;
-    --primary-active: 358 100% 76%;
-    --primary-subtle: 350 53.4% 15.1%;
-    --primary-border: 350 43.6% 29.4%;
-    --primary-foreground: 0 0% 100%;
+    --iris-1: 19 19 30;
+    --iris-2: 23 22 37;
+    --iris-3: 32 34 72;
+    --iris-4: 38 42 101;
+    --iris-5: 48 51 116;
+    --iris-6: 61 62 130;
+    --iris-7: 74 74 149;
+    --iris-8: 89 88 177;
+    --iris-9: 91 91 214;
+    --iris-10: 84 114 228;
+    --iris-11: 158 177 255;
+    --iris-12: 224 223 254;
 
-    /* Secondary & Muted Controls */
-    --secondary: 210 7.5% 20%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 7.5% 20%;
-    --muted-foreground: 218 8.1% 58.6%;
-    --accent: 350 53.4% 15.1%;
-    --accent-foreground: 0 0% 100%;
+    --blue-1: 25 17 17;
+    --blue-2: 32 19 20;
+    --blue-3: 59 18 25;
+    --blue-4: 80 15 28;
+    --blue-5: 97 22 35;
+    --blue-6: 114 35 45;
+    --blue-7: 140 51 58;
+    --blue-8: 181 69 72;
+    --blue-9: 229 72 77;
+    --blue-10: 236 93 94;
+    --blue-11: 255 149 146;
+    --blue-12: 255 209 217;
 
-    /* Success / Live (Emerald) */
-    --success: 160 84% 39%;
-    --success-foreground: 0 0% 100%;
+    --ruby-1: 25 17 19;
+    --ruby-2: 30 21 23;
+    --ruby-3: 58 20 30;
+    --ruby-4: 78 19 37;
+    --ruby-5: 94 26 46;
+    --ruby-6: 111 37 57;
+    --ruby-7: 136 52 71;
+    --ruby-8: 179 68 90;
+    --ruby-9: 229 70 102;
+    --ruby-10: 236 90 114;
+    --ruby-11: 255 148 157;
+    --ruby-12: 254 210 225;
 
-    /* Warning / Alert / Internal Note (Amber) */
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 95%;
+    --amber-1: 22 18 12;
+    --amber-2: 29 24 15;
+    --amber-3: 48 32 8;
+    --amber-4: 63 39 0;
+    --amber-5: 77 48 0;
+    --amber-6: 92 61 5;
+    --amber-7: 113 79 25;
+    --amber-8: 143 100 36;
+    --amber-9: 255 197 61;
+    --amber-10: 255 214 10;
+    --amber-11: 255 202 22;
+    --amber-12: 255 231 179;
 
-    /* VYNOR Destructive Action - Dark Mode (Radix Ruby Dark Scale) */
-    --destructive: 347.9 74.6% 58.6%;
-    --destructive-hover: 347 78% 64%;
-    --destructive-active: 347 100% 76%;
-    --destructive-subtle: 340 42.9% 16.5%;
-    --destructive-border: 341 40.5% 31%;
-    --destructive-foreground: 0 0% 100%;
+    --teal-1: 13 21 20;
+    --teal-2: 17 28 27;
+    --teal-3: 13 45 42;
+    --teal-4: 2 59 55;
+    --teal-5: 8 72 67;
+    --teal-6: 20 87 80;
+    --teal-7: 28 105 97;
+    --teal-8: 32 126 115;
+    --teal-9: 18 165 148;
+    --teal-10: 14 179 158;
+    --teal-11: 11 216 182;
+    --teal-12: 173 240 221;
 
-    /* Info / System Event (Sky) */
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --gray-1: 17 17 17;
+    --gray-2: 25 25 25;
+    --gray-3: 34 34 34;
+    --gray-4: 42 42 42;
+    --gray-5: 49 49 49;
+    --gray-6: 58 58 58;
+    --gray-7: 72 72 72;
+    --gray-8: 96 96 96;
+    --gray-9: 110 110 110;
+    --gray-10: 123 123 123;
+    --gray-11: 180 180 180;
+    --gray-12: 238 238 238;
 
-    /* Border System */
-    --border: 210 6.2% 22.7%;
-    --border-subtle: 210 8.3% 18.8%;
-    --border-strong: 215 7.6% 31.4%;
-    --input: 210 6.2% 22.7%;
-    --ring: 358.5 74.8% 59.2%;
+    --violet-1: 20 17 31;
+    --violet-2: 27 21 37;
+    --violet-3: 41 31 67;
+    --violet-4: 50 37 85;
+    --violet-5: 60 46 105;
+    --violet-6: 71 56 135;
+    --violet-7: 86 70 151;
+    --violet-8: 110 86 171;
+    --violet-9: 110 86 207;
+    --violet-10: 125 109 217;
+    --violet-11: 169 153 236;
+    --violet-12: 226 221 254;
 
-    /* Radix Red Dark Scale Variables (1-12) */
-    --brand-1: #191111;
-    --brand-2: #201314;
-    --brand-3: #3b1219;
-    --brand-4: #4c1721;
-    --brand-5: #5a1f29;
-    --brand-6: #6b2a35;
-    --brand-7: #843845;
-    --brand-8: #a84857;
-    --brand-9: #e5494d;
-    --brand-10: #ec5e62;
-    --brand-11: #ff8589;
-    --brand-12: #ffdcdd;
+    --background-color: 28 29 32;
+    --surface-1: 20 21 23;
+    --surface-2: 22 23 26;
+    --surface-active: 53 57 66;
+    --background-input-box: 255, 255, 255, 0.02;
+    --text-blue: 255 219 220;
+    --text-purple: 232 233 254;
+    --text-amber: 255 247 234;
+    --border-container: 255, 255, 255, 0;
+    --border-strong: 46 45 50;
+    --border-weak: 31 31 37;
+    --border-blue-strong: 255 205 206;
+    --solid-1: 23 23 26;
+    --solid-2: 29 30 36;
+    --solid-3: 44 45 54;
+    --solid-active: 53 57 66;
+    --solid-amber: 56 50 41;
+    --solid-blue: 88 18 31;
+    --solid-blue-2: 26 29 35;
+    --solid-iris: 38 42 101;
+    --solid-purple: 51 51 107;
+    --solid-red: 90 33 34;
+    --solid-amber-button: 255 221 141;
+    --card-color: 28 30 34;
+    --overlay: 0, 0, 0, 0.4;
+    --overlay-avatar: 0, 0, 0, 0.05;
+    --button-color: 42 43 51;
+    --button-hover-color: 0, 0, 0, 0.15;
+    --label-background: 36 38 45;
+    --label-border: 255, 255, 255, 0.03;
 
-    /* Radix Ruby Dark Scale Variables (1-12) */
-    --ruby-1: #1d0e13;
-    --ruby-2: #27141a;
-    --ruby-3: #3c1824;
-    --ruby-4: #4c1d2d;
-    --ruby-5: #5b2537;
-    --ruby-6: #6f2f43;
-    --ruby-7: #893c54;
-    --ruby-8: #ad4968;
-    --ruby-9: #e54666;
-    --ruby-10: #ec5a7b;
-    --ruby-11: #ff859f;
-    --ruby-12: #ffdce5;
+    --alpha-1: 35, 36, 42, 0.8;
+    --alpha-2: 147, 153, 176, 0.12;
+    --alpha-3: 33, 34, 38, 0.95;
+    --black-alpha-1: 0, 0, 0, 0.3;
+    --black-alpha-2: 0, 0, 0, 0.2;
+    --border-blue: 229, 72, 77, 0.5;
+    --white-alpha: 255, 255, 255, 0.1;
 
-    /* VYNOR Next Solid & Alpha Tokens - Dark Mode */
-    --solid-blue: #58121f;
-    --solid-amber: #383229;
-    --solid-iris: #262a65;
-    --solid-red: #5a2122;
-    --n-alpha-1: rgba(35, 36, 42, 0.8);
-    --n-alpha-2: rgba(147, 153, 176, 0.12);
-    --n-alpha-black2: rgba(255, 255, 255, 0.03);
+    color-scheme: dark;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Static theme: fonts, weights, sizes, screens, animations (tailwind.config.js)
+ * ------------------------------------------------------------------------- */
+@theme {
+  --font-sans:
+    'Inter', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Tahoma, Arial, sans-serif;
+  --font-inter:
+    'Inter', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Tahoma, Arial, sans-serif;
+  --font-interDisplay:
+    'InterDisplay', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Tahoma, Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+
+  --font-weight-420: 420;
+  --font-weight-440: 440;
+  --font-weight-460: 460;
+  --font-weight-520: 520;
+  --font-weight-620: 620;
+
+  --text-xxxs: 0.5rem;
+  --text-xxxs--line-height: 0.75rem;
+  --text-xxs: 0.625rem;
+  --text-xxs--line-height: 0.875rem;
+
+  --breakpoint-xs: 480px;
+  --breakpoint-3xl: 1900px;
+
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-fade-in-up: fade-in-up 0.3s ease-out;
+  --animate-loader-pulse: loader-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-card-select: card-select 0.25s ease-in-out;
+  --animate-shake: shake 0.3s ease-in-out 0s 2;
+  --animate-fade-in: fade-in 0.2s ease-out;
+
+  @keyframes wiggle {
+    0% {
+      transform: translateX(0);
+    }
+    15% {
+      transform: translateX(0.375rem);
+    }
+    30% {
+      transform: translateX(-0.375rem);
+    }
+    45% {
+      transform: translateX(0.375rem);
+    }
+    60% {
+      transform: translateX(-0.375rem);
+    }
+    75% {
+      transform: translateX(0.375rem);
+    }
+    90% {
+      transform: translateX(-0.375rem);
+    }
+    100% {
+      transform: translateX(0);
+    }
   }
 
-  * {
-    border-color: hsl(var(--border));
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  /* Viewport Height Lock: Strictly no outer window scrollbars */
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes loader-pulse {
+    0% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes card-select {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(1px);
+    }
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(0.234375rem);
+    }
+    50% {
+      transform: translateX(-0.234375rem);
+    }
+    75% {
+      transform: translateX(0.234375rem);
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Color utilities. `inline` makes each utility resolve the runtime variable
+ * directly, so `.dark` scopes and opacity modifiers (`bg-n-brand/10`) work.
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  /* VYNOR next design system (theme/colors.js → `n`) */
+  --color-n-slate-1: rgb(var(--slate-1));
+  --color-n-slate-2: rgb(var(--slate-2));
+  --color-n-slate-3: rgb(var(--slate-3));
+  --color-n-slate-4: rgb(var(--slate-4));
+  --color-n-slate-5: rgb(var(--slate-5));
+  --color-n-slate-6: rgb(var(--slate-6));
+  --color-n-slate-7: rgb(var(--slate-7));
+  --color-n-slate-8: rgb(var(--slate-8));
+  --color-n-slate-9: rgb(var(--slate-9));
+  --color-n-slate-10: rgb(var(--slate-10));
+  --color-n-slate-11: rgb(var(--slate-11));
+  --color-n-slate-12: rgb(var(--slate-12));
+
+  --color-n-iris-1: rgb(var(--iris-1));
+  --color-n-iris-2: rgb(var(--iris-2));
+  --color-n-iris-3: rgb(var(--iris-3));
+  --color-n-iris-4: rgb(var(--iris-4));
+  --color-n-iris-5: rgb(var(--iris-5));
+  --color-n-iris-6: rgb(var(--iris-6));
+  --color-n-iris-7: rgb(var(--iris-7));
+  --color-n-iris-8: rgb(var(--iris-8));
+  --color-n-iris-9: rgb(var(--iris-9));
+  --color-n-iris-10: rgb(var(--iris-10));
+  --color-n-iris-11: rgb(var(--iris-11));
+  --color-n-iris-12: rgb(var(--iris-12));
+
+  --color-n-blue-1: rgb(var(--blue-1));
+  --color-n-blue-2: rgb(var(--blue-2));
+  --color-n-blue-3: rgb(var(--blue-3));
+  --color-n-blue-4: rgb(var(--blue-4));
+  --color-n-blue-5: rgb(var(--blue-5));
+  --color-n-blue-6: rgb(var(--blue-6));
+  --color-n-blue-7: rgb(var(--blue-7));
+  --color-n-blue-8: rgb(var(--blue-8));
+  --color-n-blue-9: rgb(var(--blue-9));
+  --color-n-blue-10: rgb(var(--blue-10));
+  --color-n-blue-11: rgb(var(--blue-11));
+  --color-n-blue-12: rgb(var(--blue-12));
+
+  --color-n-ruby-1: rgb(var(--ruby-1));
+  --color-n-ruby-2: rgb(var(--ruby-2));
+  --color-n-ruby-3: rgb(var(--ruby-3));
+  --color-n-ruby-4: rgb(var(--ruby-4));
+  --color-n-ruby-5: rgb(var(--ruby-5));
+  --color-n-ruby-6: rgb(var(--ruby-6));
+  --color-n-ruby-7: rgb(var(--ruby-7));
+  --color-n-ruby-8: rgb(var(--ruby-8));
+  --color-n-ruby-9: rgb(var(--ruby-9));
+  --color-n-ruby-10: rgb(var(--ruby-10));
+  --color-n-ruby-11: rgb(var(--ruby-11));
+  --color-n-ruby-12: rgb(var(--ruby-12));
+
+  --color-n-amber-1: rgb(var(--amber-1));
+  --color-n-amber-2: rgb(var(--amber-2));
+  --color-n-amber-3: rgb(var(--amber-3));
+  --color-n-amber-4: rgb(var(--amber-4));
+  --color-n-amber-5: rgb(var(--amber-5));
+  --color-n-amber-6: rgb(var(--amber-6));
+  --color-n-amber-7: rgb(var(--amber-7));
+  --color-n-amber-8: rgb(var(--amber-8));
+  --color-n-amber-9: rgb(var(--amber-9));
+  --color-n-amber-10: rgb(var(--amber-10));
+  --color-n-amber-11: rgb(var(--amber-11));
+  --color-n-amber-12: rgb(var(--amber-12));
+
+  --color-n-teal-1: rgb(var(--teal-1));
+  --color-n-teal-2: rgb(var(--teal-2));
+  --color-n-teal-3: rgb(var(--teal-3));
+  --color-n-teal-4: rgb(var(--teal-4));
+  --color-n-teal-5: rgb(var(--teal-5));
+  --color-n-teal-6: rgb(var(--teal-6));
+  --color-n-teal-7: rgb(var(--teal-7));
+  --color-n-teal-8: rgb(var(--teal-8));
+  --color-n-teal-9: rgb(var(--teal-9));
+  --color-n-teal-10: rgb(var(--teal-10));
+  --color-n-teal-11: rgb(var(--teal-11));
+  --color-n-teal-12: rgb(var(--teal-12));
+
+  --color-n-gray-1: rgb(var(--gray-1));
+  --color-n-gray-2: rgb(var(--gray-2));
+  --color-n-gray-3: rgb(var(--gray-3));
+  --color-n-gray-4: rgb(var(--gray-4));
+  --color-n-gray-5: rgb(var(--gray-5));
+  --color-n-gray-6: rgb(var(--gray-6));
+  --color-n-gray-7: rgb(var(--gray-7));
+  --color-n-gray-8: rgb(var(--gray-8));
+  --color-n-gray-9: rgb(var(--gray-9));
+  --color-n-gray-10: rgb(var(--gray-10));
+  --color-n-gray-11: rgb(var(--gray-11));
+  --color-n-gray-12: rgb(var(--gray-12));
+
+  --color-n-violet-1: rgb(var(--violet-1));
+  --color-n-violet-2: rgb(var(--violet-2));
+  --color-n-violet-3: rgb(var(--violet-3));
+  --color-n-violet-4: rgb(var(--violet-4));
+  --color-n-violet-5: rgb(var(--violet-5));
+  --color-n-violet-6: rgb(var(--violet-6));
+  --color-n-violet-7: rgb(var(--violet-7));
+  --color-n-violet-8: rgb(var(--violet-8));
+  --color-n-violet-9: rgb(var(--violet-9));
+  --color-n-violet-10: rgb(var(--violet-10));
+  --color-n-violet-11: rgb(var(--violet-11));
+  --color-n-violet-12: rgb(var(--violet-12));
+
+  --color-n-black: #000000;
+  --color-n-brand: #e5484d;
+  --color-n-background: rgb(var(--background-color));
+  --color-n-input-background: rgba(var(--background-input-box));
+
+  --color-n-surface-1: rgb(var(--surface-1));
+  --color-n-surface-2: rgb(var(--surface-2));
+  --color-n-surface-active: rgb(var(--surface-active));
+
+  --color-n-solid-1: rgb(var(--solid-1));
+  --color-n-solid-2: rgb(var(--solid-2));
+  --color-n-solid-3: rgb(var(--solid-3));
+  --color-n-solid-active: rgb(var(--solid-active));
+  --color-n-solid-amber: rgb(var(--solid-amber));
+  --color-n-solid-amber-button: rgb(var(--solid-amber-button));
+  --color-n-solid-blue: rgb(var(--solid-blue));
+  --color-n-solid-blue-2: rgb(var(--solid-blue-2));
+  --color-n-solid-red: rgb(var(--solid-red));
+  --color-n-solid-iris: rgb(var(--solid-iris));
+  --color-n-solid-purple: rgb(var(--solid-purple));
+
+  --color-n-alpha-1: rgba(var(--alpha-1));
+  --color-n-alpha-2: rgba(var(--alpha-2));
+  --color-n-alpha-3: rgba(var(--alpha-3));
+  --color-n-alpha-black1: rgba(var(--black-alpha-1));
+  --color-n-alpha-black2: rgba(var(--black-alpha-2));
+  --color-n-alpha-white: rgba(var(--white-alpha));
+
+  --color-n-weak: rgb(var(--border-weak));
+  --color-n-container: rgba(var(--border-container));
+  --color-n-strong: rgb(var(--border-strong));
+  --color-n-blue-strong: rgb(var(--border-blue-strong));
+  --color-n-blue-border: rgba(var(--border-blue));
+
+  --color-n-blue-text: rgb(var(--text-blue));
+  --color-n-purple-text: rgb(var(--text-purple));
+  --color-n-amber-text: rgb(var(--text-amber));
+  --color-n-card: rgb(var(--card-color));
+  --color-n-overlay-default: rgba(var(--overlay));
+  --color-n-overlay-avatar: rgba(var(--overlay-avatar));
+  --color-n-button-color: rgb(var(--button-color));
+  --color-n-button-hover: rgba(var(--button-hover-color));
+  --color-n-label-color: rgb(var(--label-background));
+  --color-n-label-border: rgba(var(--label-border));
+
+  --color-modal-backdrop-light: rgba(0, 0, 0, 0.4);
+  --color-modal-backdrop-dark: rgba(0, 0, 0, 0.6);
+
+  /*
+   * Semantic aliases used by existing VYNOR CRM components, mapped onto the
+   * VYNOR scales above so every legacy class (`bg-card`, `text-muted-foreground`,
+   * `border-border`, ...) renders with VYNOR values in light and dark mode.
+   */
+  --color-background: rgb(var(--background-color));
+  --color-foreground: rgb(var(--slate-12));
+  --color-foreground-secondary: rgb(var(--slate-11));
+  --color-card: rgb(var(--card-color));
+  --color-card-foreground: rgb(var(--slate-12));
+  --color-popover: rgb(var(--solid-2));
+  --color-popover-foreground: rgb(var(--slate-12));
+  --color-surface: rgb(var(--surface-1));
+  --color-surface-muted: rgb(var(--slate-2));
+  --color-surface-elevated: rgb(var(--surface-2));
+
+  --color-primary: rgb(var(--blue-9));
+  --color-primary-hover: rgb(var(--blue-10));
+  --color-primary-active: rgb(var(--blue-11));
+  --color-primary-subtle: rgb(var(--blue-3));
+  --color-primary-border: rgb(var(--blue-6));
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: rgb(var(--slate-3));
+  --color-secondary-foreground: rgb(var(--slate-12));
+  --color-muted: rgb(var(--slate-3));
+  --color-muted-foreground: rgb(var(--slate-11));
+  --color-accent: rgb(var(--blue-3));
+  --color-accent-foreground: rgb(var(--blue-11));
+
+  --color-success: rgb(var(--teal-9));
+  --color-success-foreground: #ffffff;
+  --color-warning: rgb(var(--amber-9));
+  --color-warning-foreground: rgb(var(--amber-12));
+  --color-info: rgb(var(--iris-9));
+  --color-info-foreground: #ffffff;
+
+  --color-destructive: rgb(var(--ruby-9));
+  --color-destructive-hover: rgb(var(--ruby-10));
+  --color-destructive-active: rgb(var(--ruby-11));
+  --color-destructive-subtle: rgb(var(--ruby-3));
+  --color-destructive-border: rgb(var(--ruby-6));
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: rgb(var(--border-weak));
+  --color-border-subtle: rgb(var(--border-weak));
+  --color-border-strong: rgb(var(--border-strong));
+  --color-input: rgb(var(--border-strong));
+  --color-ring: rgb(var(--blue-9));
+}
+
+/* ---------------------------------------------------------------------------
+ * Element base styles (_base.scss + _woot.scss)
+ * ------------------------------------------------------------------------- */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: rgb(var(--border-weak));
+  }
+
+  /* Viewport lock: the shell owns every scroll container, never the window. */
   html,
   body {
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
+    height: 100%;
+    width: 100%;
     margin: 0;
     padding: 0;
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-family:
-      'Inter',
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      Roboto,
-      sans-serif;
-    font-feature-settings:
-      'rlig' 1,
-      'calt' 1;
+    overflow: hidden;
+    background-color: rgb(var(--background-color));
+    color: rgb(var(--slate-12));
+    font-family: var(--font-sans);
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 500;
+    color: rgb(var(--slate-12));
+  }
+
+  p {
+    text-rendering: optimizeLegibility;
+  }
+
+  label {
+    color: rgb(var(--slate-12));
+    font-size: 0.875rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
   }
 
   code,
   kbd,
   samp,
   pre {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
   }
 
-  /* Accessible High-Contrast Keyboard Focus Rings */
+  table {
+    border-spacing: 0;
+  }
+
+  ::placeholder {
+    color: rgb(var(--slate-10));
+  }
+
+  /* Unstyled native fields inherit the VYNOR `field-base` look. */
+  input:not([class]):not([type='checkbox']):not([type='radio']):not([type='range']):not(
+      [type='file']
+    ):not([type='hidden']),
+  select:not([class]),
+  textarea:not([class]) {
+    display: block;
+    width: 100%;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    background-color: rgba(var(--black-alpha-2));
+    color: rgb(var(--slate-12));
+    outline: 1px solid rgb(var(--border-weak));
+    outline-offset: -1px;
+  }
+
   *:focus-visible {
-    outline: 2px solid hsl(var(--ring));
+    outline: 2px solid rgb(var(--blue-9) / 0.55);
     outline-offset: 1px;
   }
 }
 
-/* Operational Type Scale Utilities (Section 14) */
-.text-page-title {
-  font-size: 18px;
-  line-height: 24px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+/* ---------------------------------------------------------------------------
+ * Component classes (_base.scss `field-*` + _woot.scss helpers)
+ * ------------------------------------------------------------------------- */
+@layer components {
+  .field-base {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    appearance: none;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    background-color: rgba(var(--black-alpha-2));
+    color: rgb(var(--slate-12));
+    outline: 1px solid rgb(var(--border-weak));
+    outline-offset: -1px;
+    transition: outline-color 0.25s ease-in-out;
+  }
+
+  .field-base::placeholder {
+    color: rgb(var(--slate-10));
+  }
+
+  .field-base:hover {
+    outline-color: rgb(var(--slate-6));
+  }
+
+  .field-base:focus,
+  .field-base:focus-visible {
+    outline: 1px solid #e5484d;
+    outline-offset: -1px;
+  }
+
+  .field-disabled,
+  .field-base:disabled {
+    opacity: 0.5;
+    outline-color: rgb(var(--border-weak));
+    cursor: not-allowed;
+  }
+
+  .field-error,
+  .field-error:hover {
+    outline: 1px solid rgb(var(--ruby-8));
+    outline-offset: -1px;
+  }
+
+  .custom-dashed-border {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23E2E3E7' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+
+  .dark .custom-dashed-border {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23343434' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+
+  /* Native <dialog> backdrop used by the Dialog primitive (Dialog.vue). */
+  dialog.n-dialog::backdrop {
+    background-color: rgba(var(--black-alpha-1));
+    backdrop-filter: blur(4px);
+  }
 }
 
-.text-section-header {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+/* ---------------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------------- */
+
+/* Hide scrollbar (Chrome/Safari/Opera + IE/Edge/Firefox) */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.text-body-default {
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 400;
-}
-
-.text-body-medium {
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 500;
-}
-
-.text-compact-meta {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 400;
-}
-
-.text-micro-label {
-  font-size: 11px;
-  line-height: 14px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-
-/* ============================================================================
- * VYNOR AUTHENTIC TYPOGRAPHY & LAYOUT UTILITIES (from VYNOR/app/javascript)
- * ============================================================================ */
-
-/* Custom VYNOR font weights */
-.font-420 {
-  font-weight: 420;
-}
-.font-440 {
-  font-weight: 440;
-}
-.font-460 {
-  font-weight: 460;
-}
-.font-520 {
-  font-weight: 520;
-}
-.font-620 {
-  font-weight: 620;
-}
-
-.font-inter {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-}
-.font-interDisplay {
-  font-family:
-    'InterDisplay',
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-}
-
-/* body-text-main: Main text style for general body text */
-.text-body-main {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 14px;
+/* Typography scale (_woot.scss)
+ * | .text-body-main    | general body text                     |
+ * | .text-body-para    | paragraphs, larger text blocks        |
+ * | .text-heading-1    | page titles, panel headers            |
+ * | .text-heading-2    | section headings, card titles         |
+ * | .text-heading-3    | card headings, breadcrumbs            |
+ * | .text-label        | form labels, field names              |
+ * | .text-label-small  | footnotes, tags, badges, captions     |
+ * | .text-button       | standard button text                  |
+ * | .text-button-small | small/compact button text             |
+ */
+@utility text-body-main {
+  font-family: var(--font-inter);
+  font-size: 0.875rem;
   font-weight: 420;
   line-height: 21px;
   letter-spacing: -0.28px;
 }
 
-/* body-text-paragraph: For paragraphs or larger blocks of text */
-.text-body-para {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 14px;
+@utility text-body-para {
+  font-family: var(--font-inter);
+  font-size: 0.875rem;
   font-weight: 420;
   line-height: 21px;
   letter-spacing: -0.21px;
 }
 
-/* heading-1: Large heading for pages and panels */
-.text-heading-1 {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 18px;
+@utility text-heading-1 {
+  font-family: var(--font-inter);
+  font-size: 1.125rem;
   font-weight: 520;
   line-height: 24px;
   letter-spacing: -0.27px;
 }
 
-/* heading-2: Secondary heading for sections */
-.text-heading-2 {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 16px;
+@utility text-heading-2 {
+  font-family: var(--font-inter);
+  font-size: 1rem;
   font-weight: 500;
   line-height: 24px;
   letter-spacing: -0.27px;
 }
 
-/* heading-3: For card headings, breadcrumbs, subsections */
-.text-heading-3 {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 14px;
+@utility text-heading-3 {
+  font-family: var(--font-inter);
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 21px;
   letter-spacing: -0.27px;
 }
 
-/* label: Standard label text for form fields */
-.text-label {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 14px;
+@utility text-label {
+  font-family: var(--font-inter);
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 21px;
 }
 
-/* label-small: Smallest font for labels, footnotes, tags */
-.text-label-small {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 12px;
+@utility text-label-small {
+  font-family: var(--font-inter);
+  font-size: 0.75rem;
   font-weight: 440;
   line-height: 16px;
   letter-spacing: -0.24px;
 }
 
-/* button-text: Text for standard size buttons */
-.text-button {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 14px;
+@utility text-button {
+  font-family: var(--font-inter);
+  font-size: 0.875rem;
   font-weight: 460;
   line-height: 21px;
   letter-spacing: -0.28px;
 }
 
-/* button-text-small: Text for smaller buttons */
-.text-button-small {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 12px;
+@utility text-button-small {
+  font-family: var(--font-inter);
+  font-size: 0.75rem;
   font-weight: 440;
   line-height: 18px;
   letter-spacing: -0.24px;
 }
 
-/* VYNOR Next semantic color token classes */
-.bg-n-background {
-  background-color: hsl(var(--background));
-}
-.bg-n-surface-1 {
-  background-color: hsl(var(--surface));
-}
-.bg-n-surface-2 {
-  background-color: hsl(var(--surface-elevated));
-}
-.border-n-weak {
-  border-color: hsl(var(--border-subtle));
-}
-.border-n-strong {
-  border-color: hsl(var(--border-strong));
-}
-.text-n-slate-12 {
-  color: hsl(var(--foreground));
-}
-.text-n-slate-11 {
-  color: hsl(var(--muted-foreground));
-}
-.text-n-slate-10 {
-  color: hsl(var(--muted-foreground) / 0.75);
-}
-.bg-n-brand {
-  background-color: #e5484d;
-}
-.text-n-brand {
-  color: #e5484d;
-}
-.bg-n-solid-blue {
-  background-color: var(--solid-blue);
-}
-.bg-n-solid-amber {
-  background-color: var(--solid-amber);
-}
-.bg-n-solid-iris {
-  background-color: var(--solid-iris);
-}
-.bg-n-solid-red {
-  background-color: var(--solid-red);
-}
-.bg-n-alpha-1 {
-  background-color: var(--n-alpha-1);
-}
-.bg-n-alpha-2 {
-  background-color: var(--n-alpha-2);
-}
-.bg-n-alpha-black2 {
-  background-color: var(--n-alpha-black2);
+/* Enter animations (tailwindcss-animate compatible subset):
+ * `animate-in fade-in zoom-in-95 slide-in-from-top-2 slide-in-from-right ...` */
+@keyframes vynor-enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1));
+  }
 }
 
-/* VYNOR SVG dashed border */
-.custom-dashed-border {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23E2E3E7' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+@utility animate-in {
+  animation: vynor-enter var(--tw-duration, 150ms) var(--tw-ease, ease-out) both;
 }
 
-.dark .custom-dashed-border {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23343434' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
+@utility fade-in {
+  --tw-enter-opacity: 0;
 }
 
-/* VYNOR form field base styles */
-.field-base {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 400;
-  padding: 8px 12px;
-  background-color: var(--n-alpha-black2);
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border-subtle));
-  outline: none;
-  transition: all 0.2s ease-in-out;
+@utility fade-in-* {
+  --tw-enter-opacity: calc(--value(integer) * 1%);
 }
-.field-base:hover {
-  border-color: hsl(var(--border-strong));
+
+@utility zoom-in {
+  --tw-enter-scale: 0;
 }
-.field-base:focus {
-  border-color: #e5484d;
-  box-shadow: 0 0 0 2px rgba(229, 72, 77, 0.2);
+
+@utility zoom-in-* {
+  --tw-enter-scale: calc(--value(integer) * 1%);
 }
-.field-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+
+@utility slide-in-from-top {
+  --tw-enter-translate-y: -100%;
 }
-.field-error {
-  border-color: #e54666 !important;
+
+@utility slide-in-from-top-* {
+  --tw-enter-translate-y: calc(var(--spacing) * --value(number) * -1);
+}
+
+@utility slide-in-from-bottom {
+  --tw-enter-translate-y: 100%;
+}
+
+@utility slide-in-from-bottom-* {
+  --tw-enter-translate-y: calc(var(--spacing) * --value(number));
+}
+
+@utility slide-in-from-left {
+  --tw-enter-translate-x: -100%;
+}
+
+@utility slide-in-from-left-* {
+  --tw-enter-translate-x: calc(var(--spacing) * --value(number) * -1);
+}
+
+@utility slide-in-from-right {
+  --tw-enter-translate-x: 100%;
+}
+
+@utility slide-in-from-right-* {
+  --tw-enter-translate-x: calc(var(--spacing) * --value(number));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

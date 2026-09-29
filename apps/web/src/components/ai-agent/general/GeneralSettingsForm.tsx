@@ -63,7 +63,7 @@ export function GeneralSettingsForm({
           aria-label="Agent name"
           aria-invalid={!name.trim() || undefined}
           placeholder="Agent name"
-          className="w-full rounded-md bg-transparent px-2 py-1 text-center text-lg font-semibold text-[hsl(var(--foreground))] outline-none placeholder:text-[#e54666] hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]"
+          className="w-full rounded-md bg-transparent px-2 py-1 text-center text-lg font-semibold text-n-slate-12 outline-none placeholder:text-n-ruby-9 hover:bg-n-slate-3 focus:bg-n-slate-3"
         />
         <p className="text-sm font-medium text-n-slate-12">Last Trained: {lastTrained}</p>
       </div>
@@ -107,20 +107,20 @@ export function GeneralSettingsForm({
               <img
                 src={general.welcomeImage}
                 alt="Welcome message attachment"
-                className="h-20 w-auto rounded-lg border border-[hsl(var(--border))] object-cover"
+                className="h-20 w-auto rounded-lg border border-n-weak object-cover"
               />
               <div className="flex flex-col items-start gap-1">
                 <button
                   type="button"
                   onClick={() => imageInput.current?.click()}
-                  className="cursor-pointer text-sm font-medium text-[var(--brand-11)] hover:underline"
+                  className="cursor-pointer text-sm font-medium text-n-blue-11 hover:underline"
                 >
                   Replace image
                 </button>
                 <button
                   type="button"
                   onClick={() => onChange({ welcomeImage: null })}
-                  className="inline-flex cursor-pointer items-center gap-1 text-sm text-n-slate-11 hover:text-[var(--ruby-11)]"
+                  className="inline-flex cursor-pointer items-center gap-1 text-sm text-n-slate-11 hover:text-n-ruby-11"
                 >
                   <Trash2 className="size-3.5" />
                   Remove
@@ -131,14 +131,14 @@ export function GeneralSettingsForm({
             <button
               type="button"
               onClick={() => imageInput.current?.click()}
-              className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-[var(--brand-11)] hover:underline"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-n-blue-11 hover:underline"
             >
               <ImagePlus className="size-4" />
               Upload image for Welcome Message
             </button>
           )}
           {imageError && (
-            <p role="alert" className="text-xs text-[#e54666]">
+            <p role="alert" className="text-xs text-n-ruby-9">
               {imageError}
             </p>
           )}
@@ -160,8 +160,8 @@ export function GeneralSettingsForm({
           description={
             <>
               Define conditions that trigger the AI to transfer the chat to a human agent. Chat
-              status will become <span className="font-medium text-[#e54666]">Pending</span> and
-              appear in the <span className="font-medium text-sky-600">Assigned</span> tab.
+              status will become <span className="font-medium text-n-ruby-9">Pending</span> and
+              appear in the <span className="font-medium text-n-iris-11">Assigned</span> tab.
             </>
           }
         />
@@ -181,7 +181,7 @@ export function GeneralSettingsForm({
           description={
             <>
               Stop the AI from sending messages after the chat status changes to{' '}
-              <span className="text-[#e54666]">Pending</span>.
+              <span className="text-n-ruby-9">Pending</span>.
             </>
           }
           checked={general.stopAfterHandoff}
@@ -197,12 +197,12 @@ export function GeneralSettingsForm({
 
       <CollapsibleCard
         icon={<Clock className="size-5" />}
-        iconClassName="bg-violet-500"
+        iconClassName="bg-n-violet-9"
         title="Pending status messages"
         description="Set messages customers receive while waiting for handoff"
       >
         {!general.stopAfterHandoff && (
-          <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+          <p className="rounded-lg bg-n-amber-9/10 px-3 py-2 text-xs text-n-amber-11">
             These messages are sent only while Stop AI after Handoff is on.
           </p>
         )}
@@ -212,7 +212,7 @@ export function GeneralSettingsForm({
               key: 'pendingAssignedMessage',
               title: 'Pending - assigned message',
               badge: 'Assigned tab',
-              badgeClass: 'text-sky-700 bg-sky-500/10 dark:text-sky-300',
+              badgeClass: 'text-n-iris-11 bg-n-iris-9/10',
               description:
                 'Sent when Stop AI after Handoff is on and a pending chat already has an assigned agent.',
               placeholder: 'Enter message for pending assigned conversations',
@@ -221,7 +221,7 @@ export function GeneralSettingsForm({
               key: 'pendingUnassignedMessage',
               title: 'Pending - unassigned message',
               badge: 'Unassigned tab',
-              badgeClass: 'text-amber-700 bg-amber-500/10 dark:text-amber-300',
+              badgeClass: 'text-n-amber-11 bg-n-amber-9/10',
               description: 'Sent when Stop AI after Handoff is on and no agent is assigned yet.',
               placeholder: 'Enter message for pending unassigned conversations',
             },
@@ -252,16 +252,16 @@ export function GeneralSettingsForm({
 
       <CollapsibleCard
         icon={<Zap className="size-5" />}
-        iconClassName="bg-sky-500"
+        iconClassName="bg-n-iris-9"
         title="AI Actions"
         description="Configure labels and pipeline statuses that AI can use automatically"
       >
         <AiActionsSettings general={general} onChange={onChange} />
       </CollapsibleCard>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-[hsl(var(--border))] p-4 sm:p-5">
+      <div className="flex flex-col gap-3 rounded-xl border border-n-weak p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-600 text-white">
+          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-n-teal-10 text-white">
             <Cpu className="size-5" />
           </span>
           <div>

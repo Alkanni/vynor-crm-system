@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { WifiOff } from 'lucide-react';
+import { Banner } from '@/components/ui';
 
 export function OfflineBanner() {
   const [isOffline, setIsOffline] = useState(false);
@@ -30,12 +31,15 @@ export function OfflineBanner() {
   }
 
   return (
-    <div
-      role="alert"
-      className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow"
-    >
-      <WifiOff className="h-4 w-4" />
-      <span>You are currently working offline. Realtime updates and API mutations are paused.</span>
+    <div className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex justify-center px-4">
+      <Banner
+        role="alert"
+        color="ruby"
+        icon={<WifiOff className="size-4" />}
+        className="pointer-events-auto shadow-sm animate-in fade-in slide-in-from-top-2 duration-200"
+      >
+        You are currently working offline. Realtime updates and API mutations are paused.
+      </Banner>
     </div>
   );
 }

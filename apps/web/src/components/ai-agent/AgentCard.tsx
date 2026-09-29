@@ -2,9 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Copy, Settings, Trash2 } from 'lucide-react';
+import { Bot, Copy, Settings, Trash2 } from 'lucide-react';
 import type { AiAgent } from '@vynor/contracts';
-import { initials } from '@/components/common/form-controls';
+import { StatusBadge } from '@/components/layout/Section';
+import { Avatar, Button, buttonVariants, CardLayout } from '@/components/ui';
 
 interface AgentCardProps {
   agent: AiAgent;
@@ -12,55 +13,55 @@ interface AgentCardProps {
   onDelete: (agent: AiAgent) => void;
 }
 
+/** AI agent card on the VYNOR `CardLayout` surface (Captain assistant card pattern). */
 export function AgentCard({ agent, onDuplicate, onDelete }: AgentCardProps) {
   const excerpt = agent.general.behavior.trim().split('\n')[0] || '-';
 
   return (
-    <article className="flex min-h-[232px] flex-col items-center gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-5 py-6 text-center shadow-sm">
-      <h2 className="w-full truncate text-lg font-semibold text-n-slate-12" title={agent.name}>
-        {agent.name}
-      </h2>
-      <span
-        aria-hidden="true"
-        className="inline-flex size-12 items-center justify-center rounded-full bg-zinc-500 text-lg font-medium text-white"
-      >
-        {initials(agent.name)}
-      </span>
-      {agent.status === 'PAUSED' && (
-        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
-          Paused
-        </span>
-      )}
-      <p className="w-full truncate text-sm text-n-slate-11" title={excerpt}>
+    <CardLayout bodyClassName="h-full min-h-[216px] gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar name={agent.name} size={40} icon={Bot} />
+          <div className="min-w-0">
+            <h2 className="m-0 truncate text-base font-medium text-n-slate-12" title={agent.name}>
+              {agent.name}
+            </h2>
+            <StatusBadge tone={agent.status === 'PAUSED' ? 'amber' : 'teal'}>
+              {agent.status === 'PAUSED' ? 'Paused' : 'Active'}
+            </StatusBadge>
+          </div>
+        </div>
+      </div>
+      <p className="m-0 line-clamp-2 text-sm text-n-slate-11" title={excerpt}>
         {excerpt}
       </p>
-      <div className="mt-auto flex items-center gap-2 pt-2">
+      <div className="mt-auto flex items-center gap-2">
         <Link
           href={`/ai-agent/${agent.id}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[hsl(var(--border-strong))] px-3 text-sm font-medium text-[hsl(var(--foreground))] transition-colors hover:bg-[hsl(var(--muted))]"
+          className={buttonVariants({ size: 'sm', color: 'slate', variant: 'faded' })}
         >
           <Settings className="size-4" />
           Settings
         </Link>
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant="faded"
+          color="slate"
+          icon={Copy}
           onClick={() => onDuplicate(agent)}
           aria-label={`Duplicate ${agent.name}`}
           title="Duplicate"
-          className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-sky-500/50 text-sky-700 transition-colors hover:bg-sky-500/10 dark:text-sky-300"
-        >
-          <Copy className="size-4" />
-        </button>
-        <button
-          type="button"
+        />
+        <Button
+          size="sm"
+          variant="faded"
+          color="ruby"
+          icon={Trash2}
           onClick={() => onDelete(agent)}
           aria-label={`Delete ${agent.name}`}
           title="Delete"
-          className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-[#e54666]/50 text-[var(--ruby-11)] transition-colors hover:bg-[var(--ruby-2)]"
-        >
-          <Trash2 className="size-4" />
-        </button>
+        />
       </div>
-    </article>
+    </CardLayout>
   );
 }

@@ -1,23 +1,37 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import {
-  Users,
-  Search,
-  Plus,
-  Download,
-  Phone,
-  Mail,
-  Tag,
-  X,
-  MessageSquare,
-  Clock,
-  Shield,
-  Layers,
-} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import {
+  Building2,
+  ChevronDown,
+  Clock,
+  Download,
+  Layers,
+  Mail,
+  MessageSquare,
+  Phone,
+  Plus,
+  Search,
+  Shield,
+  Tag,
+  Users,
+  X,
+} from 'lucide-react';
 import { ChannelBadge } from '@/components/inbox/ChannelBadge';
 import type { ChannelType } from '@/components/inbox/types';
+import { EmptyState } from '@/components/common/EmptyState';
+import { PageLayout } from '@/components/layout/PageLayout';
+import {
+  AccordionItem,
+  Avatar,
+  Button,
+  buttonVariants,
+  CardLayout,
+  Input,
+  Label,
+  useToast,
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface ContactRecord {
@@ -145,17 +159,110 @@ const MOCK_CONTACTS: ContactRecord[] = [
   },
 ];
 
+/** Port of VYNOR `Contacts/ContactsCard/ContactsCard.vue`. */
+function ContactCard({
+  contact,
+  expanded,
+  onToggleExpand,
+  onViewDetails,
+}: {
+  contact: ContactRecord;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  onViewDetails: () => void;
+}) {
+  return (
+    <CardLayout
+      layout="row"
+      after={
+        <div
+          className={cn(
+            'grid overflow-hidden transition-all duration-500 ease-in-out',
+            expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="grid gap-6 border-t border-n-strong p-6 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <h4 className="m-0 text-heading-3 text-n-slate-12">Channels</h4>
+                <div className="flex flex-wrap gap-2">
+                  {contact.channels.map((ch) => (
+                    <ChannelBadge key={ch} channel={ch} showLabel />
+                  ))}
+                </div>
+                <h4 className="m-0 mt-3 text-heading-3 text-n-slate-12">Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {contact.tags.map((tag) => (
+                    <Label key={tag} compact label={tag} />
+                  ))}
+                </div>
+              </div>
+              <dl className="m-0 flex flex-col gap-2">
+                {Object.entries(contact.customFields).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between gap-3 text-sm">
+                    <dt className="text-n-slate-11">{key}</dt>
+                    <dd className="m-0 truncate text-right text-n-slate-12">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex min-w-0 flex-1 items-center justify-start gap-4">
+        <Avatar
+          name={contact.name}
+          size={42}
+          status={contact.isOnline ? 'online' : 'offline'}
+          hideOfflineStatus
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="truncate text-base font-medium text-n-slate-12">{contact.name}</span>
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <Building2 className="mb-0.5 size-4 shrink-0 text-n-slate-10" />
+              <span className="truncate text-sm text-n-slate-11">{contact.assignedTeam}</span>
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1">
+            <span className="max-w-72 truncate text-sm text-n-slate-11" title={contact.email}>
+              {contact.email}
+            </span>
+            <span className="h-3 w-px bg-n-slate-6" />
+            <span className="truncate text-sm text-n-slate-11">{contact.phone}</span>
+            <span className="h-3 w-px bg-n-slate-6" />
+            <span className="inline-flex items-center gap-1">
+              {contact.channels.map((ch) => (
+                <ChannelBadge key={ch} channel={ch} />
+              ))}
+            </span>
+            <span className="h-3 w-px bg-n-slate-6" />
+            <Button variant="link" size="xs" label="View details" onClick={onViewDetails} />
+          </div>
+        </div>
+      </div>
+      <Button
+        icon={ChevronDown}
+        variant="ghost"
+        color="slate"
+        size="xs"
+        aria-label={expanded ? 'Collapse details' : 'Expand details'}
+        aria-expanded={expanded}
+        onClick={onToggleExpand}
+        className={cn('transition-transform', expanded && 'rotate-180')}
+      />
+    </CardLayout>
+  );
+}
+
 export default function ContactsDirectoryPage() {
   const [contacts] = useState<ContactRecord[]>(MOCK_CONTACTS);
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const toast = useToast();
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -193,88 +300,60 @@ export default function ContactsDirectoryPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast(`Exported ${filteredContacts.length} contacts as CSV!`);
+    toast.show(`Exported ${filteredContacts.length} contacts as CSV`);
   };
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-14 right-6 z-50 flex items-center gap-2 rounded-xs border border-emerald-500/40 bg-card p-3 text-xs text-foreground shadow-lg animate-in slide-in-from-top-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Customer Directory & CRM Profiles
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Unified cross-channel customer identities, contact attributes, and engagement telemetry
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
+    <PageLayout
+      title="Contacts"
+      actions={
+        <>
+          <Input
+            size="sm"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, or email"
+            aria-label="Search contacts"
+            prefix={<Search className="size-4" />}
+            containerClassName="w-full sm:w-64"
+            className="bg-n-alpha-2 dark:bg-n-solid-1"
+          />
+          <Button
+            variant="ghost"
+            color="slate"
+            size="sm"
+            icon={Download}
+            title="Export CSV"
+            aria-label="Export CSV"
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 rounded-xs border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>Export CSV</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => showToast('New Customer Modal will open in production workspace.')}
-            className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary-hover transition-colors cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add Contact</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Search & Tag Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-2 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, phone, or email..."
-              className="h-8 w-full rounded-xs border border-border bg-surface pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Tag Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto text-xs py-1">
-          <span className="text-muted-foreground text-[11px] font-medium mr-1">Filter Tag:</span>
+          />
+          <div className="h-4 w-px bg-n-strong" />
+          <Button
+            size="sm"
+            icon={Plus}
+            label="Add contact"
+            onClick={() =>
+              toast.show('The new contact form opens in the production workspace.', 'info')
+            }
+          />
+        </>
+      }
+      toolbar={
+        <div
+          className="flex items-center gap-2 overflow-x-auto py-1"
+          role="group"
+          aria-label="Filter by tag"
+        >
           <button
             type="button"
             onClick={() => setSelectedTag(null)}
+            aria-pressed={selectedTag === null}
             className={cn(
-              'px-2 py-0.5 rounded-xs text-[11px] font-medium transition-colors cursor-pointer',
+              'h-7 shrink-0 rounded-lg px-2.5 text-sm transition-colors',
               selectedTag === null
-                ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
-                : 'bg-muted text-muted-foreground hover:text-foreground',
+                ? 'bg-n-alpha-2 font-medium text-n-slate-12'
+                : 'text-n-slate-11 hover:bg-n-alpha-1',
             )}
           >
             All
@@ -284,265 +363,135 @@ export default function ContactsDirectoryPage() {
               key={tag}
               type="button"
               onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              aria-pressed={selectedTag === tag}
               className={cn(
-                'px-2 py-0.5 rounded-xs text-[11px] font-medium transition-colors cursor-pointer border',
+                'h-7 shrink-0 rounded-lg px-2.5 text-sm transition-colors',
                 selectedTag === tag
-                  ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
-                  : 'bg-surface border-border text-muted-foreground hover:text-foreground',
+                  ? 'bg-n-alpha-2 font-medium text-n-slate-12'
+                  : 'text-n-slate-11 hover:bg-n-alpha-1',
               )}
             >
               #{tag}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Main High-Density Contact Table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-foreground">
-            <thead className="bg-surface text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border font-mono">
-              <tr>
-                <th className="py-3 px-4">Customer Name</th>
-                <th className="py-3 px-4">Contact Info</th>
-                <th className="py-3 px-4">Active Channels</th>
-                <th className="py-3 px-4">Tags</th>
-                <th className="py-3 px-4 text-center">Convs</th>
-                <th className="py-3 px-4">Assigned Team</th>
-                <th className="py-3 px-4">Last Activity</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border font-sans">
-              {filteredContacts.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                    No contacts found matching criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredContacts.map((contact) => (
-                  <tr
-                    key={contact.id}
-                    onClick={() => setSelectedContact(contact)}
-                    className="hover:bg-muted/40 transition-colors cursor-pointer group"
-                  >
-                    {/* Name + Initial Avatar */}
-                    <td className="py-2.5 px-4 font-semibold text-foreground">
-                      <div className="flex items-center gap-2.5">
-                        <div className="relative">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs border border-border">
-                            {contact.name.charAt(0).toUpperCase()}
-                          </div>
-                          {contact.isOnline && (
-                            <span
-                              title="Online"
-                              className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-card"
-                            />
-                          )}
-                        </div>
-                        <span className="group-hover:text-primary transition-colors">
-                          {contact.name}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Phone & Email */}
-                    <td className="py-2.5 px-4">
-                      <div className="flex flex-col text-[11px]">
-                        <span className="font-mono text-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          {contact.phone}
-                        </span>
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          {contact.email}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Channel Badges */}
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {contact.channels.map((ch) => (
-                          <ChannelBadge key={ch} channel={ch} />
-                        ))}
-                      </div>
-                    </td>
-
-                    {/* Tags */}
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-1 flex-wrap max-w-xs">
-                        {contact.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-xs border border-border bg-surface px-1.5 py-0.2 text-[10px] text-muted-foreground"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-
-                    {/* Total Convs */}
-                    <td className="py-2.5 px-4 text-center font-mono font-medium text-foreground">
-                      {contact.totalConversations}
-                    </td>
-
-                    {/* Assigned Team */}
-                    <td className="py-2.5 px-4 text-muted-foreground text-[11px]">
-                      {contact.assignedTeam}
-                    </td>
-
-                    {/* Last Active */}
-                    <td className="py-2.5 px-4 font-mono text-[11px] text-muted-foreground">
-                      {contact.lastActive}
-                    </td>
-
-                    {/* Action link to inbox */}
-                    <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href="/inbox"
-                        className="inline-flex items-center gap-1 rounded-xs border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted hover:text-primary transition-colors"
-                      >
-                        <MessageSquare className="h-3 w-3" />
-                        <span>Chat</span>
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      }
+    >
+      {filteredContacts.length === 0 ? (
+        <EmptyState
+          compact
+          icon={<Users className="size-5" />}
+          title="No contacts found"
+          description="No contacts match the current search or tag filter."
+        />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {filteredContacts.map((contact) => (
+            <ContactCard
+              key={contact.id}
+              contact={contact}
+              expanded={expandedId === contact.id}
+              onToggleExpand={() => setExpandedId(expandedId === contact.id ? null : contact.id)}
+              onViewDetails={() => setSelectedContact(contact)}
+            />
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Slide-over Customer Profile Detail Drawer */}
+      {/* Contact details slide-over (VYNOR ContactsSidebar surface) */}
       {selectedContact && (
         <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs animate-in fade-in"
+          className="fixed inset-0 z-50 flex justify-end bg-n-alpha-black1 backdrop-blur-[2px] animate-in fade-in duration-150"
           onClick={() => setSelectedContact(null)}
         >
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Contact Detail Drawer"
-            className="h-full w-full max-w-md bg-card border-l border-border p-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200"
+            aria-label="Contact details"
+            className="flex h-full w-full max-w-md flex-col overflow-hidden border-l border-n-weak bg-n-surface-2 shadow-lg animate-in slide-in-from-right duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="space-y-5">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-border pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm border border-border">
-                    {selectedContact.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-foreground">{selectedContact.name}</h2>
-                    <span className="text-[11px] text-muted-foreground font-mono">
-                      {selectedContact.id}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedContact(null)}
-                  className="rounded-xs p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-n-weak px-4">
+              <span className="text-sm font-medium text-n-slate-12">Contact</span>
+              <Button
+                variant="ghost"
+                color="slate"
+                size="sm"
+                icon={X}
+                aria-label="Close contact details"
+                onClick={() => setSelectedContact(null)}
+              />
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+              <div className="flex flex-col gap-2">
+                <Avatar
+                  name={selectedContact.name}
+                  size={48}
+                  status={selectedContact.isOnline ? 'online' : 'offline'}
+                  hideOfflineStatus
+                />
+                <h2 className="m-0 text-base text-n-slate-12">{selectedContact.name}</h2>
+                <span className="flex items-center gap-2 text-sm text-n-slate-11">
+                  <Mail className="size-3.5" />
+                  {selectedContact.email}
+                </span>
+                <span className="flex items-center gap-2 text-sm text-n-slate-11">
+                  <Phone className="size-3.5" />
+                  {selectedContact.phone}
+                </span>
+                <span className="flex items-center gap-2 text-sm text-n-slate-11">
+                  <Clock className="size-3.5" />
+                  Active {selectedContact.lastActive} · {selectedContact.totalConversations}{' '}
+                  conversations
+                </span>
               </div>
 
-              {/* Direct Communication Channels */}
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Layers className="h-3.5 w-3.5 text-primary" />
-                  <span>Channel Ingress Identifiers</span>
-                </h3>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between rounded-xs border border-border bg-surface p-2 text-xs">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                      Phone (E.164)
-                    </span>
-                    <span className="font-mono font-medium text-foreground">
-                      {selectedContact.phone}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xs border border-border bg-surface p-2 text-xs">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                      Email
-                    </span>
-                    <span className="font-medium text-foreground">{selectedContact.email}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Active Channels */}
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Linked Messaging Providers
-                </h3>
-                <div className="flex items-center gap-2 flex-wrap">
+              <AccordionItem
+                title="Channel Identities"
+                icon={<Layers className="size-4" />}
+                defaultOpen
+              >
+                <div className="flex flex-wrap gap-2">
                   {selectedContact.channels.map((ch) => (
                     <ChannelBadge key={ch} channel={ch} showLabel />
                   ))}
                 </div>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Tag className="h-3.5 w-3.5 text-primary" />
-                  <span>Applied Tags</span>
-                </h3>
-                <div className="flex items-center gap-1.5 flex-wrap">
+              </AccordionItem>
+              <AccordionItem title="Tags" icon={<Tag className="size-4" />} defaultOpen>
+                <div className="flex flex-wrap gap-2">
                   {selectedContact.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-xs border border-border bg-surface px-2 py-0.5 text-xs text-foreground font-medium"
-                    >
-                      #{t}
-                    </span>
+                    <Label key={t} compact label={t} />
                   ))}
                 </div>
-              </div>
-
-              {/* Custom CRM Attributes */}
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5 text-primary" />
-                  <span>CRM Custom Attributes</span>
-                </h3>
-                <div className="divide-y divide-border border border-border rounded-xs bg-surface p-2 text-xs space-y-1">
+              </AccordionItem>
+              <AccordionItem
+                title="CRM Attributes"
+                icon={<Shield className="size-4" />}
+                defaultOpen
+              >
+                <dl className="m-0 flex flex-col gap-2">
                   {Object.entries(selectedContact.customFields).map(([key, val]) => (
-                    <div key={key} className="flex justify-between py-1 text-xs">
-                      <span className="text-muted-foreground">{key}</span>
-                      <span className="font-medium text-foreground font-mono">{val}</span>
+                    <div key={key} className="flex justify-between gap-3 text-sm">
+                      <dt className="text-n-slate-11">{key}</dt>
+                      <dd className="m-0 text-right text-n-slate-12">{val}</dd>
                     </div>
                   ))}
-                </div>
-              </div>
+                </dl>
+              </AccordionItem>
             </div>
 
-            {/* Drawer Footer Actions */}
-            <div className="border-t border-border pt-4 mt-6 flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
-                <Clock className="h-3 w-3" />
-                Active {selectedContact.lastActive}
-              </span>
-              <Link
-                href="/inbox"
-                className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary-hover transition-colors"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span>Open in Unified Inbox</span>
+            <div className="flex shrink-0 justify-end border-t border-n-weak p-4">
+              <Link href="/inbox" className={buttonVariants({ size: 'sm' })}>
+                <MessageSquare className="size-4" />
+                Open in inbox
               </Link>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {toast.element}
+    </PageLayout>
   );
 }

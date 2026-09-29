@@ -1,16 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Bot, CheckCircle2, Clock, Download, Users } from 'lucide-react';
+import { PageLayout } from '@/components/layout/PageLayout';
 import {
-  BarChart2,
-  Calendar,
-  Download,
-  Users,
-  CheckCircle2,
-  Clock,
-  Bot,
-  Radio,
-} from 'lucide-react';
+  MetricCard,
+  StatusBadge,
+  TABLE_CLASS,
+  TBODY_CLASS,
+  TD_CLASS,
+  TH_CLASS,
+  THEAD_CLASS,
+} from '@/components/layout/Section';
+import { Avatar, Button, Select, TabBar } from '@/components/ui';
+import { channelMeta } from '@/components/inbox/ChannelBadge';
 import { cn } from '@/lib/utils';
 
 type DateRangeType = 'today' | '7days' | '30days' | 'custom';
@@ -152,229 +155,173 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <BarChart2 className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Shift Analytics & Operational Reports
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Tabular retrospective performance, SLA adherence, and channel ingress telemetry
-          </p>
-        </div>
-
-        {/* Date Filter & Export */}
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center rounded-xs border border-border bg-card px-2.5 py-1 text-xs text-foreground">
-            <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as DateRangeType)}
-              className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
-            >
-              <option value="today">Today (Shift Triage)</option>
-              <option value="7days">Last 7 Days</option>
-              <option value="30days">Last 30 Days</option>
-              <option value="custom">Custom Date Range</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary-hover transition-colors"
+    <PageLayout
+      title="Reports"
+      width="wide"
+      actions={
+        <>
+          <Select
+            size="sm"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value as DateRangeType)}
+            aria-label="Date range"
+            containerClassName="w-44"
           >
-            <Download className="h-3.5 w-3.5" />
-            <span>Export CSV</span>
-          </button>
+            <option value="today">Today</option>
+            <option value="7days">Last 7 days</option>
+            <option value="30days">Last 30 days</option>
+            <option value="custom">Custom range</option>
+          </Select>
+          <Button size="sm" icon={Download} label="Export CSV" onClick={handleExportCsv} />
+        </>
+      }
+    >
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <MetricCard
+            label="SLA adherence"
+            icon={<CheckCircle2 />}
+            value="96.8%"
+            tone="teal"
+            hint="Target 95.0%"
+          />
+          <MetricCard
+            label="Median first response"
+            icon={<Clock />}
+            value="1m 18s"
+            hint="22s faster than last week"
+          />
+          <MetricCard
+            label="Customer satisfaction"
+            icon={<Users />}
+            value="4.7 / 5.0"
+            hint="From 528 reviews"
+          />
+          <MetricCard
+            label="AI resolution"
+            icon={<Bot />}
+            value="68.2%"
+            hint="Escalation rate 31.8%"
+          />
         </div>
-      </div>
 
-      {/* Aggregate KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-lg border border-border bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Overall SLA Adherence</span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          </div>
-          <div className="mt-1 font-mono text-2xl font-bold text-foreground">96.8%</div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Target: 95.0% SLA Threshold</p>
-        </div>
+        <TabBar<ReportTab>
+          ariaLabel="Report type"
+          value={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { value: 'AGENT_SLA', label: 'Agents' },
+            { value: 'CHANNEL_TELEMETRY', label: 'Channels' },
+          ]}
+        />
 
-        <div className="rounded-lg border border-border bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Median First Response</span>
-            <Clock className="h-4 w-4 text-primary" />
-          </div>
-          <div className="mt-1 font-mono text-2xl font-bold text-foreground">1m 18s</div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Down 22s compared to last week</p>
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Customer Satisfaction</span>
-            <Users className="h-4 w-4 text-amber-500" />
-          </div>
-          <div className="mt-1 font-mono text-2xl font-bold text-foreground">4.7 / 5.0</div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Calculated from 528 reviews</p>
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Autonomous AI Resolv.</span>
-            <Bot className="h-4 w-4 text-primary" />
-          </div>
-          <div className="mt-1 font-mono text-2xl font-bold text-foreground">68.2%</div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Human escalation rate: 31.8%</p>
-        </div>
-      </div>
-
-      {/* Report Tabs */}
-      <div className="flex items-center border-b border-border pb-1 gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab('AGENT_SLA')}
-          className={cn(
-            'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
-            activeTab === 'AGENT_SLA'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          Agent Performance & SLA
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('CHANNEL_TELEMETRY')}
-          className={cn(
-            'px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors',
-            activeTab === 'CHANNEL_TELEMETRY'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          Channel Ingress & Deliverability
-        </button>
-      </div>
-
-      {/* Tab 1: Agent Performance Table */}
-      {activeTab === 'AGENT_SLA' && (
-        <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
+        {activeTab === 'AGENT_SLA' && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase text-[10px] font-semibold tracking-wider">
+            <table className={TABLE_CLASS}>
+              <thead className={THEAD_CLASS}>
                 <tr>
-                  <th className="px-4 py-3">Agent</th>
-                  <th className="px-4 py-3">Team Group</th>
-                  <th className="px-4 py-3 text-right">Handled</th>
-                  <th className="px-4 py-3 text-right">Avg First Resp</th>
-                  <th className="px-4 py-3 text-right">Avg Handle Time</th>
-                  <th className="px-4 py-3 text-right">SLA Adherence</th>
-                  <th className="px-4 py-3 text-right">CSAT</th>
-                  <th className="px-4 py-3 text-right">Handoffs</th>
+                  <th className={TH_CLASS}>Agent</th>
+                  <th className={TH_CLASS}>Team</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Handled</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>First response</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Handle time</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>SLA</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>CSAT</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Handoffs</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className={TBODY_CLASS}>
                 {MOCK_AGENT_PERFORMANCE.map((row) => (
-                  <tr key={row.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-foreground flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px]">
-                        {row.agentName.charAt(0)}
-                      </div>
-                      <span>{row.agentName}</span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.team}</td>
-                    <td className="px-4 py-3 text-right font-mono font-medium text-foreground">
-                      {row.conversationsHandled}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                      {row.avgFirstResponseTime}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                      {row.avgResolutionTime}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      <span
-                        className={cn(
-                          'inline-flex items-center font-bold px-1.5 py-0.5 rounded-xs text-[11px]',
-                          row.slaAdherenceRate >= 95
-                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-                            : 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-                        )}
-                      >
-                        {row.slaAdherenceRate}%
+                  <tr key={row.id}>
+                    <td className={TD_CLASS}>
+                      <span className="flex items-center gap-2 whitespace-nowrap text-n-slate-12">
+                        <Avatar name={row.agentName} size={24} roundedFull />
+                        {row.agentName}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
+                    <td className={cn(TD_CLASS, 'whitespace-nowrap')}>{row.team}</td>
+                    <td className={cn(TD_CLASS, 'text-end tabular-nums text-n-slate-12')}>
+                      {row.conversationsHandled}
+                    </td>
+                    <td className={cn(TD_CLASS, 'text-end tabular-nums')}>
+                      {row.avgFirstResponseTime}
+                    </td>
+                    <td className={cn(TD_CLASS, 'text-end tabular-nums')}>
+                      {row.avgResolutionTime}
+                    </td>
+                    <td className={cn(TD_CLASS, 'text-end')}>
+                      <StatusBadge tone={row.slaAdherenceRate >= 95 ? 'teal' : 'amber'}>
+                        {row.slaAdherenceRate}%
+                      </StatusBadge>
+                    </td>
+                    <td className={cn(TD_CLASS, 'text-end tabular-nums text-n-slate-12')}>
                       ★ {row.csatScore.toFixed(1)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                      {row.handoffsToTier2}
-                    </td>
+                    <td className={cn(TD_CLASS, 'text-end tabular-nums')}>{row.handoffsToTier2}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Tab 2: Channel Ingress & Telemetry Table */}
-      {activeTab === 'CHANNEL_TELEMETRY' && (
-        <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
+        {activeTab === 'CHANNEL_TELEMETRY' && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase text-[10px] font-semibold tracking-wider">
+            <table className={TABLE_CLASS}>
+              <thead className={THEAD_CLASS}>
                 <tr>
-                  <th className="px-4 py-3">Platform Channel</th>
-                  <th className="px-4 py-3 text-right">Messages Sent</th>
-                  <th className="px-4 py-3 text-right">Delivered</th>
-                  <th className="px-4 py-3 text-right">Delivery Rate</th>
-                  <th className="px-4 py-3 text-right">Read Receipt Rate</th>
-                  <th className="px-4 py-3 text-right">Delivery Failures</th>
-                  <th className="px-4 py-3 text-right">Ingress Latency</th>
+                  <th className={TH_CLASS}>Channel</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Sent</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Delivered</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Delivery rate</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Read rate</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Failures</th>
+                  <th className={cn(TH_CLASS, 'text-end')}>Latency</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
-                {MOCK_CHANNEL_TELEMETRY.map((ch) => (
-                  <tr key={ch.channel} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-foreground flex items-center gap-2">
-                      <Radio className="h-4 w-4 text-primary" />
-                      <span>{ch.channel}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-foreground">
-                      {ch.totalSent.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-foreground">
-                      {ch.delivered.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                      {ch.deliveryRate}%
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                      {ch.readRate}%
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {ch.failedCount > 0 ? (
-                        <span className="text-destructive font-bold">{ch.failedCount}</span>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                      {ch.avgLatencyMs} ms
-                    </td>
-                  </tr>
-                ))}
+              <tbody className={TBODY_CLASS}>
+                {MOCK_CHANNEL_TELEMETRY.map((ch) => {
+                  const Icon = channelMeta((ch.channel.split(' ')[0] ?? '').toUpperCase()).icon;
+                  return (
+                    <tr key={ch.channel}>
+                      <td className={TD_CLASS}>
+                        <span className="flex items-center gap-2 whitespace-nowrap text-n-slate-12">
+                          <span className="flex size-6 items-center justify-center rounded-full bg-n-alpha-2">
+                            <Icon className="size-3.5 text-n-slate-11" />
+                          </span>
+                          {ch.channel}
+                        </span>
+                      </td>
+                      <td className={cn(TD_CLASS, 'text-end tabular-nums text-n-slate-12')}>
+                        {ch.totalSent.toLocaleString()}
+                      </td>
+                      <td className={cn(TD_CLASS, 'text-end tabular-nums text-n-slate-12')}>
+                        {ch.delivered.toLocaleString()}
+                      </td>
+                      <td className={cn(TD_CLASS, 'text-end tabular-nums text-n-teal-11')}>
+                        {ch.deliveryRate}%
+                      </td>
+                      <td className={cn(TD_CLASS, 'text-end tabular-nums')}>{ch.readRate}%</td>
+                      <td
+                        className={cn(
+                          TD_CLASS,
+                          'text-end tabular-nums',
+                          ch.failedCount > 0 && 'text-n-ruby-11',
+                        )}
+                      >
+                        {ch.failedCount}
+                      </td>
+                      <td className={cn(TD_CLASS, 'text-end tabular-nums')}>
+                        {ch.avgLatencyMs} ms
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </PageLayout>
   );
 }

@@ -198,15 +198,15 @@ export function AgentTestChat({
   return (
     <aside
       aria-label="Test chat"
-      className="flex h-[560px] flex-col overflow-hidden rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] shadow-sm lg:sticky lg:top-0 lg:h-[calc(100dvh-20rem)] lg:min-h-[440px]"
+      className="flex h-[560px] flex-col overflow-hidden rounded-xl border border-n-weak bg-n-solid-2 shadow-sm lg:sticky lg:top-0 lg:h-[calc(100dvh-20rem)] lg:min-h-[440px]"
     >
-      <div className="flex items-center gap-3 border-b border-[hsl(var(--border))] px-4 py-3">
-        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--muted))] text-n-slate-11">
+      <div className="flex items-center gap-3 border-b border-n-weak px-4 py-3">
+        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-n-slate-3 text-n-slate-11">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-n-slate-12">{agentName}</p>
-          <p className="text-[11px] text-n-slate-10">
+          <p className="text-xs text-n-slate-10">
             Test chat{usesUnsavedChanges ? ' · using unsaved changes' : ''}
           </p>
         </div>
@@ -215,19 +215,17 @@ export function AgentTestChat({
           onClick={resolve}
           aria-label="Resolve chat and start a new session"
           title="Resolve chat and start a new session"
-          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-n-slate-11 hover:bg-[hsl(var(--muted))]"
+          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-n-slate-11 hover:bg-n-slate-3"
         >
           <RotateCcw className="size-4" />
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-[hsl(var(--border))] px-4 py-2 text-[11px]">
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-n-weak px-4 py-2 text-xs">
         <span
           className={cn(
             'rounded-full px-2 py-0.5 font-medium',
-            pending
-              ? 'bg-[var(--ruby-3)] text-[var(--ruby-11)]'
-              : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+            pending ? 'bg-n-ruby-3 text-n-ruby-11' : 'bg-n-teal-9/10 text-n-teal-11',
           )}
         >
           {pending ? 'Pending' : 'Open'}
@@ -236,22 +234,19 @@ export function AgentTestChat({
           <button
             type="button"
             onClick={() => setConversation((c) => ({ ...c, assigned: !c.assigned }))}
-            className="cursor-pointer rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-n-slate-11 hover:bg-[hsl(var(--muted))]"
+            className="cursor-pointer rounded-full border border-n-weak px-2 py-0.5 text-n-slate-11 hover:bg-n-slate-3"
             title="Simulate a human agent picking up the chat"
           >
             {conversation.assigned ? 'Assigned · unassign' : 'Unassigned · assign agent'}
           </button>
         )}
         {conversation.pipelineStatus && (
-          <span className="rounded-full bg-[hsl(var(--muted))] px-2 py-0.5 text-n-slate-11">
+          <span className="rounded-full bg-n-slate-3 px-2 py-0.5 text-n-slate-11">
             {conversation.pipelineStatus}
           </span>
         )}
         {conversation.labels.map((label) => (
-          <span
-            key={label}
-            className="rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-700 dark:text-sky-300"
-          >
+          <span key={label} className="rounded-full bg-n-iris-9/10 px-2 py-0.5 text-n-iris-11">
             {label}
           </span>
         ))}
@@ -263,7 +258,7 @@ export function AgentTestChat({
       <div
         ref={scroller}
         aria-live="polite"
-        className="flex flex-1 flex-col gap-3 overflow-y-auto bg-[hsl(var(--muted))] px-4 py-4"
+        className="flex flex-1 flex-col gap-3 overflow-y-auto bg-n-slate-3 px-4 py-4"
       >
         {entries.length === 0 && (
           <div className="m-auto flex max-w-xs flex-col items-center gap-2 text-center text-sm text-n-slate-11">
@@ -279,7 +274,7 @@ export function AgentTestChat({
         {entries.map((entry) => {
           if (entry.kind === 'divider') {
             return (
-              <p key={entry.id} className="text-center text-[11px] text-n-slate-10">
+              <p key={entry.id} className="text-center text-xs text-n-slate-10">
                 — {entry.text} —
               </p>
             );
@@ -289,10 +284,10 @@ export function AgentTestChat({
               <p
                 key={entry.id}
                 className={cn(
-                  'mx-auto max-w-[90%] rounded-full px-3 py-1 text-center text-[11px]',
+                  'mx-auto max-w-[90%] rounded-full px-3 py-1 text-center text-xs',
                   entry.tone === 'warning'
-                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200'
-                    : 'bg-[hsl(var(--surface))] text-n-slate-11',
+                    ? 'bg-n-amber-9/15 text-n-amber-11'
+                    : 'bg-n-solid-2 text-n-slate-11',
                 )}
               >
                 {entry.text}
@@ -313,7 +308,7 @@ export function AgentTestChat({
                   'whitespace-pre-wrap break-words rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
                   fromCustomer
                     ? 'rounded-br-sm bg-n-solid-blue text-n-slate-12'
-                    : 'rounded-bl-sm border border-[hsl(var(--border))] bg-[hsl(var(--surface))] text-n-slate-12',
+                    : 'rounded-bl-sm border border-n-weak bg-n-solid-2 text-n-slate-12',
                 )}
               >
                 {entry.image && (
@@ -322,7 +317,7 @@ export function AgentTestChat({
                 {entry.text}
               </div>
               {entry.sources.length > 0 && (
-                <p className="px-1 text-[11px] text-n-slate-10">From {entry.sources.join(' · ')}</p>
+                <p className="px-1 text-xs text-n-slate-10">From {entry.sources.join(' · ')}</p>
               )}
             </div>
           );
@@ -336,7 +331,7 @@ export function AgentTestChat({
       </div>
 
       <form
-        className="flex items-end gap-2 border-t border-[hsl(var(--border))] p-3"
+        className="flex items-end gap-2 border-t border-n-weak p-3"
         onSubmit={(e) => {
           e.preventDefault();
           send();
@@ -354,13 +349,13 @@ export function AgentTestChat({
           rows={1}
           aria-label="Message as customer"
           placeholder="Type your message..."
-          className="max-h-32 min-h-10 flex-1 resize-none rounded-lg bg-transparent px-2 py-2 text-sm text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground))]"
+          className="max-h-32 min-h-10 flex-1 resize-none rounded-lg bg-transparent px-2 py-2 text-sm text-n-slate-12 outline-none placeholder:text-n-slate-11"
         />
         <button
           type="submit"
           disabled={!input.trim()}
           aria-label="Send message"
-          className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[hsl(var(--foreground))] transition-colors hover:bg-[hsl(var(--muted))] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-n-slate-12 transition-colors hover:bg-n-slate-3 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <SendHorizontal className="size-5" />
         </button>

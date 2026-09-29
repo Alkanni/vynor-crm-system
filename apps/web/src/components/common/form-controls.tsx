@@ -1,35 +1,40 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
+import { Switch } from '@/components/ui';
+import { getInitials } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 
-// The semantic `bg-card` / `text-muted-foreground` utilities have no @theme
-// mapping yet (see issue #29), so these controls read the CSS variables directly.
+/**
+ * VYNOR `field-base` look (`_base.scss` / `Input.vue`): `bg-n-alpha-black2`,
+ * `outline-n-weak`, hover `outline-n-slate-6`, focus `outline-n-brand`.
+ * Callers add their own height (`h-10` default in VYNOR).
+ */
 export const FIELD_CLASS =
-  'w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 text-sm text-[hsl(var(--foreground))] outline-none transition-colors placeholder:text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--border-strong))] focus:border-[#e5484d] focus:ring-2 focus:ring-[#e5484d]/20';
+  'w-full rounded-lg border-0 bg-n-alpha-black2 px-3 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak transition-all duration-200 placeholder:text-n-slate-10 hover:outline-n-slate-6 focus:outline-n-brand focus-visible:outline-n-brand disabled:cursor-not-allowed disabled:opacity-50';
 
 export function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join('');
+  return getInitials(name);
 }
 
 interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   children: React.ReactNode;
 }
 
+/** Native select with the VYNOR field look and chevron (`components-next/select/Select.vue`). */
 export function SelectField({ className, children, ...props }: SelectFieldProps) {
   return (
     <div className="relative">
       <select
         {...props}
-        className={cn(FIELD_CLASS, 'h-12 cursor-pointer appearance-none pr-10', className)}
+        className={cn(
+          FIELD_CLASS,
+          'h-10 cursor-pointer appearance-none pr-10 [&>option]:bg-n-solid-2',
+          className,
+        )}
       >
         {children}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-n-slate-11" />
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-n-slate-11" />
     </div>
   );
 }
@@ -40,25 +45,7 @@ interface ToggleProps {
   label: string;
 }
 
+/** Accessible switch — delegates to the VYNOR `Switch` primitive (role="switch"). */
 export function Toggle({ checked, onChange, label }: ToggleProps) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        'relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-        checked ? 'bg-[#e5484d]' : 'bg-[hsl(var(--border))]',
-      )}
-    >
-      <span
-        className={cn(
-          'inline-block size-5 rounded-full bg-white shadow-sm transition-transform',
-          checked ? 'translate-x-[18px]' : 'translate-x-0.5',
-        )}
-      />
-    </button>
-  );
+  return <Switch checked={checked} onChange={onChange} label={label} />;
 }

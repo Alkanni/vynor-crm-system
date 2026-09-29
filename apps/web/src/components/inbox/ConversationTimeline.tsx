@@ -2,41 +2,50 @@
 
 import React, { useEffect, useRef } from 'react';
 import type { MessageRecord } from './types';
-import { MessageBubble } from './MessageBubble';
-import { InternalNoteBubble } from './InternalNoteBubble';
-import { SystemEventChip } from './SystemEventChip';
+import { MessageBubble, messageVariant } from './MessageBubble';
 
 interface ConversationTimelineProps {
   messages: MessageRecord[];
   onRetryMessage?: ((messageId: string) => void) | undefined;
 }
 
+function sameSender(a: MessageRecord | undefined, b: MessageRecord | undefined): boolean {
+  if (!a || !b) return false;
+  const variantA = messageVariant(a);
+  if (variantA === 'activity') return false;
+  return variantA === messageVariant(b) && a.senderName === b.senderName;
+}
+
+/** Message list — VYNOR `message/MessageList.vue` inside the `bg-n-surface-1` conversation pane. */
 export function ConversationTimeline({ messages, onRetryMessage }: ConversationTimelineProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background/50">
-      {/* Date Header Marker */}
-      <div className="flex items-center justify-center my-3 select-none">
-        <span className="rounded-full border border-border/70 bg-card px-3 py-0.5 font-mono text-[10px] text-muted-foreground">
-          Today, September 25, 2026
+    <div
+      role="log"
+      aria-label="Conversation messages"
+      aria-live="polite"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4"
+    >
+      <div className="mb-4 flex justify-center">
+        <span className="rounded-xl bg-n-alpha-1 px-3 py-1 text-xs font-medium text-n-slate-11">
+          Today
         </span>
       </div>
 
-      {/* Message Stream */}
-      {messages.map((msg) => {
-        if (msg.senderType === 'INTERNAL_NOTE') {
-          return <InternalNoteBubble key={msg.id} message={msg} />;
-        }
-        if (msg.senderType === 'SYSTEM') {
-          return <SystemEventChip key={msg.id} message={msg} />;
-        }
-        return <MessageBubble key={msg.id} message={msg} onRetry={onRetryMessage} />;
-      })}
+      {messages.map((msg, index) => (
+        <MessageBubble
+          key={msg.id}
+          message={msg}
+          onRetry={onRetryMessage}
+          groupWithNext={sameSender(msg, messages[index + 1])}
+          groupWithPrevious={sameSender(messages[index - 1], msg)}
+        />
+      ))}
 
       <div ref={bottomRef} />
     </div>

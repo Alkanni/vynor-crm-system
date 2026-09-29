@@ -30,7 +30,7 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
     <>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <span className="inline-flex size-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600">
+          <span className="inline-flex size-6 items-center justify-center rounded-md bg-n-teal-9/15 text-n-teal-11">
             <Tag className="size-3.5" />
           </span>
           <h4 className="text-sm font-semibold text-n-slate-12">Change Conversation Label</h4>
@@ -43,7 +43,7 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
             {general.allowedLabels.map((label) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--muted))] py-1 pl-3 pr-1.5 text-xs font-medium text-[hsl(var(--foreground))]"
+                className="inline-flex items-center gap-1 rounded-full bg-n-slate-3 py-1 pl-3 pr-1.5 text-xs font-medium text-n-slate-12"
               >
                 {label}
                 <button
@@ -52,7 +52,7 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
                   onClick={() =>
                     onChange({ allowedLabels: general.allowedLabels.filter((l) => l !== label) })
                   }
-                  className="cursor-pointer rounded-full p-0.5 text-n-slate-11 hover:bg-[hsl(var(--border))]"
+                  className="cursor-pointer rounded-full p-0.5 text-n-slate-11 hover:bg-n-slate-4"
                 >
                   <X className="size-3" />
                 </button>
@@ -83,7 +83,7 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
         </label>
         <p className="-mt-2 text-xs text-n-slate-11">
           Instructions for when AI should apply specific labels. Example: &ldquo;Apply label{' '}
-          <span className="font-medium text-emerald-600">Purchased</span> when customer confirms a
+          <span className="font-medium text-n-teal-11">Purchased</span> when customer confirms a
           purchase&rdquo;
         </p>
         <CountedTextarea
@@ -96,9 +96,9 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
         />
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-[hsl(var(--border))] pt-5">
+      <div className="flex flex-col gap-3 border-t border-n-weak pt-5">
         <div className="flex items-center gap-2">
-          <span className="inline-flex size-6 items-center justify-center rounded-md bg-violet-500/15 text-violet-600">
+          <span className="inline-flex size-6 items-center justify-center rounded-md bg-n-violet-9/15 text-n-violet-11">
             <Workflow className="size-3.5" />
           </span>
           <h4 className="text-sm font-semibold text-n-slate-12">
@@ -109,8 +109,8 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
           Select pipeline statuses that AI is allowed to move conversations to. AI can only move
           forward in the pipeline.
         </p>
-        <div className="rounded-lg bg-[var(--n-alpha-black2)] p-3">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-n-slate-10">
+        <div className="rounded-lg bg-n-alpha-black2 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-n-slate-10">
             Pipeline flow (AI can only move forward →)
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -126,8 +126,8 @@ export function AiActionsSettings({ general, onChange }: AiActionsSettingsProps)
                     className={cn(
                       'inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
                       on
-                        ? 'border-[hsl(var(--border-strong))] bg-[hsl(var(--surface))] text-[hsl(var(--foreground))]'
-                        : 'border-transparent text-n-slate-10 hover:text-[hsl(var(--foreground))]',
+                        ? 'border-n-strong bg-n-solid-2 text-n-slate-12'
+                        : 'border-transparent text-n-slate-10 hover:text-n-slate-12',
                     )}
                   >
                     <span

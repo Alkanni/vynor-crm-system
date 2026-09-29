@@ -1,122 +1,235 @@
 'use client';
 
 import React from 'react';
-import { Check, CheckCheck, Bot, AlertCircle, RefreshCw, Paperclip } from 'lucide-react';
+import {
+  AlertTriangle,
+  Bot,
+  Check,
+  CheckCheck,
+  Clock3,
+  LockKeyhole,
+  Paperclip,
+  RefreshCcw,
+} from 'lucide-react';
 import type { MessageRecord } from './types';
+import { Avatar } from '@/components/ui';
 import { cn } from '@/lib/utils';
+
+export type MessageVariant = 'user' | 'agent' | 'bot' | 'private' | 'error' | 'activity';
+
+/** Bubble colors from VYNOR `components-next/message/bubbles/Base.vue`. */
+const VARIANT_CLASSES: Record<Exclude<MessageVariant, 'activity'>, string> = {
+  agent: 'bg-n-solid-blue text-n-slate-12',
+  private: 'bg-n-solid-amber text-n-amber-12',
+  user: 'bg-n-slate-4 text-n-slate-12',
+  bot: 'bg-n-solid-iris text-n-slate-12',
+  error: 'bg-n-ruby-4 text-n-ruby-12',
+};
+
+export function messageVariant(message: MessageRecord): MessageVariant {
+  switch (message.senderType) {
+    case 'SYSTEM':
+      return 'activity';
+    case 'INTERNAL_NOTE':
+      return 'private';
+    case 'AI':
+      return 'bot';
+    case 'CUSTOMER':
+      return 'user';
+    default:
+      return message.deliveryStatus === 'FAILED' ? 'error' : 'agent';
+  }
+}
+
+/** Port of VYNOR `message/MessageStatus.vue`. */
+function MessageStatus({ status }: { status: MessageRecord['deliveryStatus'] }) {
+  switch (status) {
+    case 'QUEUED':
+      return <Clock3 className="size-3.5 text-n-slate-10" aria-label="Sending" />;
+    case 'SENT':
+      return <Check className="size-3.5 text-n-slate-10" aria-label="Sent" />;
+    case 'DELIVERED':
+      return <CheckCheck className="size-3.5 text-n-slate-10" aria-label="Delivered" />;
+    case 'READ':
+      return <CheckCheck className="size-3.5 text-[#7EB6FF]" aria-label="Read" />;
+    default:
+      return null;
+  }
+}
+
+/** Port of VYNOR `message/MessageError.vue`. */
+function MessageError({ error, onRetry }: { error: string; onRetry?: (() => void) | undefined }) {
+  return (
+    <div className="flex items-center justify-end gap-1.5 text-xs text-n-ruby-11">
+      <span>Failed to send</span>
+      <span className="group relative">
+        <span
+          tabIndex={0}
+          aria-label={error}
+          className="grid size-5 cursor-pointer place-content-center rounded-md bg-n-alpha-2"
+        >
+          <AlertTriangle className="size-3.5 text-n-ruby-11" />
+        </span>
+        <span className="invisible absolute bottom-6 right-0 z-10 w-52 break-words rounded-xl border border-n-strong bg-n-alpha-3 px-4 py-3 text-xs text-n-slate-12 opacity-0 shadow-[0px_0px_24px_0px_rgba(0,0,0,0.12)] backdrop-blur-[100px] transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+          {error}
+        </span>
+      </span>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          aria-label="Retry"
+          title="Retry"
+          className="grid size-5 cursor-pointer place-content-center rounded-md bg-n-alpha-2"
+        >
+          <RefreshCcw className="size-3.5 text-n-ruby-11" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Port of VYNOR `message/bubbles/Activity.vue`. */
+export function ActivityBubble({ content, time }: { content: string; time?: string | undefined }) {
+  return (
+    <div className="mb-2 flex w-full justify-center">
+      <div
+        title={time}
+        className="flex min-w-0 items-center gap-2 rounded-xl bg-n-alpha-1 px-3 py-1 text-sm text-n-slate-11"
+      >
+        <span className="truncate" title={content}>
+          {content}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 interface MessageBubbleProps {
   message: MessageRecord;
   onRetry?: ((messageId: string) => void) | undefined;
+  /** The next message comes from the same sender (VYNOR `group-with-next`). */
+  groupWithNext?: boolean | undefined;
+  /** The previous message came from the same sender (tightens the top corner). */
+  groupWithPrevious?: boolean | undefined;
 }
 
-export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
-  const isCustomer = message.senderType === 'CUSTOMER';
-  const isAi = message.senderType === 'AI';
-  const isFailed = message.deliveryStatus === 'FAILED';
+/**
+ * Message row — port of VYNOR `message/Message.vue` + `bubbles/Base.vue` +
+ * `bubbles/Text/Index.vue`: incoming messages sit on the left without an
+ * avatar, outgoing ones on the right with a 24px avatar; bubbles are
+ * `px-4 py-3 rounded-xl` with the corner next to the sender tightened.
+ */
+export function MessageBubble({
+  message,
+  onRetry,
+  groupWithNext = false,
+  groupWithPrevious = false,
+}: MessageBubbleProps) {
+  const variant = messageVariant(message);
 
-  // Delivery status tick icons
-  const renderDeliveryIcon = () => {
-    switch (message.deliveryStatus) {
-      case 'QUEUED':
-        return <span className="text-[10px] text-muted-foreground font-mono">queued</span>;
-      case 'SENT':
-        return (
-          <span title="Sent to provider">
-            <Check className="h-3 w-3 text-muted-foreground" />
-          </span>
-        );
-      case 'DELIVERED':
-        return (
-          <span title="Delivered to device">
-            <CheckCheck className="h-3 w-3 text-muted-foreground" />
-          </span>
-        );
-      case 'READ':
-        return (
-          <span title="Read by customer">
-            <CheckCheck className="h-3 w-3 text-sky-500" />
-          </span>
-        );
-      case 'FAILED':
-        return (
-          <span title="Delivery failed">
-            <AlertCircle className="h-3 w-3 text-destructive" />
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  if (variant === 'activity') {
+    return <ActivityBubble content={message.content} time={message.createdAt} />;
+  }
+
+  const isRight = variant !== 'user';
+  const isFailed = message.deliveryStatus === 'FAILED';
+  const metaColor = variant === 'private' ? 'text-n-amber-12/50' : 'text-n-slate-11';
 
   return (
-    <div className={cn('flex w-full flex-col gap-1', isCustomer ? 'items-start' : 'items-end')}>
-      {/* Sender Header info */}
-      <div className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground select-none">
-        {isAi && (
-          <span className="inline-flex items-center gap-1 rounded-xs border border-border bg-muted/60 px-1 py-0.2 text-[10px] font-semibold text-foreground">
-            <Bot className="h-3 w-3 text-sky-500" />
-            <span>AI Assistant</span>
-          </span>
-        )}
-        <span className="font-medium text-foreground">{message.senderName}</span>
-        <span>•</span>
-        <span className="font-mono">{message.createdAt}</span>
-      </div>
-
-      {/* Bubble Container */}
+    <div
+      className={cn(
+        'flex w-full',
+        groupWithNext ? 'mb-1' : 'mb-2',
+        isRight ? 'justify-end' : 'justify-start',
+      )}
+      data-message-id={message.id}
+    >
       <div
         className={cn(
-          'relative max-w-[75%] sm:max-w-lg px-3.5 py-2 text-xs leading-relaxed shadow-2xs transition-colors text-body-main',
-          isCustomer
-            ? 'bg-card text-foreground border border-border/80 rounded-xl rounded-bl-xs'
-            : isAi
-              ? 'bg-n-solid-iris text-foreground border border-border/90 rounded-xl rounded-br-xs'
-              : 'bg-n-solid-blue text-foreground border border-border-strong rounded-xl rounded-br-xs',
-          isFailed && 'border-destructive/60 bg-destructive/5',
+          'grid gap-x-2',
+          isRight ? 'grid-cols-[1fr_24px]' : 'grid-cols-1',
+          isFailed && 'gap-y-2',
         )}
+        style={{
+          gridTemplateAreas: isRight ? '"bubble avatar" "meta spacer"' : '"bubble" "meta"',
+        }}
       >
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
-
-        {/* Attachments preview */}
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="mt-2 flex flex-col gap-1 border-t border-border/50 pt-1.5">
-            {message.attachments.map((att) => (
-              <div
-                key={att.id}
-                className="flex items-center gap-1.5 rounded-xs border border-border bg-background/50 px-2 py-1 text-[11px]"
-              >
-                <Paperclip className="h-3 w-3 text-muted-foreground" />
-                <span className="truncate font-medium">{att.name}</span>
-                <span className="text-muted-foreground">({att.size})</span>
-              </div>
-            ))}
+        {isRight && !groupWithNext && (
+          <div className="flex items-end [grid-area:avatar]">
+            <Avatar
+              name={message.senderName}
+              size={24}
+              roundedFull
+              icon={variant === 'bot' ? Bot : undefined}
+              title={message.senderName}
+            />
           </div>
         )}
 
-        {/* Failure Message & Actionable Retry */}
-        {isFailed && (
-          <div className="mt-2 flex items-center justify-between gap-2 border-t border-destructive/20 pt-1.5 text-[11px] text-destructive">
-            <span className="truncate">
-              {message.errorMessage || 'Failed to deliver: Provider connection error'}
-            </span>
-            {onRetry && (
-              <button
-                type="button"
-                onClick={() => onRetry(message.id)}
-                className="inline-flex items-center gap-1 font-semibold text-destructive hover:underline shrink-0"
-              >
-                <RefreshCw className="h-2.5 w-2.5" />
-                <span>Retry</span>
-              </button>
+        <div
+          className={cn('flex min-w-0 [grid-area:bubble]', isRight ? 'ml-8 justify-end' : 'mr-8')}
+        >
+          <div
+            data-bubble-name="text"
+            className={cn(
+              'min-w-0 max-w-lg rounded-xl px-4 py-3 text-sm',
+              VARIANT_CLASSES[variant],
+              isRight ? 'rounded-br-xs' : 'rounded-bl-xs',
+              groupWithPrevious && (isRight ? 'rounded-tr-xs' : 'rounded-tl-xs'),
             )}
-          </div>
-        )}
+          >
+            <div className="flex flex-col gap-3">
+              <p className="mb-0 whitespace-pre-wrap break-words leading-[1.6]">
+                {message.content}
+              </p>
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {message.attachments.map((att) => (
+                    <span
+                      key={att.id}
+                      className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-n-alpha-black1 px-2 py-1 text-xs"
+                    >
+                      <Paperclip className="size-3.5 shrink-0" />
+                      <span className="truncate font-medium">{att.name}</span>
+                      <span className="shrink-0 opacity-70">{att.size}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
-        {/* Delivery Tick on Outbound Messages */}
-        {!isCustomer && !isFailed && (
-          <div className="mt-1 flex justify-end items-center gap-1 text-[10px]">
-            {renderDeliveryIcon()}
+            <div
+              className={cn(
+                'mt-2 flex items-center gap-1.5 text-xs',
+                metaColor,
+                isRight ? 'justify-end' : 'justify-start',
+              )}
+            >
+              {variant === 'bot' && (
+                <span className="inline-flex items-center gap-1 font-medium">
+                  <Bot className="size-3" />
+                  AI Assistant
+                </span>
+              )}
+              {variant === 'private' && <span className="font-medium">{message.senderName}</span>}
+              <time>{message.createdAt}</time>
+              {variant === 'private' && (
+                <LockKeyhole className="size-3" aria-label="Private note, visible to team only" />
+              )}
+              {isRight && variant !== 'private' && !isFailed && (
+                <MessageStatus status={message.deliveryStatus} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {isFailed && (
+          <div className="[grid-area:meta]">
+            <MessageError
+              error={message.errorMessage || 'Failed to deliver: provider connection error'}
+              onRetry={onRetry ? () => onRetry(message.id) : undefined}
+            />
           </div>
         )}
       </div>

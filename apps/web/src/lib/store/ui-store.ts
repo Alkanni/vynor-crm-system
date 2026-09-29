@@ -8,7 +8,7 @@ import { create } from 'zustand';
  *    - Server queries and mutations must never be synchronized or stored in Zustand.
  *
  * 2. Zustand is restricted STRICTLY to local, ephemeral client UI interaction state:
- *    - Sidebar collapse/open status.
+ *    - Sidebar width / collapse / mobile open status.
  *    - Active modal/dialog IDs.
  *    - Active client theme preference (light / dark / system).
  *    - Session expiry banner/dialog toggle.
@@ -18,14 +18,47 @@ import { create } from 'zustand';
  *    and prevents Socket.IO events from properly invalidating TanStack Query keys.
  */
 
+/** Sidebar geometry mirrors VYNOR `components-next/sidebar/provider.js`. */
+export const SIDEBAR_DEFAULT_WIDTH = 200;
+export const SIDEBAR_MIN_WIDTH = 56;
+export const SIDEBAR_COLLAPSED_THRESHOLD = 160;
+export const SIDEBAR_MAX_WIDTH = 320;
+const SIDEBAR_WIDTH_KEY = 'vynor_sidebar_width';
+
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type AvailabilityStatus = 'online' | 'busy' | 'offline';
+
+function clampSidebarWidth(width: number): number {
+  return Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, Math.round(width)));
+}
+
+function persist(key: string, value: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage can be unavailable (private mode); UI state stays in memory.
+  }
+}
+
+export function applyThemePreference(theme: ThemePreference) {
+  if (typeof window === 'undefined') return;
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', isDark);
+}
+
 export interface UiState {
-  // Sidebar State
+  // Sidebar State (desktop width + collapse, mobile flyout)
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
+  sidebarWidth: number;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebarCollapsed: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setSidebarWidth: (width: number, options?: { persist?: boolean }) => void;
 
   // Customer Context Panel State (320px right panel)
   customerContextOpen: boolean;
@@ -50,8 +83,14 @@ export interface UiState {
   setSelectedConversationId: (id: string | null) => void;
 
   // Theme State
-  theme: 'light' | 'dark' | 'system';
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  theme: ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
+  /** Reads persisted preferences after hydration (theme + sidebar width). */
+  hydratePreferences: () => void;
+
+  // Agent availability shown on the sidebar profile avatar
+  availability: AvailabilityStatus;
+  setAvailability: (status: AvailabilityStatus) => void;
 
   // Modal / Dialog State
   activeModal: string | null;
@@ -63,13 +102,23 @@ export interface UiState {
   setSessionExpired: (expired: boolean) => void;
 }
 
-export const useUiStore = create<UiState>((set) => ({
-  sidebarOpen: true,
+export const useUiStore = create<UiState>((set, get) => ({
+  sidebarOpen: false,
   sidebarCollapsed: false,
+  sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
-  toggleSidebarCollapsed: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
-  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+  toggleSidebarCollapsed: () => get().setSidebarCollapsed(!get().sidebarCollapsed),
+  setSidebarCollapsed: (collapsed) => {
+    const width = collapsed ? SIDEBAR_MIN_WIDTH : SIDEBAR_DEFAULT_WIDTH;
+    set({ sidebarCollapsed: collapsed, sidebarWidth: width });
+    persist(SIDEBAR_WIDTH_KEY, String(width));
+  },
+  setSidebarWidth: (width, options) => {
+    const next = clampSidebarWidth(width);
+    set({ sidebarWidth: next, sidebarCollapsed: next < SIDEBAR_COLLAPSED_THRESHOLD });
+    if (options?.persist) persist(SIDEBAR_WIDTH_KEY, String(next));
+  },
 
   customerContextOpen: true,
   toggleCustomerContext: () =>
@@ -84,7 +133,7 @@ export const useUiStore = create<UiState>((set) => ({
   setShortcutsModalOpen: (open) => set({ shortcutsModalOpen: open }),
   toggleShortcutsModal: () => set((state) => ({ shortcutsModalOpen: !state.shortcutsModalOpen })),
 
-  activeQueueTab: 'unassigned',
+  activeQueueTab: 'mine',
   setActiveQueueTab: (tab) => set({ activeQueueTab: tab }),
 
   composerMode: 'reply',
@@ -95,24 +144,32 @@ export const useUiStore = create<UiState>((set) => ({
   selectedConversationId: null,
   setSelectedConversationId: (id) => set({ selectedConversationId: id }),
 
-  theme:
-    typeof window !== 'undefined'
-      ? (localStorage.getItem('vynor_theme') as 'light' | 'dark' | 'system') || 'system'
-      : 'system',
+  // Starts as 'system' on server and client alike to keep hydration stable;
+  // `hydratePreferences` then restores the persisted choice.
+  theme: 'system',
   setTheme: (theme) => {
     set({ theme });
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('vynor_theme', theme);
-      const isDark =
-        theme === 'dark' ||
-        (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+    persist('vynor_theme', theme);
+    applyThemePreference(theme);
+  },
+  hydratePreferences: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const storedTheme = localStorage.getItem('vynor_theme');
+      if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system') {
+        set({ theme: storedTheme });
       }
+      const storedWidth = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
+      if (Number.isFinite(storedWidth) && storedWidth > 0) {
+        get().setSidebarWidth(storedWidth);
+      }
+    } catch {
+      // Ignore unavailable storage.
     }
   },
+
+  availability: 'online',
+  setAvailability: (status) => set({ availability: status }),
 
   activeModal: null,
   openModal: (modalId) => set({ activeModal: modalId }),
