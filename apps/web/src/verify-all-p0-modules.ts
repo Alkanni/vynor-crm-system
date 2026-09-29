@@ -94,54 +94,125 @@ console.info(
 );
 
 // -------------------------------------------------------------
-// 2. Verify UX-AI-001 [P0]: AI Agent Supervisor Console & Sanitized Playground
+// 2. Verify UX-AI-001 [P0]: Multi-Agent AI Settings (General & Knowledge Sources)
 // -------------------------------------------------------------
-console.info('\n2. Checking UX-AI-001: AI Agent Supervisor Console & Sanitized Playground...');
-const aiConfigSource = fs.readFileSync(
-  path.join(__dirname, 'components/ai-agent/AIAgentConfig.tsx'),
+console.info('\n2. Checking UX-AI-001: Multi-Agent AI Settings, Knowledge Sources & Test Chat...');
+const readAi = (name: string) =>
+  fs.readFileSync(path.join(__dirname, 'components/ai-agent', name), 'utf-8');
+const aiListSource = readAi('AgentListView.tsx');
+const aiSettingsSource = readAi('AgentSettingsView.tsx');
+const aiChatSource = readAi('AgentTestChat.tsx');
+const aiUiSource = readAi('ui.tsx');
+const aiGeneralSource = [
+  'GeneralSettingsForm.tsx',
+  'AdditionalSettings.tsx',
+  'AiActionsSettings.tsx',
+]
+  .map((f) => readAi(`general/${f}`))
+  .join('\n');
+const aiKnowledgeSource = fs
+  .readdirSync(path.join(__dirname, 'components/ai-agent/knowledge'))
+  .map((f) => readAi(`knowledge/${f}`))
+  .join('\n');
+const aiLibSource = fs
+  .readdirSync(path.join(__dirname, 'lib/ai-agents'))
+  .map((f) => fs.readFileSync(path.join(__dirname, 'lib/ai-agents', f), 'utf-8'))
+  .join('\n');
+const aiContractSource = fs.readFileSync(
+  path.join(__dirname, '../../../packages/contracts/src/ai/agent.ts'),
   'utf-8',
 );
-const aiPlaygroundSource = fs.readFileSync(
-  path.join(__dirname, 'components/ai-agent/AIPlayground.tsx'),
+const formControlsSource = fs.readFileSync(
+  path.join(__dirname, 'components/common/form-controls.tsx'),
   'utf-8',
 );
-const aiPageSource = fs.readFileSync(path.join(__dirname, 'app/ai-agent/page.tsx'), 'utf-8');
-const aiTypesSource = fs.readFileSync(
-  path.join(__dirname, 'components/ai-agent/types.ts'),
-  'utf-8',
-);
+const aiModuleText = [
+  aiListSource,
+  aiSettingsSource,
+  aiChatSource,
+  aiUiSource,
+  aiGeneralSource,
+  aiKnowledgeSource,
+  aiLibSource,
+].join('\n');
 
 assert.ok(
-  aiTypesSource.includes('AIAgentState') && aiTypesSource.includes('PlaygroundMessage'),
-  'AIAgent types must declare AIAgentState and PlaygroundMessage',
+  ['AiAgentSchema', 'AiAgentGeneralSettingsSchema', 'AiAgentKnowledgeSchema'].every((name) =>
+    aiContractSource.includes(`export const ${name}`),
+  ),
+  'AI agent configuration must be defined as Zod contracts in packages/contracts (AD-013)',
 );
 assert.ok(
-  aiPlaygroundSource.includes('TEST ENVIRONMENT — NO CUSTOMER MESSAGES SENT'),
-  'AIPlayground must display prominent non-customer warning banner',
+  aiLibSource.includes('useQuery') &&
+    aiLibSource.includes('useMutation') &&
+    !aiModuleText.includes("from 'zustand'"),
+  'AI agents must be loaded through TanStack Query, never mirrored in Zustand (FND-FE-005)',
 );
 assert.ok(
-  aiPlaygroundSource.includes('latencyMs') && aiPlaygroundSource.includes('tokensPrompt'),
-  'AIPlayground must report latency and token usage telemetry',
+  aiListSource.includes('Create New') &&
+    aiListSource.includes('Search AI agents') &&
+    aiListSource.includes('handleDuplicate') &&
+    aiListSource.includes('ConfirmDialog'),
+  'AI Agents list must create, search, duplicate and delete (with confirmation) multiple agents',
+);
+for (const tab of [
+  'General',
+  'Knowledge Sources',
+  'Integrations',
+  'Followups',
+  'Evaluation',
+  'Orchestration',
+]) {
+  assert.ok(
+    aiSettingsSource.includes(`label: '${tab}'`),
+    `Agent settings must list the ${tab} tab`,
+  );
+}
+for (const setting of [
+  'AI Agent Behavior',
+  'Welcome Message',
+  'Agent Transfer Conditions',
+  'Stop AI after Handoff',
+  'Silent Agent Handoff',
+  'Pending status messages',
+  'AI Actions',
+  'AI Model',
+  'Additional Settings',
+  'AI History Limit',
+  'AI Read File Limit',
+  'AI Context Limit',
+  'AI Temperature',
+  'Message Await',
+  'AI Message Limit',
+  'Watcher',
+  'Timezone',
+  'Session-Only Memory',
+]) {
+  assert.ok(aiGeneralSource.includes(setting), `General settings must include "${setting}"`);
+}
+for (const source of [
+  "label: 'Text'",
+  "label: 'Website'",
+  "label: 'File'",
+  "label: 'Q&A'",
+  "label: 'Product'",
+]) {
+  assert.ok(aiKnowledgeSource.includes(source), `Knowledge Sources must include ${source}`);
+}
+assert.ok(
+  aiKnowledgeSource.includes('Total Detected Characters'),
+  'Knowledge Sources must summarise detected characters',
 );
 assert.ok(
-  aiPlaygroundSource.includes('retrievedCitations') &&
-    aiPlaygroundSource.includes('Telemetry Inspector'),
-  'AIPlayground must feature retrieved citations inspector drawer',
+  aiChatSource.includes('runPreviewEngine') && aiChatSource.includes('No customer'),
+  'Test chat must answer through the preview engine and state that no customer receives replies',
 );
 assert.ok(
-  aiPlaygroundSource.includes('Emergency Kill') || aiPageSource.includes('Emergency Kill Switch'),
-  'AI supervisor must provide instant emergency kill switch',
-);
-assert.ok(
-  aiPlaygroundSource.includes('Guardrail Enforcement Activated'),
-  'AIPlayground must alert and trip guardrails on forbidden keywords',
-);
-assert.ok(
-  aiPageSource.includes('AIAgentConfig') && aiPageSource.includes('AIPlayground'),
-  'AI Agent page must integrate both AIAgentConfig and AIPlayground',
+  !aiModuleText.includes('telah memproses instruksi ini'),
+  'Test chat must not fall back to the old echo reply',
 );
 console.info(
-  '   ✓ UX-AI-001: Sanitized Playground, Warning Banner, Kill Switch, and Guardrails verified.',
+  '   ✓ UX-AI-001: Multi-agent list, General settings, Knowledge Sources, and test chat verified.',
 );
 
 // -------------------------------------------------------------
@@ -246,14 +317,14 @@ assert.ok(
   'Gate 1 (Hierarchy): Inbox identity must have clear typography hierarchy',
 );
 assert.ok(
-  aiPlaygroundSource.includes('role="alert"'),
-  'Gate 1 (Hierarchy): Warnings must be anchored with prominent role="alert"',
+  aiGeneralSource.includes('role="alert"'),
+  'Gate 1 (Hierarchy): Setting errors must be anchored with role="alert"',
 );
 
 // 2. Density: Information-dense without clutter, compact enterprise layout, monospace for technical data
 assert.ok(
-  aiPlaygroundSource.includes('font-mono'),
-  'Gate 2 (Density): AI tokens and latency must use monospace formatting',
+  aiUiSource.includes('tabular-nums'),
+  'Gate 2 (Density): AI character counters must use tabular figures',
 );
 assert.ok(
   broadcastWizardSource.includes('font-mono'),
@@ -270,8 +341,8 @@ assert.ok(
   'Gate 3 (Consistency): Inbox card must use the semantic surface and border tokens',
 );
 assert.ok(
-  aiPlaygroundSource.includes('bg-zinc-950') && aiPlaygroundSource.includes('border-zinc-800'),
-  'Gate 3 (Consistency): Playground must match dark enterprise palette',
+  aiChatSource.includes('hsl(var(--surface))') && aiChatSource.includes('hsl(var(--border))'),
+  'Gate 3 (Consistency): AI test chat must use the semantic surface and border tokens',
 );
 
 // 4. Speed: Zero layout shift, immediate client-side feedback
@@ -282,8 +353,10 @@ assert.ok(
 
 // 5. State completeness: Empty, loading, paused, completed, error states accounted for
 assert.ok(
-  aiPlaygroundSource.includes('Sandbox session is empty'),
-  'Gate 5 (State Completeness): Playground must have an explicit empty state',
+  aiChatSource.includes('Send a message as a customer') &&
+    aiListSource.includes('No AI agents match') &&
+    aiSettingsSource.includes('AI agent not found'),
+  'Gate 5 (State Completeness): AI Agent must have empty chat, empty search and not-found states',
 );
 assert.ok(
   broadcastWizardSource.includes('Broadcast Completed'),
@@ -313,26 +386,31 @@ assert.ok(
   blastDispatcherSource.includes('Invalid E.164 phone format'),
   'Gate 6 (Failure Clarity): Phone syntax error must give actionable format instruction',
 );
+assert.ok(
+  aiKnowledgeSource.includes('Enter a valid website address') &&
+    aiLibSource.includes('Make sure you can highlight the text') &&
+    aiKnowledgeSource.includes('before saving'),
+  'Gate 6 (Failure Clarity): Knowledge errors must explain how to fix the input',
+);
 
 // 7. WCAG 2.2 AA Contrast & Accessibility
 assert.ok(
-  aiPlaygroundSource.includes('aria-live="polite"'),
-  'Gate 7 (Accessibility): Warning banners must include aria-live announcement',
+  aiChatSource.includes('aria-live="polite"'),
+  'Gate 7 (Accessibility): Test chat replies must be announced with aria-live',
 );
 assert.ok(
-  aiPlaygroundSource.includes('role="alert"'),
-  'Gate 7 (Accessibility): Critical guardrails must include role="alert"',
+  aiUiSource.includes('role="alertdialog"'),
+  'Gate 7 (Accessibility): Destructive confirmations must use role="alertdialog"',
 );
 assert.ok(
-  connectModalSource.includes('aria-modal="true"') && channelsUiSource.includes('role="switch"'),
+  connectModalSource.includes('aria-modal="true"') && formControlsSource.includes('role="switch"'),
   'Gate 7 (Accessibility): Connect dialog must be modal and settings toggles must be switches',
 );
 
 // 8. Anti-AI Slop: Zero gratuitous gradients, zero neon glow, authentic CRM tool aesthetic
 const allComponentsText = [
   channelsModuleText,
-  aiPlaygroundSource,
-  aiConfigSource,
+  aiModuleText,
   broadcastWizardSource,
   blastDispatcherSource,
 ].join('\n');
