@@ -33,6 +33,17 @@ const POLL_BATCH_SIZE = 10;
 const MAX_PARSE_BYTES = 15 * 1024 * 1024;
 /** Journaled plain text is capped to keep provider_events rows small. */
 const MAX_TEXT_CHARS = 100_000;
+/** Date headers further than this from the receive time come from a wrong sender clock. */
+const MAX_DATE_SKEW_MS = 10 * 60_000;
+
+/** Uses the Date header unless the sender's clock is clearly off, then the receive time. */
+function receivedTimestamp(dateHeader: string | undefined): string {
+  const now = Date.now();
+  const parsed = dateHeader ? Date.parse(dateHeader) : Number.NaN;
+  return Number.isNaN(parsed) || Math.abs(parsed - now) > MAX_DATE_SKEW_MS
+    ? new Date(now).toISOString()
+    : new Date(parsed).toISOString();
+}
 
 export const EMAIL_CAPABILITIES: ChannelCapabilities = {
   text: true,
@@ -330,16 +341,22 @@ export class EmailAdapter implements ChannelAdapter<EmailCredentials> {
           .slice(0, POLL_BATCH_SIZE);
         if (uids.length === 0) return { uidValidity, lastUid, messages: [] };
 
-        const summaries = await client.fetchAll(
-          uids,
-          { uid: true, size: true, envelope: true },
-          { uid: true },
-        );
+        const summaries = await client.fetchAll(uids, { uid: true, size: true }, { uid: true });
         const messages: { uid: number; source?: Buffer; oversized: boolean; envelope?: unknown }[] =
           [];
         for (const summary of summaries.sort((a, b) => a.uid - b.uid)) {
           if ((summary.size ?? 0) > MAX_PARSE_BYTES) {
-            messages.push({ uid: summary.uid, oversized: true, envelope: summary.envelope });
+            // Only the envelope of oversized mail is read, never its body.
+            const head = await client.fetchOne(
+              String(summary.uid),
+              { uid: true, envelope: true },
+              { uid: true },
+            );
+            messages.push({
+              uid: summary.uid,
+              oversized: true,
+              envelope: head ? head.envelope : undefined,
+            });
             continue;
           }
           const full = await client.fetchOne(
@@ -439,7 +456,7 @@ export class EmailAdapter implements ChannelAdapter<EmailCredentials> {
             metadata: { email: address },
           },
           recipient: { identifier: account.credentials.emailAddress },
-          timestamp: asString(payload.date) ?? new Date().toISOString(),
+          timestamp: receivedTimestamp(asString(payload.date)),
           content: { type: 'TEXT', text },
           ...(inReplyTo ? { replyContext: { targetProviderMessageId: inReplyTo } } : {}),
           rawEventRef: {

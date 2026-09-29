@@ -58,6 +58,8 @@ export const ChannelInboundSchema = z.object({
   signingSecret: z.string().nullable(),
   /** True when VYNOR registered the webhook with the provider itself. */
   webhookRegistered: z.boolean(),
+  /** What the admin still has to do on the provider side, if anything. */
+  setupNote: z.string().nullable(),
 });
 export type ChannelInbound = z.infer<typeof ChannelInboundSchema>;
 

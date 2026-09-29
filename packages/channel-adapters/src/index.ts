@@ -8,5 +8,6 @@ export * from './http/http-client.js';
 export * from './runtime/runtime-config.js';
 export * from './signatures/hmac.js';
 export * from './credentials/credential-store.js';
+export * from './credentials/stored-channel.js';
 export * from './util/payload.js';
 export * from './providers/index.js';

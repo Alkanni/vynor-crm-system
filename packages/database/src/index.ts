@@ -86,9 +86,18 @@ export {
   persistProviderEvent,
   transitionProviderEventStatus,
   replayProviderEvent,
+  journalProviderEvents,
+  journalProviderEventsInTransaction,
+  PROVIDER_EVENT_RECEIVED,
   type PersistProviderEventParams,
   type PersistProviderEventResult,
+  type JournalEventInput,
+  type JournalProviderEventsParams,
+  type JournalProviderEventsResult,
 } from './provider-events.js';
+
+// Realtime hints relayed to Socket.IO through Postgres NOTIFY (issue #37)
+export { notifyRealtime } from './realtime-notify.js';
 
 // Schema & Migration verification helper (FND-DB-007)
 export {
