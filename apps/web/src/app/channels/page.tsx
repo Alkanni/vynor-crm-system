@@ -1,22 +1,18 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Check, Plus } from 'lucide-react';
 import type { ChannelProviderType } from '@vynor/contracts';
 import { ConnectPlatformModal } from '@/components/channels/ConnectPlatformModal';
 import { InboxList } from '@/components/channels/InboxList';
 import { InboxSettingsPanel } from '@/components/channels/InboxSettingsPanel';
+import { useAiAgents } from '@/lib/ai-agents/queries';
 import type {
   InboxAccount,
   InboxAgent,
   InboxDraft,
   InboxSettings,
 } from '@/components/channels/types';
-
-const AI_AGENTS: InboxAgent[] = [
-  { id: 'ai_support', name: 'VYNOR Support AI' },
-  { id: 'ai_sales', name: 'VYNOR Sales AI' },
-];
 
 const HUMAN_AGENTS: InboxAgent[] = [
   { id: 'agt_sarah', name: 'Sarah Jenkins' },
@@ -115,6 +111,12 @@ export default function ChannelsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(INITIAL_INBOXES[0]?.id ?? null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const agentsQuery = useAiAgents();
+  // Agents are created and configured on the AI Agent page.
+  const aiAgents = useMemo<InboxAgent[]>(
+    () => (agentsQuery.data ?? []).map(({ id, name }) => ({ id, name })),
+    [agentsQuery.data],
+  );
 
   const selected = inboxes.find((inbox) => inbox.id === selectedId) ?? null;
 
@@ -182,7 +184,7 @@ export default function ChannelsPage() {
         <InboxList
           inboxes={inboxes}
           selectedId={selectedId}
-          aiAgents={AI_AGENTS}
+          aiAgents={aiAgents}
           humanAgents={HUMAN_AGENTS}
           onSelect={setSelectedId}
           onConnect={openConnect}
@@ -194,7 +196,7 @@ export default function ChannelsPage() {
           <InboxSettingsPanel
             key={selected.id}
             inbox={selected}
-            aiAgents={AI_AGENTS}
+            aiAgents={aiAgents}
             humanAgents={HUMAN_AGENTS}
             onSave={handleSave}
             onDelete={handleDelete}

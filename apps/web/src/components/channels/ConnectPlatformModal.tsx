@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import type { ChannelProviderType } from '@vynor/contracts';
 import { PLATFORMS, PlatformIcon, getPlatform } from './platforms';
-import { FIELD_CLASS } from './ui';
+import { FIELD_CLASS } from '@/components/common/form-controls';
 import { cn } from '@/lib/utils';
 
 interface ConnectPlatformModalProps {

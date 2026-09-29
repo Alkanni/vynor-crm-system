@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import type { InboxAccount, InboxAgent } from './types';
 import { InboxCard } from './InboxCard';
-import { FIELD_CLASS } from './ui';
+import { FIELD_CLASS } from '@/components/common/form-controls';
 import { cn } from '@/lib/utils';
 
 interface InboxListProps {

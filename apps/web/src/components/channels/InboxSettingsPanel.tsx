@@ -10,7 +10,7 @@ import type {
   InboxSettings,
 } from './types';
 import { PlatformIcon, getPlatform } from './platforms';
-import { FIELD_CLASS, SelectField, Toggle, initials } from './ui';
+import { FIELD_CLASS, SelectField, Toggle, initials } from '@/components/common/form-controls';
 import { cn } from '@/lib/utils';
 
 const DISTRIBUTION_METHODS: { value: ChatDistributionMethod; label: string }[] = [
@@ -169,7 +169,8 @@ export function InboxSettingsPanel({
           </label>
           <SelectField
             id="inbox-ai-agent"
-            value={draft.aiAgentId ?? ''}
+            // A deleted agent reads as "No AI agent" instead of an unknown id.
+            value={aiAgents.some((a) => a.id === draft.aiAgentId) ? (draft.aiAgentId ?? '') : ''}
             onChange={(e) => update('aiAgentId', e.target.value || null)}
           >
             <option value="">No AI agent</option>
