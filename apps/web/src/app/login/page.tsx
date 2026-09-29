@@ -2,9 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertCircle, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { VynorLogo } from '@/components/common/VynorLogo';
-import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { Banner, Button } from '@/components/ui';
+import { cn } from '@/lib/utils';
+
+/** Field styling from VYNOR `v3/components/Form/Input.vue`. */
+const LOGIN_INPUT_CLASS =
+  'block w-full appearance-none rounded-md border-none bg-n-alpha-black2 px-3 py-3 text-n-slate-12 shadow-sm outline outline-1 -outline-offset-1 outline-n-weak placeholder:text-n-slate-10 hover:outline-n-slate-6 focus:outline focus:outline-1 focus:outline-n-brand sm:text-sm sm:leading-6';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +22,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [hasErrored, setHasErrored] = useState(false);
 
   // If already authenticated, redirect immediately
   useEffect(() => {
@@ -33,6 +41,8 @@ export default function LoginPage() {
       const { error } = await signIn(email, password);
       if (error) {
         setErrorMessage(error.message || 'Invalid credentials. Please try again.');
+        setHasErrored(true);
+        setTimeout(() => setHasErrored(false), 600);
       } else {
         router.replace(returnUrl);
       }
@@ -57,99 +67,115 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
-      <div className="flex flex-col items-center text-center space-y-2">
-        <VynorLogo variant="full" size={44} className="mb-1" />
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Sign in to VYNOR CRM</h1>
-        <p className="text-xs text-muted-foreground">
-          Enter your credentials to access your omnichannel workspace
+    <main className="flex h-dvh w-full flex-col overflow-y-auto bg-n-brand/5 py-20 dark:bg-n-background sm:px-6 lg:px-8">
+      <section className="mx-auto flex max-w-5xl flex-col items-center px-4">
+        <VynorLogo variant="full" size={32} className="mx-auto" />
+        <h1 className="mt-6 text-center text-3xl font-medium text-n-slate-12">Login to VYNOR</h1>
+        <p className="mt-3 text-center text-sm text-n-slate-11">
+          Access your omnichannel workspace
         </p>
-      </div>
+      </section>
 
-      {errorMessage && (
-        <div
-          role="alert"
-          aria-live="polite"
-          className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3.5 text-sm text-destructive"
-        >
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
+      <section
+        className={cn(
+          'mt-11 bg-white p-8 shadow dark:bg-n-solid-2 sm:mx-auto sm:w-full sm:max-w-lg sm:rounded-lg sm:p-11 sm:shadow-lg',
+          hasErrored && 'animate-wiggle',
+        )}
+      >
+        {errorMessage && (
+          <Banner
+            role="alert"
+            color="ruby"
+            icon={<AlertCircle className="size-4" />}
+            className="mb-5"
+          >
+            {errorMessage}
+          </Banner>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm font-medium text-foreground">
-            Work Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="agent@vynor.com"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-5" data-testid="login-form">
+          <div>
+            <label htmlFor="email" className="text-sm font-medium leading-6 text-n-slate-12">
+              Email
+            </label>
+            <div className="mt-1">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="agent@vynor.com"
+                className={LOGIN_INPUT_CLASS}
+              />
+            </div>
+          </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium text-foreground">
+          <div>
+            <label htmlFor="password" className="text-sm font-medium leading-6 text-n-slate-12">
               Password
             </label>
+            <div className="relative mt-1">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className={cn(LOGIN_INPUT_CLASS, 'pr-10')}
+              />
+              <Button
+                variant="link"
+                color="slate"
+                size="sm"
+                icon={showPassword ? EyeOff : Eye}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 pr-3"
+              />
+            </div>
           </div>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full"
+            label={isSubmitting ? 'Signing in…' : 'Login'}
+            isLoading={isSubmitting}
+            disabled={isSubmitting}
           />
+        </form>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-n-strong" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 uppercase text-n-slate-10 dark:bg-n-solid-2">or</span>
+          </div>
         </div>
 
-        <button
-          type="submit"
+        <Button
+          variant="faded"
+          color="slate"
+          size="lg"
+          icon={Sparkles}
+          className="w-full"
+          label="Explore UI/UX Demo (Super Admin)"
+          onClick={handleDemoSignIn}
           disabled={isSubmitting}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 transition-colors"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Signing in...</span>
-            </>
-          ) : (
-            <span>Sign in</span>
-          )}
-        </button>
-      </form>
+        />
 
-      <div className="relative flex items-center justify-center my-1">
-        <div className="border-t border-border w-full"></div>
-        <span className="bg-card px-2 text-[10px] text-muted-foreground uppercase tracking-wider shrink-0">
-          or preview UI/UX
-        </span>
-      </div>
-
-      <button
-        type="button"
-        onClick={handleDemoSignIn}
-        disabled={isSubmitting}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-secondary/80 hover:bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground shadow-xs transition-colors cursor-pointer"
-      >
-        <Sparkles className="h-4 w-4 text-primary" />
-        <span>Explore UI/UX Demo (Super Admin Mode)</span>
-      </button>
-
-      <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
-        VYNOR CRM Security Boundary &bull; Role-Based Access Control
-      </div>
-    </div>
+        <p className="mb-0 mt-6 text-center text-xs text-n-slate-10">
+          VYNOR CRM security boundary · Role-based access control
+        </p>
+      </section>
+    </main>
   );
 }

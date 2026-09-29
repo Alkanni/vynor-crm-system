@@ -37,7 +37,7 @@ export function QnaKnowledge({ pairs, onChange }: QnaKnowledgeProps) {
       </div>
 
       {pairs.length === 0 && (
-        <p className="rounded-xl border border-dashed border-[hsl(var(--border-strong))] px-6 py-10 text-center text-sm text-n-slate-11">
+        <p className="rounded-xl border border-dashed border-n-strong px-6 py-10 text-center text-sm text-n-slate-11">
           Add the questions customers ask most, with the exact answer the AI should give.
         </p>
       )}
@@ -45,7 +45,7 @@ export function QnaKnowledge({ pairs, onChange }: QnaKnowledgeProps) {
       {pairs.map((pair, index) => (
         <fieldset
           key={pair.id}
-          className="flex flex-col gap-3 rounded-xl bg-[var(--n-alpha-black2)] p-4 sm:p-5"
+          className="flex flex-col gap-3 rounded-xl bg-n-alpha-black2 p-4 sm:p-5"
         >
           <legend className="sr-only">Q&amp;A {index + 1}</legend>
           <label htmlFor={`${pair.id}-q`} className="text-sm text-n-slate-11">
@@ -71,7 +71,7 @@ export function QnaKnowledge({ pairs, onChange }: QnaKnowledgeProps) {
             rows={3}
           />
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-[#e54666]">
+            <p className="text-xs text-n-ruby-9">
               {isIncompletePair(pair) &&
                 (pair.question.trim()
                   ? 'Add an answer to this question.'
@@ -81,7 +81,7 @@ export function QnaKnowledge({ pairs, onChange }: QnaKnowledgeProps) {
               type="button"
               onClick={() => onChange((prev) => prev.filter((p) => p.id !== pair.id))}
               aria-label={`Delete Q&A ${index + 1}`}
-              className="cursor-pointer rounded-md p-1.5 text-[var(--ruby-11)] hover:bg-[var(--ruby-2)]"
+              className="cursor-pointer rounded-md p-1.5 text-n-ruby-11 hover:bg-n-ruby-2"
             >
               <Trash2 className="size-4" />
             </button>

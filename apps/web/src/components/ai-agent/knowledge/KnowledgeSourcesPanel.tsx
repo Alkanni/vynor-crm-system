@@ -78,7 +78,7 @@ export function KnowledgeSourcesPanel({
       <div
         role="tablist"
         aria-label="Knowledge source type"
-        className="flex gap-1 overflow-x-auto border-b border-[hsl(var(--border))]"
+        className="flex gap-1 overflow-x-auto border-b border-n-weak"
       >
         {SOURCE_TABS.map(({ id, label, icon: Icon }) => (
           <button
@@ -90,8 +90,8 @@ export function KnowledgeSourcesPanel({
             className={cn(
               '-mb-px inline-flex shrink-0 cursor-pointer items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
               tab === id
-                ? 'border-[#e5484d] text-[var(--brand-11)]'
-                : 'border-transparent text-n-slate-11 hover:text-[hsl(var(--foreground))]',
+                ? 'border-n-brand text-n-blue-11'
+                : 'border-transparent text-n-slate-11 hover:text-n-slate-12',
             )}
           >
             <Icon className="size-4" />
@@ -132,7 +132,7 @@ export function KnowledgeSourcesPanel({
 
         <aside
           aria-label="Knowledge summary"
-          className="order-first flex h-fit flex-col gap-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-5 shadow-sm lg:sticky lg:top-0 lg:order-none"
+          className="order-first flex h-fit flex-col gap-4 rounded-xl border border-n-weak bg-n-solid-2 p-5 shadow-sm lg:sticky lg:top-0 lg:order-none"
         >
           <dl className="grid grid-cols-2 gap-4 lg:grid-cols-1">
             {stats.map(([label, value]) => (
@@ -151,7 +151,7 @@ export function KnowledgeSourcesPanel({
             </div>
           </dl>
           {problem && (
-            <p role="alert" className="text-xs text-[#e54666]">
+            <p role="alert" className="text-xs text-n-ruby-9">
               {problem}
             </p>
           )}

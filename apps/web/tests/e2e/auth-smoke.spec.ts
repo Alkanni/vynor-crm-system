@@ -22,11 +22,9 @@ test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TS
   }) => {
     await page.goto('/login');
 
-    // Verify page header and branding
-    await expect(page.locator('h1')).toContainText('Sign in to VYNOR CRM');
-    await expect(
-      page.getByText('Enter your credentials to access your omnichannel workspace'),
-    ).toBeVisible();
+    // Verify page header and branding (VYNOR v3 login layout)
+    await expect(page.locator('h1')).toContainText('Login to VYNOR');
+    await expect(page.getByText('Access your omnichannel workspace')).toBeVisible();
 
     // Verify form input controls
     const emailInput = page.locator('#email');
@@ -36,7 +34,7 @@ test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TS
     await expect(emailInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
     await expect(submitBtn).toBeVisible();
-    await expect(submitBtn).toContainText('Sign in');
+    await expect(submitBtn).toContainText('Login');
   });
 
   test('submitting credentials against auth provider displays feedback', async ({ page }) => {
@@ -47,8 +45,8 @@ test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TS
     await page.fill('#password', 'WrongPassword123!');
     await page.click('button[type="submit"]');
 
-    // Expect error alert or feedback to appear
-    const alertBox = page.locator('[role="alert"]');
+    // Expect error alert or feedback to appear (ignore Next's empty route announcer)
+    const alertBox = page.getByRole('alert').filter({ hasText: /\S/ });
     await expect(alertBox).toBeVisible({ timeout: 5000 });
   });
 
@@ -99,28 +97,25 @@ test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TS
 
     await page.goto('/');
 
-    // Verify VYNOR CRM app shell header and workspace badge
-    await expect(page.getByText('VYNOR CRM')).toBeVisible();
-    await expect(page.getByRole('banner').getByText('Smoke Test Workspace')).toBeVisible();
+    // VYNOR shell: no global top header / status bar, full-height sidebar instead
+    await expect(page.getByRole('banner')).toHaveCount(0);
+    const sidebar = page.locator('aside[aria-label="Main navigation"]');
+    await expect(sidebar).toBeVisible();
+    await expect(sidebar.getByText('Smoke Test Workspace')).toBeVisible();
+    await expect(sidebar.getByRole('link', { name: 'Inbox' })).toBeVisible();
 
-    // Verify navigation sidebar
-    const navMenu = page.locator('nav[aria-label="Main Navigation"]').first();
-    await expect(navMenu).toBeVisible();
-
-    // Verify home page welcome header
+    // Verify home page header (PageHeader)
     await expect(page.locator('h1').first()).toContainText('Welcome back, Agent Smoke');
-    await expect(page.getByText('Authenticated (RBAC Active)')).toBeVisible();
+    await expect(page.getByText('Authenticated (RBAC active)')).toBeVisible();
 
-    // Verify user display name in header
-    await expect(page.getByRole('banner').getByText('Agent Smoke')).toBeVisible();
+    // Verify the profile menu in the sidebar footer
+    await expect(sidebar.getByText('Agent Smoke')).toBeVisible();
+    await sidebar.getByRole('button', { name: /Agent Smoke/ }).click();
+    await expect(page.getByRole('menuitem', { name: 'Log out' })).toBeVisible();
+    await page.keyboard.press('Escape');
 
-    // Verify sidebar toggle button
-    const toggleButton = page.locator('button[aria-label="Toggle Navigation Sidebar"]');
-    await expect(toggleButton).toBeVisible();
-    await toggleButton.click();
-
-    // Verify sign out button is rendered
-    const signOutBtn = page.locator('button[aria-label="Sign Out"]');
-    await expect(signOutBtn).toBeVisible();
+    // Double-clicking the resize handle collapses the sidebar to 56px
+    await page.getByRole('separator', { name: 'Resize sidebar' }).dblclick();
+    await expect.poll(async () => (await sidebar.boundingBox())?.width).toBe(56);
   });
 });

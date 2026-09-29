@@ -10,12 +10,12 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { cn } from '@/lib/utils';
 
 const STATUS_LABEL: Record<KnowledgeLink['status'], { text: string; className: string }> = {
-  QUEUED: { text: 'Queued', className: 'bg-amber-500/10 text-amber-700 dark:text-amber-300' },
+  QUEUED: { text: 'Queued', className: 'bg-n-amber-9/10 text-n-amber-11' },
   TRAINED: {
     text: 'Trained',
-    className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    className: 'bg-n-teal-9/10 text-n-teal-11',
   },
-  FAILED: { text: 'Failed', className: 'bg-[var(--ruby-3)] text-[var(--ruby-11)]' },
+  FAILED: { text: 'Failed', className: 'bg-n-ruby-3 text-n-ruby-11' },
 };
 
 function normalizeUrl(value: string): string | null {
@@ -98,7 +98,7 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
         <div
           role="radiogroup"
           aria-label="Link mode"
-          className="inline-flex w-fit rounded-lg bg-[hsl(var(--muted))] p-1"
+          className="inline-flex w-fit rounded-lg bg-n-slate-3 p-1"
         >
           {(['BATCH', 'SINGLE'] as const).map((m) => (
             <button
@@ -109,9 +109,7 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
               onClick={() => setMode(m)}
               className={cn(
                 'cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                mode === m
-                  ? 'bg-[hsl(var(--surface))] text-n-slate-12 shadow-sm'
-                  : 'text-n-slate-11',
+                mode === m ? 'bg-n-solid-2 text-n-slate-12 shadow-sm' : 'text-n-slate-11',
               )}
             >
               {m === 'BATCH' ? 'Batch Link' : 'Single Link'}
@@ -134,7 +132,7 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
             placeholder="Link URL"
             aria-invalid={error ? true : undefined}
             aria-describedby="website-url-hint"
-            className={cn(FIELD_CLASS, 'h-11 flex-1', error && 'border-[#e54666]')}
+            className={cn(FIELD_CLASS, 'h-11 flex-1', error && 'border-n-ruby-9')}
           />
           <button
             type="submit"
@@ -145,12 +143,12 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
           </button>
         </div>
         {error ? (
-          <p role="alert" className="text-sm text-[#e54666]">
+          <p role="alert" className="text-sm text-n-ruby-9">
             {error}
           </p>
         ) : (
           <p id="website-url-hint" className="flex items-start gap-2 text-sm text-n-slate-11">
-            <Info className="mt-0.5 size-4 shrink-0 text-sky-600" />
+            <Info className="mt-0.5 size-4 shrink-0 text-n-iris-11" />
             {mode === 'BATCH' ? (
               <span>
                 Start with URL and this tool will gather up to <strong>300 unique</strong> links
@@ -163,7 +161,7 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
         )}
       </form>
 
-      <div className="flex flex-col gap-4 border-t border-[hsl(var(--border))] pt-6">
+      <div className="flex flex-col gap-4 border-t border-n-weak pt-6">
         <div>
           <h3 className="text-lg font-semibold text-n-slate-12">Trained Link</h3>
           <p className="text-sm text-n-slate-11">
@@ -191,7 +189,7 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
               : 'No links match your search.'}
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-[hsl(var(--border))]">
+          <ul className="flex flex-col divide-y divide-n-weak">
             {filtered.map((link) => (
               <li key={link.id} className="flex items-center gap-3 py-3">
                 <input
@@ -199,14 +197,14 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
                   checked={selected.has(link.id)}
                   onChange={() => toggle(link.id)}
                   aria-label={`Select ${link.url}`}
-                  className="size-4 shrink-0 cursor-pointer accent-[#e5484d]"
+                  className="size-4 shrink-0 cursor-pointer accent-n-brand"
                 />
                 <Globe className="size-4 shrink-0 text-n-slate-10" />
                 <a
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="min-w-0 flex-1 truncate text-sm text-[hsl(var(--foreground))] hover:underline"
+                  className="min-w-0 flex-1 truncate text-sm text-n-slate-12 hover:underline"
                 >
                   {link.url}
                 </a>
@@ -225,7 +223,7 @@ export function WebsiteKnowledge({ links, onChange }: WebsiteKnowledgeProps) {
                   type="button"
                   onClick={() => remove(new Set([link.id]))}
                   aria-label={`Remove ${link.url}`}
-                  className="shrink-0 cursor-pointer rounded-md p-1.5 text-n-slate-11 hover:bg-[var(--ruby-2)] hover:text-[var(--ruby-11)]"
+                  className="shrink-0 cursor-pointer rounded-md p-1.5 text-n-slate-11 hover:bg-n-ruby-2 hover:text-n-ruby-11"
                 >
                   <Trash2 className="size-4" />
                 </button>

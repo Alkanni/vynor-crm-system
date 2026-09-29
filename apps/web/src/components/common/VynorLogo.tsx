@@ -63,7 +63,7 @@ export function VynorLogomark({
       {/* Unread Alert Indicator Badge (Golden dot on Brand Red ring) */}
       {hasUnread && (
         <span
-          className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-[#E5484D] ring-2 ring-background"
+          className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-n-brand ring-2 ring-n-background"
           style={{ width: Math.max(8, size * 0.35), height: Math.max(8, size * 0.35) }}
           title="Unassigned conversations waiting in queue"
         >
@@ -99,7 +99,7 @@ export function VynorWordmark({
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="VYNOR"
-      className={cn('inline-block select-none text-foreground shrink-0', className)}
+      className={cn('inline-block select-none text-n-slate-12 shrink-0', className)}
       style={{ width, height }}
     >
       <g

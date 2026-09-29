@@ -81,13 +81,13 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
       </SelectionToolbar>
 
       {filtered.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-[hsl(var(--border-strong))] px-6 py-10 text-center text-sm text-n-slate-11">
+        <p className="rounded-xl border border-dashed border-n-strong px-6 py-10 text-center text-sm text-n-slate-11">
           {products.length === 0
             ? 'No products yet. Add products from your catalog so the AI can answer price and stock questions.'
             : 'No products match your search.'}
         </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-[hsl(var(--border))]">
+        <ul className="flex flex-col divide-y divide-n-weak">
           {filtered.map((product) => (
             <li key={product.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
               <input
@@ -95,9 +95,9 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
                 checked={selected.has(product.id)}
                 onChange={() => setSelected((s) => toggle(s, product.id))}
                 aria-label={`Select ${product.name}`}
-                className="size-4 shrink-0 cursor-pointer accent-[#e5484d]"
+                className="size-4 shrink-0 cursor-pointer accent-n-brand"
               />
-              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--muted))] text-sky-600">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-n-slate-3 text-n-iris-11">
                 <Package className="size-5" />
               </span>
               <div className="min-w-0 flex-1 basis-40">
@@ -113,7 +113,7 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
                 <div className="flex items-center gap-1.5">
                   <Warehouse className="size-3.5 text-n-slate-10" />
                   <dt className="text-n-slate-10">Stock:</dt>
-                  <dd className={product.stock === 0 ? 'text-[var(--ruby-11)]' : 'text-n-slate-12'}>
+                  <dd className={product.stock === 0 ? 'text-n-ruby-11' : 'text-n-slate-12'}>
                     {product.stock === 0 ? 'Out of stock' : product.stock}
                   </dd>
                 </div>
@@ -127,7 +127,7 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
                 type="button"
                 onClick={() => remove(new Set([product.id]))}
                 aria-label={`Remove ${product.name}`}
-                className="ml-auto shrink-0 cursor-pointer rounded-md p-1.5 text-n-slate-11 hover:bg-[var(--ruby-2)] hover:text-[var(--ruby-11)]"
+                className="ml-auto shrink-0 cursor-pointer rounded-md p-1.5 text-n-slate-11 hover:bg-n-ruby-2 hover:text-n-ruby-11"
               >
                 <Trash2 className="size-4" />
               </button>
@@ -138,7 +138,7 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
 
       {picking && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-n-alpha-black1 p-4 backdrop-blur-[4px] animate-in fade-in duration-150"
           onClick={() => setPicking(false)}
           onKeyDown={(e) => e.key === 'Escape' && setPicking(false)}
         >
@@ -147,7 +147,7 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
             aria-modal="true"
             aria-labelledby="add-products-title"
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-full w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-5 shadow-2xl"
+            className="flex max-h-full w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border border-n-weak bg-n-alpha-3 p-5 shadow-xl backdrop-blur-[100px]"
           >
             <div>
               <h2 id="add-products-title" className="text-lg font-semibold text-n-slate-12">
@@ -160,13 +160,13 @@ export function ProductKnowledge({ products, onChange }: ProductKnowledgeProps) 
             <ul className="flex min-h-0 flex-col gap-1 overflow-y-auto">
               {available.map((product) => (
                 <li key={product.id}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-[hsl(var(--muted))]">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-n-slate-3">
                     <input
                       type="checkbox"
                       autoFocus={product.id === available[0]?.id}
                       checked={picked.has(product.id)}
                       onChange={() => setPicked((s) => toggle(s, product.id))}
-                      className="size-4 cursor-pointer accent-[#e5484d]"
+                      className="size-4 cursor-pointer accent-n-brand"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-n-slate-12">

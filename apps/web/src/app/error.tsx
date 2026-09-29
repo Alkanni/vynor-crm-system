@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { ApiClientError } from '@/lib/api/api-client';
+import { EmptyState } from '@/components/common/EmptyState';
+import { Button } from '@/components/ui';
 
 export default function RootError({
   error,
@@ -20,34 +22,31 @@ export default function RootError({
   const code = isApiError ? error.code : 'CLIENT_RUNTIME_ERROR';
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center p-6 text-center bg-background">
-      <div className="mb-4 rounded-full bg-destructive/10 p-4 text-destructive">
-        <AlertCircle className="h-10 w-10" />
-      </div>
-      <h2 className="mb-2 text-2xl font-bold tracking-tight text-foreground">Application Error</h2>
-      <p className="mb-4 max-w-md text-sm text-muted-foreground">
-        {error.message || 'An unexpected error occurred while rendering the page.'}
-      </p>
-
-      <div className="mb-6 rounded-md bg-muted p-3 text-xs text-muted-foreground text-left">
-        <div>
-          <span className="font-semibold text-foreground">Code: </span>
-          <code>{code}</code>
-        </div>
-        <div>
-          <span className="font-semibold text-foreground">Correlation ID: </span>
-          <code>{correlationId}</code>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => reset()}
-        className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <RefreshCw className="h-4 w-4" />
-        <span>Try Again</span>
-      </button>
+    <div className="flex h-full w-full flex-col items-center justify-center bg-n-surface-1 p-6">
+      <EmptyState
+        icon={<AlertCircle className="size-6 text-n-ruby-11" />}
+        title="Application error"
+        description={error.message || 'An unexpected error occurred while rendering the page.'}
+        actions={
+          <div className="flex flex-col items-center gap-4">
+            <dl className="m-0 grid gap-1 rounded-lg bg-n-alpha-2 px-3 py-2 text-left text-xs text-n-slate-11">
+              <div>
+                <dt className="inline font-medium text-n-slate-12">Code: </dt>
+                <dd className="inline">
+                  <code>{code}</code>
+                </dd>
+              </div>
+              <div>
+                <dt className="inline font-medium text-n-slate-12">Correlation ID: </dt>
+                <dd className="inline">
+                  <code>{correlationId}</code>
+                </dd>
+              </div>
+            </dl>
+            <Button size="sm" icon={RefreshCw} label="Try again" onClick={() => reset()} />
+          </div>
+        }
+      />
     </div>
   );
 }

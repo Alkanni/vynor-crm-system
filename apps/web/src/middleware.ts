@@ -3,7 +3,18 @@ import { NextResponse, type NextRequest } from 'next/server';
 /**
  * Public routes that do not require an active authenticated session.
  */
-const PUBLIC_PATHS = ['/login', '/auth', '/api/health', '/_next', '/favicon.ico'];
+const PUBLIC_PATHS = [
+  '/login',
+  '/auth',
+  '/api/health',
+  '/_next',
+  '/favicon.ico',
+  '/icon.svg',
+  // Static brand assets must load before sign-in (fonts, logos).
+  '/fonts',
+  '/brand-assets',
+  '/robots.txt',
+];
 
 /**
  * Edge middleware protecting CRM routes and propagating correlation IDs.
@@ -67,7 +78,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - icon.svg, fonts/, brand-assets/, robots.txt (public static files)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|fonts/|brand-assets/|robots.txt).*)',
   ],
 };

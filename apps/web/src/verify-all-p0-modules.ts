@@ -122,6 +122,10 @@ const aiContractSource = fs.readFileSync(
   path.join(__dirname, '../../../packages/contracts/src/ai/agent.ts'),
   'utf-8',
 );
+const switchPrimitiveSource = fs.readFileSync(
+  path.join(__dirname, 'components/ui/Switch.tsx'),
+  'utf-8',
+);
 const formControlsSource = fs.readFileSync(
   path.join(__dirname, 'components/common/form-controls.tsx'),
   'utf-8',
@@ -313,8 +317,8 @@ console.info('\n5. Checking Section 47 Visual Quality Gate (8-Point Checklist)..
 
 // 1. Hierarchy: Visual anchor per screen, scannable in 3 seconds, no competing primaries
 assert.ok(
-  inboxCardSource.includes('font-semibold') && inboxCardSource.includes('text-xs'),
-  'Gate 1 (Hierarchy): Inbox identity must have clear typography hierarchy',
+  inboxCardSource.includes('text-base font-medium') && inboxCardSource.includes('text-sm'),
+  'Gate 1 (Hierarchy): Inbox identity must follow the VYNOR card hierarchy (text-base name, text-sm meta)',
 );
 assert.ok(
   aiGeneralSource.includes('role="alert"'),
@@ -335,14 +339,18 @@ assert.ok(
   'Gate 2 (Density): Phone numbers and row indexes must use monospace',
 );
 
-// 3. Consistency: Standard tokens, semantic card borders and palette
+// 3. Consistency: VYNOR n-* design tokens (CardLayout surface + outline, weak borders)
 assert.ok(
-  inboxCardSource.includes('hsl(var(--surface))') && inboxCardSource.includes('hsl(var(--border))'),
-  'Gate 3 (Consistency): Inbox card must use the semantic surface and border tokens',
+  inboxCardSource.includes('bg-n-solid-2') && inboxCardSource.includes('outline-n-container'),
+  'Gate 3 (Consistency): Inbox card must use the VYNOR CardLayout surface and outline tokens',
 );
 assert.ok(
-  aiChatSource.includes('hsl(var(--surface))') && aiChatSource.includes('hsl(var(--border))'),
-  'Gate 3 (Consistency): AI test chat must use the semantic surface and border tokens',
+  aiChatSource.includes('bg-n-solid-2') && aiChatSource.includes('border-n-weak'),
+  'Gate 3 (Consistency): AI test chat must use the VYNOR surface and border tokens',
+);
+assert.ok(
+  !/hsl\(var\(--/.test(`${channelsModuleText}\n${aiModuleText}`),
+  'Gate 3 (Consistency): Modules must not read legacy HSL variables directly',
 );
 
 // 4. Speed: Zero layout shift, immediate client-side feedback
@@ -403,7 +411,9 @@ assert.ok(
   'Gate 7 (Accessibility): Destructive confirmations must use role="alertdialog"',
 );
 assert.ok(
-  connectModalSource.includes('aria-modal="true"') && formControlsSource.includes('role="switch"'),
+  connectModalSource.includes('aria-modal="true"') &&
+    formControlsSource.includes('<Switch') &&
+    switchPrimitiveSource.includes('role="switch"'),
   'Gate 7 (Accessibility): Connect dialog must be modal and settings toggles must be switches',
 );
 

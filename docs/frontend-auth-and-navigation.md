@@ -10,7 +10,7 @@ Protected CRM routes are guarded at the edge by Next.js middleware in `apps/web/
 
 ```mermaid
 flowchart TD
-    Req[Incoming Navigation Request] --> Matcher{Is Path Public?<br/>/login, /auth, /_next, etc.}
+    Req[Incoming Navigation Request] --> Matcher{Is Path Public?<br/>/login, /auth, /_next, /fonts, /icon.svg, etc.}
     Matcher -- Yes --> Next[Allow Request]
     Matcher -- No --> CheckCookie{Session Cookie Present?<br/>sb-access-token / auth-token}
     CheckCookie -- No --> Redirect[Redirect to /login?returnUrl=pathname]
@@ -99,7 +99,7 @@ Navigation links are filtered dynamically based on the actor's permissions:
 flowchart LR
     Master[CRM_NAV_ITEMS<br/>Complete Hierarchy] --> Filter[getVisibleNavItems]
     Filter --> ActorContext{Evaluate permissions<br/>against item.requiredPermissions}
-    ActorContext -- Permitted --> NavMenu[Render in NavigationMenu]
+    ActorContext -- Permitted --> NavMenu[Render in Sidebar<br/>components/sidebar/Sidebar.tsx]
     ActorContext -- Denied --> Hidden[Omit from DOM completely]
 ```
 

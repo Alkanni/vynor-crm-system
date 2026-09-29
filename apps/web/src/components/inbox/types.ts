@@ -8,6 +8,8 @@ export interface ConversationSummary {
   customerName: string;
   customerIdentifier: string;
   avatarUrl?: string | undefined;
+  /** Customer presence, drives the avatar status dot. */
+  isOnline?: boolean | undefined;
   channel: ChannelType;
   lastMessageSnippet: string;
   lastMessageAt: string;

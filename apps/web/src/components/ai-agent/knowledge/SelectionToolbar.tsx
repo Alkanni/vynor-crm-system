@@ -31,7 +31,7 @@ export function SelectionToolbar({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3">
-        <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-sm font-medium text-[var(--brand-11)]">
+        <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-sm font-medium text-n-blue-11">
           <input
             type="checkbox"
             checked={allSelected}
@@ -40,7 +40,7 @@ export function SelectionToolbar({
             }}
             onChange={onToggleAll}
             disabled={total === 0}
-            className="size-4 cursor-pointer accent-[#e5484d]"
+            className="size-4 cursor-pointer accent-n-brand"
           />
           Select
         </label>
@@ -48,7 +48,7 @@ export function SelectionToolbar({
           <button
             type="button"
             onClick={onDeleteSelected}
-            className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-[#e54666]/50 px-3 text-sm font-medium text-[var(--ruby-11)] hover:bg-[var(--ruby-2)]"
+            className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-n-ruby-9/50 px-3 text-sm font-medium text-n-ruby-11 hover:bg-n-ruby-2"
           >
             <Trash2 className="size-4" />
             Delete ({selected})

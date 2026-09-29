@@ -139,17 +139,7 @@ export function CommandPaletteDialog() {
       title: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`,
       category: 'Actions',
       icon: theme === 'dark' ? Sun : Moon,
-      action: () => {
-        const nextTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(nextTheme);
-        if (typeof document !== 'undefined') {
-          if (nextTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        }
-      },
+      action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
     },
     {
       id: 'act-shortcuts',
@@ -203,37 +193,38 @@ export function CommandPaletteDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 pt-[15vh] backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-n-alpha-black1 p-4 pt-[15vh] backdrop-blur-[4px] animate-in fade-in duration-100"
       onClick={() => setCommandPaletteOpen(false)}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Command Palette"
-        className="w-full max-w-xl rounded-md border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        className="w-full max-w-xl overflow-hidden rounded-xl border border-n-weak bg-n-alpha-3 shadow-xl backdrop-blur-[100px] animate-in fade-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 border-b border-border px-3.5 py-2.5 bg-background">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <div className="flex items-center gap-3 border-b border-n-weak px-4 py-3">
+          <Search className="size-4 shrink-0 text-n-slate-10" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command or jump to module..."
-            className="w-full bg-transparent text-sm text-foreground outline-hidden placeholder:text-muted-foreground"
+            placeholder="Search or jump to…"
+            aria-label="Search commands"
+            className="w-full border-0 bg-transparent text-sm text-n-slate-12 outline-none placeholder:text-n-slate-10 focus-visible:outline-none"
           />
-          <kbd className="hidden sm:inline-block rounded-xs border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-            ESC
+          <kbd className="hidden shrink-0 rounded-md bg-n-alpha-2 px-1.5 py-0.5 font-sans text-xs text-n-slate-11 sm:inline-block">
+            Esc
           </kbd>
         </div>
 
         {/* Search Results */}
-        <div className="max-h-80 overflow-y-auto p-1.5 divide-y divide-border/20">
+        <div className="grid max-h-80 gap-1 overflow-y-auto p-2">
           {filteredItems.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
+            <div className="p-6 text-center text-sm text-n-slate-11">
               No matching commands or navigation items found.
             </div>
           ) : (
@@ -250,30 +241,16 @@ export function CommandPaletteDialog() {
                   }}
                   onMouseEnter={() => setSelectedIndex(index)}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-xs px-2.5 py-2 text-left text-xs transition-colors',
-                    isSelected
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'text-foreground hover:bg-muted',
+                    'flex w-full items-center justify-between gap-3 rounded-lg p-2 text-left text-sm text-n-slate-12 transition-colors',
+                    isSelected && 'bg-n-alpha-2',
                   )}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Icon
-                      className={cn(
-                        'h-4 w-4 shrink-0',
-                        isSelected ? 'text-primary-foreground' : 'text-muted-foreground',
-                      )}
-                    />
-                    <span>{item.title}</span>
-                  </div>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Icon className="size-4 shrink-0 text-n-slate-11" />
+                    <span className="truncate">{item.title}</span>
+                  </span>
                   {item.shortcut && (
-                    <kbd
-                      className={cn(
-                        'rounded-xs border px-1.5 py-0.5 font-mono text-[10px]',
-                        isSelected
-                          ? 'border-primary-foreground/30 bg-primary-foreground/20 text-primary-foreground'
-                          : 'border-border bg-muted text-muted-foreground',
-                      )}
-                    >
+                    <kbd className="shrink-0 rounded-md bg-n-alpha-2 px-1.5 py-0.5 font-sans text-xs text-n-slate-11">
                       {item.shortcut}
                     </kbd>
                   )}
@@ -284,16 +261,12 @@ export function CommandPaletteDialog() {
         </div>
 
         {/* Footer Hints */}
-        <div className="flex items-center justify-between border-t border-border bg-muted/40 px-3 py-1.5 text-[11px] text-muted-foreground">
-          <div className="flex items-center gap-3">
-            <span>
-              <kbd className="font-mono">↑</kbd> <kbd className="font-mono">↓</kbd> navigate
-            </span>
-            <span>
-              <kbd className="font-mono">↵</kbd> select
-            </span>
-          </div>
-          <span>VYNOR Command Bar</span>
+        <div className="flex items-center justify-between border-t border-n-weak px-4 py-2 text-xs text-n-slate-10">
+          <span className="flex items-center gap-3">
+            <span>↑ ↓ navigate</span>
+            <span>↵ select</span>
+          </span>
+          <span>VYNOR</span>
         </div>
       </div>
     </div>

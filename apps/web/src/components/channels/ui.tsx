@@ -1,30 +1,37 @@
 import React from 'react';
 import type { InboxAgent } from './types';
-import { initials } from '@/components/common/form-controls';
+import { Avatar } from '@/components/ui';
 
 interface AgentAvatarStackProps {
   agents: InboxAgent[];
-  max?: number;
+  max?: number | undefined;
 }
 
+/** Overlapping 24px VYNOR avatars for the agents assigned to an inbox. */
 export function AgentAvatarStack({ agents, max = 3 }: AgentAvatarStackProps) {
   if (agents.length === 0) {
-    return <span className="text-[11px] text-n-slate-10">No agents</span>;
+    return <span className="text-xs text-n-slate-10">No agents</span>;
   }
 
   const visible = agents.slice(0, max);
   const hidden = agents.length - visible.length;
-  const bubble =
-    'inline-flex size-6 items-center justify-center rounded-full border-2 border-[hsl(var(--surface))] bg-[var(--brand-3)] text-[10px] font-semibold text-[var(--brand-11)]';
 
   return (
     <div className="flex -space-x-1.5" title={agents.map((a) => a.name).join(', ')}>
       {visible.map((agent) => (
-        <span key={agent.id} className={bubble}>
-          {initials(agent.name)}
-        </span>
+        <Avatar
+          key={agent.id}
+          name={agent.name}
+          size={24}
+          roundedFull
+          className="rounded-full ring-2 ring-n-solid-2"
+        />
       ))}
-      {hidden > 0 && <span className={bubble}>+{hidden}</span>}
+      {hidden > 0 && (
+        <span className="relative inline-flex size-6 items-center justify-center rounded-full bg-n-slate-4 text-xxs font-medium text-n-slate-12 ring-2 ring-n-solid-2">
+          +{hidden}
+        </span>
+      )}
     </div>
   );
 }

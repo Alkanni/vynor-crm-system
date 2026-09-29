@@ -1,8 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Megaphone, Plus, Search } from 'lucide-react';
+import {
+  ArrowLeft,
+  BarChart3,
+  Megaphone,
+  Plus,
+  Search,
+  SlidersVertical,
+  Trash2,
+} from 'lucide-react';
 import { BroadcastWizard } from '@/components/broadcast/BroadcastWizard';
+import { EmptyState } from '@/components/common/EmptyState';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { MetricCard } from '@/components/layout/Section';
+import { Button, CardLayout, Input, useToast } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface CampaignHistoryItem {
@@ -49,10 +61,99 @@ const PAST_CAMPAIGNS: CampaignHistoryItem[] = [
   },
 ];
 
+/** Status colors from VYNOR `CampaignCard.vue` (`bg-n-alpha-2` pill + tone text). */
+const STATUS_TEXT: Record<CampaignHistoryItem['status'], string> = {
+  COMPLETED: 'text-n-teal-11',
+  DISPATCHING: 'text-n-blue-11',
+  SCHEDULED: 'text-n-amber-11',
+  DRAFT: 'text-n-slate-11',
+};
+
+/** Port of VYNOR `Campaigns/CampaignCard/CampaignCard.vue`. */
+function CampaignCard({
+  campaign,
+  onAnalytics,
+  onEdit,
+  onDelete,
+}: {
+  campaign: CampaignHistoryItem;
+  onAnalytics: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <CardLayout layout="row">
+      <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2">
+        <div className="flex w-fit max-w-full justify-between gap-3">
+          <span className="line-clamp-1 text-base font-medium capitalize text-n-slate-12">
+            {campaign.name}
+          </span>
+          <span
+            className={cn(
+              'inline-flex h-6 shrink-0 items-center rounded-md bg-n-alpha-2 px-2 py-0.5 text-xs font-medium capitalize',
+              STATUS_TEXT[campaign.status],
+            )}
+          >
+            {campaign.status.toLowerCase()}
+          </span>
+        </div>
+        <div className="line-clamp-1 h-6 font-mono text-sm text-n-slate-11">
+          {campaign.templateName}
+        </div>
+        <div className="flex h-6 w-full items-center gap-2 overflow-hidden text-sm text-n-slate-11">
+          <span className="truncate">{campaign.channel}</span>
+          <span className="h-3 w-px shrink-0 bg-n-slate-6" />
+          <span className="shrink-0 tabular-nums">
+            {campaign.recipients.toLocaleString()} recipients
+          </span>
+          <span className="h-3 w-px shrink-0 bg-n-slate-6" />
+          <span className="shrink-0">
+            {campaign.status === 'COMPLETED' ? (
+              <span className="text-n-teal-11">{campaign.deliveredPercent}% delivered</span>
+            ) : (
+              campaign.createdAt
+            )}
+          </span>
+        </div>
+      </div>
+      <div className="flex w-auto items-center justify-end gap-2 sm:w-28">
+        <Button
+          variant="faded"
+          size="sm"
+          color="slate"
+          icon={BarChart3}
+          aria-label={`Analytics for ${campaign.name}`}
+          title="Analytics"
+          onClick={onAnalytics}
+        />
+        <Button
+          variant="faded"
+          size="sm"
+          color="slate"
+          icon={SlidersVertical}
+          aria-label={`Edit ${campaign.name}`}
+          title="Edit"
+          onClick={onEdit}
+        />
+        <Button
+          variant="faded"
+          color="ruby"
+          size="sm"
+          icon={Trash2}
+          aria-label={`Delete ${campaign.name}`}
+          title="Delete"
+          onClick={onDelete}
+        />
+      </div>
+    </CardLayout>
+  );
+}
+
 export default function CampaignsPage() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [campaigns] = useState<CampaignHistoryItem[]>(PAST_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState<CampaignHistoryItem[]>(PAST_CAMPAIGNS);
   const [searchTerm, setSearchTerm] = useState('');
+  const toast = useToast();
 
   const filteredCampaigns = campaigns.filter(
     (c) =>
@@ -60,174 +161,90 @@ export default function CampaignsPage() {
       c.templateName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-primary" />
-            <span>Outbound Broadcast Operations</span>
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Deploy compliant, high-throughput outbound campaigns across WhatsApp Cloud API and
-            integrated channels with pre-flight safety gates.
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {!isWizardOpen ? (
-            <button
-              onClick={() => setIsWizardOpen(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Broadcast Campaign</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsWizardOpen(false)}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-surface hover:bg-muted text-foreground border border-border rounded font-medium text-xs transition-colors cursor-pointer"
-            >
-              <span>Back to Overview</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Conditional: Wizard View vs Overview Table */}
-      {isWizardOpen ? (
-        <div className="space-y-4">
-          <BroadcastWizard
-            onComplete={() => {
-              setIsWizardOpen(false);
-            }}
+  if (isWizardOpen) {
+    return (
+      <PageLayout
+        title="New broadcast"
+        width="wide"
+        leading={
+          <Button
+            variant="ghost"
+            color="slate"
+            size="sm"
+            icon={ArrowLeft}
+            aria-label="Back to campaigns"
+            onClick={() => setIsWizardOpen(false)}
           />
+        }
+      >
+        <BroadcastWizard onComplete={() => setIsWizardOpen(false)} />
+      </PageLayout>
+    );
+  }
+
+  return (
+    <PageLayout
+      title="Broadcast"
+      actions={
+        <Button size="sm" icon={Plus} label="New broadcast" onClick={() => setIsWizardOpen(true)} />
+      }
+    >
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <MetricCard label="30-day dispatched" value="42,850" hint="Across 18 campaigns" />
+          <MetricCard
+            label="Avg delivery rate"
+            value="98.9%"
+            tone="teal"
+            hint="Meta quality: High"
+          />
+          <MetricCard label="WABA tier" value="Tier 2" hint="10,000 recipients / 24h" />
+          <MetricCard label="Opt-out rate" value="0.14%" hint="Below the 1.0% danger zone" />
         </div>
-      ) : (
-        <>
-          {/* KPI Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">
-                30-Day Dispatched
-              </div>
-              <div className="text-2xl font-bold font-mono text-foreground mt-1">42,850</div>
-              <div className="text-[11px] text-muted-foreground mt-1">Across 18 campaigns</div>
-            </div>
 
-            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">
-                Avg Delivery Rate
-              </div>
-              <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
-                98.9%
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Meta Tier High Quality</div>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Input
+            size="sm"
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search campaigns or templates"
+            aria-label="Search campaigns"
+            prefix={<Search className="size-3.5" />}
+            containerClassName="w-full sm:w-72"
+          />
+          <span className="text-sm text-n-slate-11">
+            {filteredCampaigns.length} campaign{filteredCampaigns.length === 1 ? '' : 's'}
+          </span>
+        </div>
 
-            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">
-                Current WABA Tier
-              </div>
-              <div className="text-2xl font-bold font-mono text-foreground mt-1">Tier 2</div>
-              <div className="text-[11px] text-muted-foreground mt-1">
-                10,000 unique recipients / 24h
-              </div>
-            </div>
-
-            <div className="bg-card border border-border p-4 rounded-lg shadow-2xs">
-              <div className="text-[11px] font-mono text-muted-foreground uppercase">
-                Opt-Out Rate
-              </div>
-              <div className="text-2xl font-bold font-mono text-foreground mt-1">0.14%</div>
-              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
-                Well below 1.0% danger zone
-              </div>
-            </div>
+        {filteredCampaigns.length === 0 ? (
+          <EmptyState
+            compact
+            icon={<Megaphone className="size-5" />}
+            title="No campaigns found"
+            description="Create a broadcast or adjust the search."
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filteredCampaigns.map((camp) => (
+              <CampaignCard
+                key={camp.id}
+                campaign={camp}
+                onAnalytics={() =>
+                  toast.show(`Analytics for "${camp.name}" open in Reports.`, 'info')
+                }
+                onEdit={() => setIsWizardOpen(true)}
+                onDelete={() => {
+                  setCampaigns((prev) => prev.filter((c) => c.id !== camp.id));
+                  toast.show(`Deleted "${camp.name}"`);
+                }}
+              />
+            ))}
           </div>
-
-          {/* Campaign Table Section */}
-          <div className="bg-card border border-border rounded-lg overflow-hidden shadow-2xs">
-            {/* Table Search & Toolbar */}
-            <div className="p-4 bg-surface border-b border-border flex items-center justify-between gap-3">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Filter campaigns by title or template..."
-                  className="w-full bg-background border border-border rounded pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
-                />
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                Showing <strong className="text-foreground">{filteredCampaigns.length}</strong>{' '}
-                campaigns
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-foreground">
-                <thead className="bg-surface text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border font-mono">
-                  <tr>
-                    <th className="py-3 px-4">Campaign Name</th>
-                    <th className="py-3 px-4">Target Channel</th>
-                    <th className="py-3 px-4">Template Identifier</th>
-                    <th className="py-3 px-4 text-right">Recipients</th>
-                    <th className="py-3 px-4 text-right">Delivered</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Dispatched At</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border font-sans">
-                  {filteredCampaigns.map((camp) => (
-                    <tr key={camp.id} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-foreground">{camp.name}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{camp.channel}</td>
-                      <td className="py-3 px-4 font-mono text-[11px] text-muted-foreground">
-                        {camp.templateName}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-medium text-foreground">
-                        {camp.recipients.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono">
-                        {camp.status === 'COMPLETED' ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                            {camp.deliveredPercent}%
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={cn(
-                            'px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider',
-                            camp.status === 'COMPLETED' &&
-                              'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30',
-                            camp.status === 'DISPATCHING' &&
-                              'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/30',
-                            camp.status === 'SCHEDULED' &&
-                              'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30',
-                            camp.status === 'DRAFT' &&
-                              'bg-muted text-muted-foreground border border-border',
-                          )}
-                        >
-                          {camp.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">{camp.createdAt}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+        )}
+      </div>
+      {toast.element}
+    </PageLayout>
   );
 }

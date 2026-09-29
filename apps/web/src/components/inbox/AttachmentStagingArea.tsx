@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, FileText, Image as ImageIcon } from 'lucide-react';
+import { FileText, Image as ImageIcon, X } from 'lucide-react';
 import type { MessageAttachment } from './types';
 
 interface AttachmentStagingAreaProps {
@@ -9,32 +9,30 @@ interface AttachmentStagingAreaProps {
   onRemove: (id: string) => void;
 }
 
+/** Staged uploads above the editor (VYNOR `ReplyBox` attachment preview chips). */
 export function AttachmentStagingArea({ attachments, onRemove }: AttachmentStagingAreaProps) {
   if (attachments.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 border-t border-border/40 bg-surface">
+    <div className="flex flex-wrap gap-2 px-3 pb-2">
       {attachments.map((att) => {
-        const isImage = att.type.startsWith('image/');
-        const Icon = isImage ? ImageIcon : FileText;
+        const Icon = att.type.startsWith('image/') ? ImageIcon : FileText;
 
         return (
           <div
             key={att.id}
-            className="flex items-center gap-1.5 rounded-xs border border-border bg-card px-2 py-1 text-xs shadow-2xs select-none"
+            className="flex h-8 select-none items-center gap-1.5 rounded-lg bg-n-alpha-2 pl-2 pr-1 text-xs text-n-slate-12"
           >
-            <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="max-w-[140px] truncate text-[11px] font-medium text-foreground">
-              {att.name}
-            </span>
-            <span className="font-mono text-[10px] text-muted-foreground">({att.size})</span>
+            <Icon className="size-3.5 shrink-0 text-n-slate-11" />
+            <span className="max-w-36 truncate font-medium">{att.name}</span>
+            <span className="text-n-slate-10">{att.size}</span>
             <button
               type="button"
               onClick={() => onRemove(att.id)}
               aria-label={`Remove attachment ${att.name}`}
-              className="ml-0.5 rounded-xs p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="grid size-6 place-content-center rounded-md text-n-slate-11 hover:bg-n-alpha-2 hover:text-n-slate-12"
             >
-              <X className="h-3 w-3" />
+              <X className="size-3.5" />
             </button>
           </div>
         );

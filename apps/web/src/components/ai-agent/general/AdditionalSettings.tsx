@@ -148,7 +148,7 @@ export function AdditionalSettings({ general, onChange }: AdditionalSettingsProp
         aria-expanded={open}
         aria-controls="additional-settings"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex cursor-pointer items-center justify-center gap-1.5 self-center rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--brand-11)] hover:bg-[var(--brand-2)]"
+        className="inline-flex cursor-pointer items-center justify-center gap-1.5 self-center rounded-lg px-3 py-1.5 text-sm font-semibold text-n-blue-11 hover:bg-n-blue-2"
       >
         Additional Settings
         <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />

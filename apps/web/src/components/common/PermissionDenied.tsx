@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import type { PermissionAction } from '@vynor/contracts';
+import { buttonVariants } from '@/components/ui';
+import { EmptyState } from './EmptyState';
 
 export interface PermissionDeniedProps {
-  missingPermissions?: PermissionAction[];
-  message?: string;
-  returnHref?: string;
+  missingPermissions?: PermissionAction[] | undefined;
+  message?: string | undefined;
+  returnHref?: string | undefined;
 }
 
 export function PermissionDenied({
@@ -14,26 +16,23 @@ export function PermissionDenied({
   returnHref = '/',
 }: PermissionDeniedProps) {
   return (
-    <div className="flex min-h-[400px] w-full flex-col items-center justify-center p-6 text-center">
-      <div className="mb-4 rounded-full bg-destructive/10 p-4 text-destructive">
-        <ShieldAlert className="h-10 w-10" />
-      </div>
-      <h2 className="mb-2 text-2xl font-bold tracking-tight text-foreground">Access Denied</h2>
-      <p className="mb-4 max-w-md text-sm text-muted-foreground">{message}</p>
-
-      {missingPermissions.length > 0 && (
-        <div className="mb-6 rounded-md bg-muted p-3 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">Required permission(s): </span>
-          <code>{missingPermissions.join(', ')}</code>
+    <EmptyState
+      icon={<ShieldAlert className="size-6 text-n-ruby-11" />}
+      title="Access Denied"
+      description={message}
+      actions={
+        <div className="flex flex-col items-center gap-4">
+          {missingPermissions.length > 0 && (
+            <div className="rounded-lg bg-n-alpha-2 px-3 py-2 text-xs text-n-slate-11">
+              <span className="font-medium text-n-slate-12">Required permission(s): </span>
+              <code>{missingPermissions.join(', ')}</code>
+            </div>
+          )}
+          <Link href={returnHref} className={buttonVariants({ size: 'sm' })}>
+            Return to Dashboard
+          </Link>
         </div>
-      )}
-
-      <Link
-        href={returnHref}
-        className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        Return to Dashboard
-      </Link>
-    </div>
+      }
+    />
   );
 }

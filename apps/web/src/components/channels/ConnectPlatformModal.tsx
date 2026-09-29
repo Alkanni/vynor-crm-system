@@ -29,19 +29,19 @@ export function ConnectPlatformModal({ onClose, onConnect }: ConnectPlatformModa
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-n-alpha-black1 p-4 backdrop-blur-[4px] animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="connect-platform-title"
-        className="max-h-full w-full max-w-3xl overflow-y-auto rounded-xl bg-[hsl(var(--surface))] p-6 shadow-2xl sm:p-7"
+        className="max-h-full w-full max-w-3xl overflow-y-auto rounded-xl bg-n-alpha-3 p-6 shadow-xl backdrop-blur-[100px] sm:p-7"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="connect-platform-title" className="text-xl font-semibold text-n-slate-12">
+            <h2 id="connect-platform-title" className="text-heading-1 text-n-slate-12">
               {platform ? `Connect ${platform.label}` : 'Platform'}
             </h2>
             <p className="mt-1 text-sm text-n-slate-11">
@@ -54,7 +54,7 @@ export function ConnectPlatformModal({ onClose, onConnect }: ConnectPlatformModa
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="-mr-1 inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-n-slate-11 hover:bg-[hsl(var(--muted))]"
+            className="-mr-1 inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-n-slate-11 hover:bg-n-slate-3"
           >
             <X className="size-5" />
           </button>
@@ -67,12 +67,12 @@ export function ConnectPlatformModal({ onClose, onConnect }: ConnectPlatformModa
                 key={p.provider}
                 type="button"
                 onClick={() => setProvider(p.provider)}
-                className="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border border-[hsl(var(--border))] px-3 py-7 transition-colors hover:border-[#e5484d] hover:bg-[var(--brand-2)]"
+                className="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl bg-n-solid-2 px-3 py-7 outline outline-1 -outline-offset-1 outline-n-container transition-colors hover:bg-n-alpha-1 hover:outline-n-brand"
               >
-                <span className="flex rounded-full bg-[hsl(var(--muted))] p-2">
+                <span className="flex rounded-full bg-n-slate-3 p-2">
                   <PlatformIcon provider={p.provider} size="lg" />
                 </span>
-                <span className="text-center text-xs font-semibold text-n-slate-12">{p.label}</span>
+                <span className="text-center text-sm font-medium text-n-slate-12">{p.label}</span>
               </button>
             ))}
           </div>
@@ -84,7 +84,7 @@ export function ConnectPlatformModal({ onClose, onConnect }: ConnectPlatformModa
               if (name.trim()) onConnect(platform.provider, name.trim());
             }}
           >
-            <span className="flex rounded-full bg-[hsl(var(--muted))] p-2">
+            <span className="flex rounded-full bg-n-slate-3 p-2">
               <PlatformIcon provider={platform.provider} size="lg" />
             </span>
             <p className="max-w-md text-sm text-n-slate-11">{platform.connectHint}</p>
@@ -102,7 +102,7 @@ export function ConnectPlatformModal({ onClose, onConnect }: ConnectPlatformModa
               <button
                 type="button"
                 onClick={() => setProvider(null)}
-                className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-n-slate-11 hover:bg-[hsl(var(--muted))]"
+                className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-n-slate-11 hover:bg-n-slate-3"
               >
                 <ArrowLeft className="size-4" />
                 All platforms
@@ -110,7 +110,7 @@ export function ConnectPlatformModal({ onClose, onConnect }: ConnectPlatformModa
               <button
                 type="submit"
                 disabled={!name.trim()}
-                className="h-10 cursor-pointer rounded-lg bg-[#e5484d] px-5 text-sm font-medium text-white transition-colors hover:bg-[#dc3e42] disabled:cursor-not-allowed disabled:bg-[hsl(var(--muted))] disabled:text-[hsl(var(--muted-foreground))]"
+                className="h-10 cursor-pointer rounded-lg bg-n-brand px-4 text-sm font-medium text-white transition-all hover:enabled:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Connect
               </button>

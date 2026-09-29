@@ -1,35 +1,28 @@
+import { Spinner } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-  label?: string;
+  size?: 'sm' | 'md' | 'lg' | undefined;
+  className?: string | undefined;
+  label?: string | undefined;
 }
 
+const SIZES = { sm: 16, md: 24, lg: 32 } as const;
+
+/** Centered VYNOR spinner (`components-next/spinner/Spinner.vue`) with an optional caption. */
 export function LoadingSpinner({
   size = 'md',
   className,
   label = 'Loading...',
 }: LoadingSpinnerProps) {
-  const sizeClasses = {
-    sm: 'w-4 h-4 border-2',
-    md: 'w-8 h-8 border-3',
-    lg: 'w-12 h-12 border-4',
-  }[size];
-
   return (
     <div
       role="status"
       aria-label={label}
-      className={cn('flex flex-col items-center justify-center gap-2', className)}
+      className={cn('flex flex-col items-center justify-center gap-3 text-n-slate-11', className)}
     >
-      <div
-        className={cn(
-          'animate-spin rounded-full border-solid border-primary border-t-transparent',
-          sizeClasses,
-        )}
-      />
-      {label && <span className="sr-only">{label}</span>}
+      <Spinner size={SIZES[size]} className="text-n-brand" label={label} />
+      {label && <span className="text-sm text-n-slate-11">{label}</span>}
     </div>
   );
 }

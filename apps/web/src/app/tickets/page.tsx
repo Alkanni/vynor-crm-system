@@ -1,8 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Ticket, Search, Plus, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { Clock, Plus, Search, Ticket } from 'lucide-react';
+import { PriorityIcon, PRIORITY_LABELS } from '@/components/inbox/PriorityIcon';
+import { EmptyState } from '@/components/common/EmptyState';
+import { PageLayout } from '@/components/layout/PageLayout';
+import {
+  StatusBadge,
+  TABLE_CLASS,
+  TBODY_CLASS,
+  TD_CLASS,
+  TH_CLASS,
+  THEAD_CLASS,
+  type StatusTone,
+} from '@/components/layout/Section';
+import { Button, buttonVariants, Input, TabBar, useToast } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'PENDING_CUSTOMER' | 'ESCALATED' | 'RESOLVED';
@@ -77,10 +90,33 @@ const INITIAL_TICKETS: TicketItem[] = [
   },
 ];
 
+const STATUS_TONE: Record<TicketStatus, StatusTone> = {
+  OPEN: 'blue',
+  IN_PROGRESS: 'amber',
+  PENDING_CUSTOMER: 'iris',
+  ESCALATED: 'ruby',
+  RESOLVED: 'teal',
+};
+
+const STATUS_FILTERS = [
+  'ALL',
+  'OPEN',
+  'IN_PROGRESS',
+  'ESCALATED',
+  'PENDING_CUSTOMER',
+  'RESOLVED',
+] as const;
+
+function statusLabel(status: TicketStatus | 'ALL'): string {
+  if (status === 'ALL') return 'All';
+  return status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' ');
+}
+
 export default function TicketsManagementPage() {
   const [tickets] = useState<TicketItem[]>(INITIAL_TICKETS);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
+  const toast = useToast();
 
   const filteredTickets = tickets.filter((t) => {
     if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
@@ -95,163 +131,120 @@ export default function TicketsManagementPage() {
     return true;
   });
 
-  const getStatusBadge = (status: TicketStatus) => {
-    switch (status) {
-      case 'OPEN':
-        return 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30';
-      case 'IN_PROGRESS':
-        return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30';
-      case 'PENDING_CUSTOMER':
-        return 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30';
-      case 'ESCALATED':
-        return 'bg-destructive/10 text-destructive border-destructive/30 font-bold';
-      case 'RESOLVED':
-        return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30';
-    }
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'URGENT':
-        return 'bg-destructive/10 text-destructive border-destructive/30 font-semibold';
-      case 'HIGH':
-        return 'bg-warning/10 text-warning-foreground dark:text-amber-400 border-warning/30 font-medium';
-      default:
-        return 'bg-muted text-muted-foreground border-border';
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Structured Work Items & Tickets
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Cross-department operational accountability, SLA escalation workflows, and ticket
-            lifecycle
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <PageLayout
+      title="Tickets"
+      width="wide"
+      actions={
+        <>
           <Link
             href="/inbox"
-            className="inline-flex items-center gap-1.5 rounded-xs border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+            className={buttonVariants({ size: 'sm', color: 'slate', variant: 'faded' })}
           >
-            <span>Unified Inbox</span>
+            Unified inbox
           </Link>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary-hover transition-colors cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Create Work Item</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Tabs & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-1 rounded-xs bg-muted/60 p-0.5 text-xs font-medium overflow-x-auto">
-          {(
-            ['ALL', 'OPEN', 'IN_PROGRESS', 'ESCALATED', 'PENDING_CUSTOMER', 'RESOLVED'] as const
-          ).map((st) => (
-            <button
-              key={st}
-              type="button"
-              onClick={() => setStatusFilter(st)}
-              className={cn(
-                'px-3 py-1 rounded-xs transition-all cursor-pointer shrink-0',
-                statusFilter === st
-                  ? 'bg-card text-foreground font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {st === 'ALL' ? 'All Tickets' : st.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
+          <Button
+            size="sm"
+            icon={Plus}
+            label="Create work item"
+            onClick={() =>
+              toast.show('Work item creation opens in the production workspace.', 'info')
+            }
+          />
+        </>
+      }
+      toolbar={
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-full overflow-x-auto">
+            <TabBar<TicketStatus | 'ALL'>
+              ariaLabel="Filter tickets by status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              tabs={STATUS_FILTERS.map((st) => ({ value: st, label: statusLabel(st) }))}
+            />
+          </div>
+          <Input
+            size="sm"
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tickets..."
-            className="h-8 w-full rounded-xs border border-border bg-surface pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+            placeholder="Search tickets"
+            aria-label="Search tickets"
+            prefix={<Search className="size-3.5" />}
+            containerClassName="w-full sm:w-56"
           />
         </div>
-      </div>
-
-      {/* Tickets Dense Table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden shadow-2xs">
+      }
+    >
+      {filteredTickets.length === 0 ? (
+        <EmptyState
+          compact
+          icon={<Ticket className="size-5" />}
+          title="No tickets found"
+          description="No work items match the selected status or search."
+        />
+      ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-foreground">
-            <thead className="bg-surface text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border font-mono">
+          <table className={TABLE_CLASS}>
+            <thead className={THEAD_CLASS}>
               <tr>
-                <th className="py-3 px-4 w-28">Ticket ID</th>
-                <th className="py-3 px-4">Subject & Summary</th>
-                <th className="py-3 px-4">Customer</th>
-                <th className="py-3 px-4">Priority</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">SLA Target</th>
-                <th className="py-3 px-4">Assigned Team</th>
-                <th className="py-3 px-4 text-right">Updated</th>
+                <th className={TH_CLASS}>Ticket</th>
+                <th className={TH_CLASS}>Subject</th>
+                <th className={TH_CLASS}>Customer</th>
+                <th className={TH_CLASS}>Priority</th>
+                <th className={TH_CLASS}>Status</th>
+                <th className={TH_CLASS}>SLA</th>
+                <th className={TH_CLASS}>Team</th>
+                <th className={cn(TH_CLASS, 'text-end')}>Updated</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border font-sans">
+            <tbody className={TBODY_CLASS}>
               {filteredTickets.map((ticket) => (
                 <tr
                   key={ticket.id}
-                  className="hover:bg-muted/40 transition-colors cursor-pointer group"
+                  className="group cursor-pointer transition-colors hover:bg-n-alpha-1"
                 >
-                  <td className="py-3 px-4 font-mono font-bold text-primary">{ticket.id}</td>
-                  <td className="py-3 px-4 font-medium text-foreground max-w-sm truncate group-hover:text-primary transition-colors">
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap font-medium text-n-slate-12')}>
+                    {ticket.id}
+                  </td>
+                  <td
+                    className={cn(TD_CLASS, 'max-w-sm truncate text-n-slate-12')}
+                    title={ticket.subject}
+                  >
                     {ticket.subject}
                   </td>
-                  <td className="py-3 px-4 text-muted-foreground">{ticket.customerName}</td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={cn(
-                        'rounded-xs border px-1.5 py-0.5 text-[10px]',
-                        getPriorityBadge(ticket.priority),
-                      )}
-                    >
-                      {ticket.priority}
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap')}>{ticket.customerName}</td>
+                  <td className={TD_CLASS}>
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      <PriorityIcon priority={ticket.priority} />
+                      {PRIORITY_LABELS[ticket.priority]}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className={TD_CLASS}>
+                    <StatusBadge tone={STATUS_TONE[ticket.status]}>
+                      {statusLabel(ticket.status)}
+                    </StatusBadge>
+                  </td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap')}>
                     <span
                       className={cn(
-                        'rounded-xs border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
-                        getStatusBadge(ticket.status),
+                        'inline-flex items-center gap-1',
+                        ticket.status === 'ESCALATED' && 'text-n-ruby-11',
                       )}
                     >
-                      {ticket.status.replace('_', ' ')}
+                      <Clock className="size-3.5" />
+                      {ticket.slaDeadline}
                     </span>
                   </td>
-                  <td className="py-3 px-4 font-mono text-[11px] text-muted-foreground flex items-center gap-1 mt-1">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span>{ticket.slaDeadline}</span>
-                  </td>
-                  <td className="py-3 px-4 text-muted-foreground text-[11px]">
-                    {ticket.assignedTeam}
-                  </td>
-                  <td className="py-3 px-4 font-mono text-[11px] text-muted-foreground text-right">
-                    {ticket.updatedAt}
-                  </td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap')}>{ticket.assignedTeam}</td>
+                  <td className={cn(TD_CLASS, 'whitespace-nowrap text-end')}>{ticket.updatedAt}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      )}
+      {toast.element}
+    </PageLayout>
   );
 }

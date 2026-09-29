@@ -9,6 +9,8 @@ interface UseInboxShortcutsOptions {
   onFocusComposer?: () => void;
   onClaimConversation?: () => void;
   onCompleteConversation?: () => void;
+  /** Overrides the default `]` behaviour (store toggle), e.g. to open a slide-over below xl. */
+  onToggleContextPanel?: () => void;
   enabled?: boolean;
 }
 
@@ -22,7 +24,7 @@ interface UseInboxShortcutsOptions {
  * - A: Claim conversation (Take ownership)
  * - E: Complete conversation (Archive & move to next)
  * - Alt+N: Toggle Internal Note mode (handled globally or here)
- * - [: Toggle navigation rail collapse
+ * - [: Toggle sidebar collapse
  * - ]: Toggle customer context panel collapse
  */
 export function useInboxKeyboardShortcuts({
@@ -31,6 +33,7 @@ export function useInboxKeyboardShortcuts({
   onFocusComposer,
   onClaimConversation,
   onCompleteConversation,
+  onToggleContextPanel,
   enabled = true,
 }: UseInboxShortcutsOptions) {
   const { toggleComposerMode, toggleSidebarCollapsed, toggleCustomerContext } = useUiStore();
@@ -68,7 +71,8 @@ export function useInboxKeyboardShortcuts({
       }
       if (e.key === ']') {
         e.preventDefault();
-        toggleCustomerContext();
+        if (onToggleContextPanel) onToggleContextPanel();
+        else toggleCustomerContext();
         return;
       }
 
@@ -108,6 +112,7 @@ export function useInboxKeyboardShortcuts({
     onFocusComposer,
     onClaimConversation,
     onCompleteConversation,
+    onToggleContextPanel,
     toggleComposerMode,
     toggleSidebarCollapsed,
     toggleCustomerContext,

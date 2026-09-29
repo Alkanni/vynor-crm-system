@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { Check, Plus } from 'lucide-react';
+import { Plus, Radio } from 'lucide-react';
 import type { ChannelProviderType } from '@vynor/contracts';
 import { ConnectPlatformModal } from '@/components/channels/ConnectPlatformModal';
 import { InboxList } from '@/components/channels/InboxList';
 import { InboxSettingsPanel } from '@/components/channels/InboxSettingsPanel';
 import { useAiAgents } from '@/lib/ai-agents/queries';
+import { EmptyState } from '@/components/common/EmptyState';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { Button, useToast } from '@/components/ui';
 import type {
   InboxAccount,
   InboxAgent,
@@ -110,7 +113,7 @@ export default function ChannelsPage() {
   const [inboxes, setInboxes] = useState<InboxAccount[]>(INITIAL_INBOXES);
   const [selectedId, setSelectedId] = useState<string | null>(INITIAL_INBOXES[0]?.id ?? null);
   const [connectOpen, setConnectOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toast = useToast();
   const agentsQuery = useAiAgents();
   // Agents are created and configured on the AI Agent page.
   const aiAgents = useMemo<InboxAgent[]>(
@@ -120,10 +123,7 @@ export default function ChannelsPage() {
 
   const selected = inboxes.find((inbox) => inbox.id === selectedId) ?? null;
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
+  const showToast = (msg: string) => toast.show(msg);
 
   const openConnect = () => setConnectOpen(true);
   const closeConnect = useCallback(() => setConnectOpen(false), []);
@@ -168,60 +168,50 @@ export default function ChannelsPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row">
-      {toastMessage && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed right-6 top-14 z-50 flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-[hsl(var(--surface))] px-3 py-2.5 text-sm text-n-slate-12 shadow-lg"
-        >
-          <Check className="size-4 shrink-0 text-emerald-600" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      <div className="flex min-h-0 flex-col lg:w-[380px] lg:shrink-0">
-        <InboxList
-          inboxes={inboxes}
-          selectedId={selectedId}
-          aiAgents={aiAgents}
-          humanAgents={HUMAN_AGENTS}
-          onSelect={setSelectedId}
-          onConnect={openConnect}
-        />
-      </div>
-
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {selected ? (
-          <InboxSettingsPanel
-            key={selected.id}
-            inbox={selected}
+    <PageLayout
+      title="Channels"
+      description="This is where you can connect all your platforms"
+      width="wide"
+      actions={<Button size="sm" icon={Plus} label="Connect a platform" onClick={openConnect} />}
+    >
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="flex min-h-0 flex-col lg:sticky lg:top-0 lg:w-[380px] lg:shrink-0">
+          <InboxList
+            inboxes={inboxes}
+            selectedId={selectedId}
             aiAgents={aiAgents}
             humanAgents={HUMAN_AGENTS}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            onReconnect={handleReconnect}
+            onSelect={setSelectedId}
+            onConnect={openConnect}
           />
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[hsl(var(--border-strong))] px-6 py-16 text-center">
-            <p className="text-base font-semibold text-n-slate-12">No channels yet</p>
-            <p className="max-w-sm text-sm text-n-slate-11">
-              Connect WhatsApp, Instagram, email or another platform to start receiving customer
-              messages here.
-            </p>
-            <button
-              type="button"
-              onClick={openConnect}
-              className="mt-2 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg bg-[#e5484d] px-4 text-sm font-medium text-white hover:bg-[#dc3e42]"
-            >
-              <Plus className="size-4" />
-              Connect a platform
-            </button>
-          </div>
-        )}
+        </div>
+
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {selected ? (
+            <InboxSettingsPanel
+              key={selected.id}
+              inbox={selected}
+              aiAgents={aiAgents}
+              humanAgents={HUMAN_AGENTS}
+              onSave={handleSave}
+              onDelete={handleDelete}
+              onReconnect={handleReconnect}
+            />
+          ) : (
+            <EmptyState
+              compact
+              icon={<Radio className="size-5" />}
+              title="No channels yet"
+              description="Connect WhatsApp, Instagram, email or another platform to start receiving customer messages here."
+              action={{ label: 'Connect a platform', onClick: openConnect }}
+              className="border border-dashed border-n-strong"
+            />
+          )}
+        </div>
       </div>
 
       {connectOpen && <ConnectPlatformModal onClose={closeConnect} onConnect={handleConnect} />}
-    </div>
+      {toast.element}
+    </PageLayout>
   );
 }

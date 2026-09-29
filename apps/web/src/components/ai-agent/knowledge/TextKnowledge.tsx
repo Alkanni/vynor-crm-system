@@ -62,7 +62,7 @@ export function TextKnowledge({ docs, onChange, onError }: TextKnowledgeProps) {
           onClick={addDoc}
           aria-label="Add text document"
           title="Add text document"
-          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-n-slate-11 hover:bg-[hsl(var(--muted))]"
+          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-n-slate-11 hover:bg-n-slate-3"
         >
           <Plus className="size-4" />
         </button>
@@ -82,7 +82,7 @@ export function TextKnowledge({ docs, onChange, onError }: TextKnowledgeProps) {
                   if (e.key === 'Enter') commitRename();
                   if (e.key === 'Escape') setRenamingId(null);
                 }}
-                className="h-9 w-40 shrink-0 rounded-lg border border-[#e5484d] bg-[hsl(var(--surface))] px-3 text-sm text-[hsl(var(--foreground))] outline-none"
+                className="h-9 w-40 shrink-0 rounded-xl border border-n-brand bg-n-solid-2 px-3 text-sm text-n-slate-12 outline-none"
               />
             );
           }
@@ -91,9 +91,7 @@ export function TextKnowledge({ docs, onChange, onError }: TextKnowledgeProps) {
               key={doc.id}
               className={cn(
                 'flex h-9 shrink-0 items-center gap-1 rounded-lg pl-3 pr-1 text-sm transition-colors',
-                selected
-                  ? 'bg-[#e5484d] text-white'
-                  : 'border border-[hsl(var(--border))] text-[hsl(var(--foreground))]',
+                selected ? 'bg-n-brand text-white' : 'border border-n-weak text-n-slate-12',
               )}
             >
               <button
@@ -112,7 +110,7 @@ export function TextKnowledge({ docs, onChange, onError }: TextKnowledgeProps) {
                   setRenamingId(doc.id);
                   setTitle(doc.title);
                 }}
-                className="cursor-pointer rounded p-1 opacity-80 hover:opacity-100"
+                className="cursor-pointer rounded-lg p-1 opacity-80 hover:opacity-100"
               >
                 <Pencil className="size-3.5" />
               </button>
@@ -121,7 +119,7 @@ export function TextKnowledge({ docs, onChange, onError }: TextKnowledgeProps) {
                   type="button"
                   aria-label={`Delete ${doc.title}`}
                   onClick={() => (htmlToText(doc.content) ? setDeleting(doc) : removeDoc(doc))}
-                  className="cursor-pointer rounded p-1 opacity-80 hover:opacity-100"
+                  className="cursor-pointer rounded-lg p-1 opacity-80 hover:opacity-100"
                 >
                   <X className="size-3.5" />
                 </button>

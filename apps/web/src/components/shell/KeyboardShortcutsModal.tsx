@@ -1,118 +1,96 @@
 'use client';
 
-import { X, Keyboard } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useUiStore } from '@/lib/store/ui-store';
+import { Button, Dialog } from '@/components/ui';
 
+const SHORTCUT_SECTIONS = [
+  {
+    title: 'Unified Inbox',
+    items: [
+      { key: 'J', desc: 'Select next conversation' },
+      { key: 'K', desc: 'Select previous conversation' },
+      { key: 'C', desc: 'Focus the reply box' },
+      { key: 'A', desc: 'Claim conversation' },
+      { key: 'E', desc: 'Resolve conversation' },
+      { key: 'Alt + N', desc: 'Toggle Reply / Private Note' },
+      { key: 'Ctrl + Enter', desc: 'Send reply or add note' },
+      { key: '/', desc: 'Insert canned response' },
+      { key: 'Esc', desc: 'Blur reply box / close popover' },
+    ],
+  },
+  {
+    title: 'Navigation',
+    items: [
+      { key: 'G then I', desc: 'Inbox' },
+      { key: 'G then C', desc: 'Contacts' },
+      { key: 'G then P', desc: 'Channels' },
+      { key: 'G then A', desc: 'AI Agent' },
+      { key: 'G then B', desc: 'Broadcast' },
+      { key: 'G then T', desc: 'Tickets' },
+      { key: 'G then D', desc: 'Dashboard' },
+      { key: 'G then R', desc: 'Reports' },
+      { key: 'G then S', desc: 'Settings' },
+    ],
+  },
+  {
+    title: 'General',
+    items: [
+      { key: 'Ctrl + K', desc: 'Search / command bar' },
+      { key: '?', desc: 'Keyboard shortcuts' },
+      { key: '[', desc: 'Collapse / expand sidebar' },
+      { key: ']', desc: 'Toggle contact panel' },
+    ],
+  },
+];
+
+/** Keyboard shortcut cheatsheet (VYNOR `KeyboardShortcutModal`) on the Dialog primitive. */
 export function KeyboardShortcutsModal() {
   const { shortcutsModalOpen, setShortcutsModalOpen } = useUiStore();
-
-  if (!shortcutsModalOpen) return null;
-
-  const shortcutSections = [
-    {
-      title: 'Unified Inbox Operational Loop (Section 41)',
-      items: [
-        { key: 'J', desc: 'Select next conversation in active queue' },
-        { key: 'K', desc: 'Select previous conversation in active queue' },
-        { key: 'C', desc: 'Focus Message Composer input' },
-        { key: 'A', desc: 'Claim conversation (Take ownership)' },
-        { key: 'E', desc: 'Complete / Resolve conversation' },
-        { key: 'Alt + N', desc: 'Toggle Internal Note mode (Team only)' },
-        { key: 'Ctrl + Enter', desc: 'Send customer reply or add note' },
-        { key: '/', desc: 'Trigger Canned Response / Template popover' },
-        { key: 'Esc', desc: 'Blur composer / Close popover' },
-      ],
-    },
-    {
-      title: 'Global Navigation Chords (Section 11)',
-      items: [
-        { key: 'G then I', desc: 'Jump to Unified Inbox (/inbox)' },
-        { key: 'G then C', desc: 'Jump to Contacts Directory (/contacts)' },
-        { key: 'G then P', desc: 'Jump to Connected Platforms (/channels)' },
-        { key: 'G then A', desc: 'Jump to AI Agent Console (/ai-agent)' },
-        { key: 'G then B', desc: 'Jump to Broadcast Campaigns (/campaigns)' },
-        { key: 'G then T', desc: 'Jump to Tickets & Workflows (/tickets)' },
-        { key: 'G then D', desc: 'Jump to Executive Dashboard (/)' },
-        { key: 'G then R', desc: 'Jump to Reports & Analytics (/analytics)' },
-        { key: 'G then S', desc: 'Jump to Workspace Settings (/settings)' },
-      ],
-    },
-    {
-      title: 'System & Command Palette',
-      items: [
-        { key: 'Ctrl + K / ⌘K', desc: 'Open Global Command Palette' },
-        { key: '?', desc: 'Toggle this Keyboard Shortcuts Cheatsheet' },
-        { key: '[', desc: 'Toggle Navigation Rail Collapse/Expand' },
-        { key: ']', desc: 'Toggle Customer Context Panel' },
-      ],
-    },
-  ];
+  const close = () => setShortcutsModalOpen(false);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
-      onClick={() => setShortcutsModalOpen(false)}
+    <Dialog
+      open={shortcutsModalOpen}
+      onClose={close}
+      width="2xl"
+      footer={null}
+      title={
+        <span className="flex items-center justify-between gap-2">
+          <span>Keyboard shortcuts</span>
+          <Button
+            variant="ghost"
+            color="slate"
+            size="sm"
+            icon={X}
+            aria-label="Close keyboard shortcuts"
+            onClick={close}
+          />
+        </span>
+      }
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="shortcuts-modal-title"
-        className="w-full max-w-2xl rounded-md border border-border bg-card p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-100"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="flex items-center gap-2">
-            <Keyboard className="h-5 w-5 text-primary" />
-            <h2 id="shortcuts-modal-title" className="text-sm font-semibold text-foreground">
-              Keyboard Productivity Cheatsheet
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShortcutsModalOpen(false)}
-            aria-label="Close keyboard shortcuts modal"
-            className="rounded-xs p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Shortcut Groups */}
-        <div className="mt-4 max-h-[65vh] overflow-y-auto space-y-5 pr-1 text-xs">
-          {shortcutSections.map((sec) => (
-            <div key={sec.title} className="space-y-2">
-              <h3 className="font-semibold text-muted-foreground tracking-wider uppercase text-[11px]">
-                {sec.title}
-              </h3>
-              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                {sec.items.map((item) => (
-                  <div
-                    key={item.key}
-                    className="flex items-center justify-between rounded-xs border border-border/60 bg-surface px-2.5 py-1.5"
-                  >
-                    <span className="text-muted-foreground">{item.desc}</span>
-                    <kbd className="ml-2 shrink-0 rounded-xs border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold text-foreground">
-                      {item.key}
-                    </kbd>
-                  </div>
-                ))}
-              </div>
+      <div className="-mt-2 flex max-h-[65vh] flex-col gap-6 overflow-y-auto pr-1">
+        {SHORTCUT_SECTIONS.map((section) => (
+          <section key={section.title} className="flex flex-col gap-2">
+            <h4 className="text-xs font-medium tracking-[0.2px] text-n-slate-10">
+              {section.title}
+            </h4>
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+              {section.items.map((item) => (
+                <div
+                  key={item.key}
+                  className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-n-alpha-1"
+                >
+                  <span className="text-sm text-n-slate-11">{item.desc}</span>
+                  <kbd className="shrink-0 rounded-md bg-n-alpha-2 px-1.5 py-0.5 font-sans text-xs font-medium text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak">
+                    {item.key}
+                  </kbd>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-4 border-t border-border pt-3 text-right">
-          <button
-            type="button"
-            onClick={() => setShortcutsModalOpen(false)}
-            className="rounded-xs bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80"
-          >
-            Close (Esc)
-          </button>
-        </div>
+          </section>
+        ))}
       </div>
-    </div>
+    </Dialog>
   );
 }

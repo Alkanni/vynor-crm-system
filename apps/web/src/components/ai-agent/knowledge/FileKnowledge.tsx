@@ -18,7 +18,7 @@ function FileRow({ file, onRemove }: { file: KnowledgeFile; onRemove: () => void
   return (
     <li className="flex items-center gap-2 text-sm">
       <FileText className="size-4 shrink-0 text-n-slate-10" />
-      <span className="min-w-0 truncate text-[hsl(var(--foreground))]">{file.name}</span>
+      <span className="min-w-0 truncate text-n-slate-12">{file.name}</span>
       <span className="shrink-0 font-semibold tabular-nums text-n-slate-12">
         {file.content.length.toLocaleString('en-US')} characters
       </span>
@@ -26,7 +26,7 @@ function FileRow({ file, onRemove }: { file: KnowledgeFile; onRemove: () => void
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${file.name}`}
-        className="shrink-0 cursor-pointer rounded-md p-1 text-[var(--ruby-11)] hover:bg-[var(--ruby-2)]"
+        className="shrink-0 cursor-pointer rounded-md p-1 text-n-ruby-11 hover:bg-n-ruby-2"
       >
         <Trash2 className="size-4" />
       </button>
@@ -73,7 +73,7 @@ export function FileKnowledge({ files, savedFileIds, onChange, onError }: FileKn
   const remove = (id: string) => onChange((prev) => prev.filter((f) => f.id !== id));
 
   return (
-    <div className="flex flex-col gap-5 rounded-xl border border-[hsl(var(--border))] p-4 sm:p-5">
+    <div className="flex flex-col gap-5 rounded-xl border border-n-weak p-4 sm:p-5">
       <h3 className="text-lg font-semibold text-n-slate-12">Files</h3>
 
       <div className="flex flex-col items-center gap-2">
@@ -92,9 +92,7 @@ export function FileKnowledge({ files, savedFileIds, onChange, onError }: FileKn
           }}
           className={cn(
             'flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-12 text-center transition-colors',
-            dragging
-              ? 'border-[#e5484d] bg-[var(--brand-2)]'
-              : 'border-[hsl(var(--border-strong))] hover:border-[#e5484d]',
+            dragging ? 'border-n-brand bg-n-blue-2' : 'border-n-strong hover:border-n-brand',
           )}
         >
           <UploadCloud className="size-7 text-n-slate-10" />
