@@ -9,6 +9,9 @@ export {
   ProviderAccountStatus,
   ProviderEventStatus,
   MessageDeliveryStatus,
+  ConversationStatus,
+  MessageDirection,
+  MessageSenderType,
 } from '@prisma/client';
 
 export type {
@@ -24,7 +27,12 @@ export type {
   OutboxEvent,
   AuditLog,
   ProviderAccount,
+  ProviderAccountMember,
   ProviderEvent,
+  Contact,
+  ContactIdentity,
+  Conversation,
+  Message,
 } from '@prisma/client';
 
 // Client instantiation and singleton

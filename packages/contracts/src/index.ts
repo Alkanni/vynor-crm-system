@@ -7,6 +7,7 @@ export * from './observability/index.js';
 export * from './audit/index.js';
 export * from './jobs/index.js';
 export * from './channels/index.js';
+export * from './conversations/index.js';
 export * from './ai/index.js';
 export * from './storage/index.js';
 export * from './realtime/index.js';

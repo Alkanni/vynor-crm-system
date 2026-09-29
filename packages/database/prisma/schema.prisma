@@ -43,6 +43,7 @@ enum ChannelType {
   EMAIL
   LINE
   WEBCHAT
+  API
 }
 
 enum ProviderAccountStatus {
@@ -66,6 +67,24 @@ enum MessageDeliveryStatus {
   DELIVERED
   READ
   FAILED
+}
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  RESOLVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageSenderType {
+  CONTACT
+  AGENT
+  AI
+  SYSTEM
 }
 
 enum AttachmentPurpose {
@@ -100,14 +119,18 @@ model Workspace {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  memberships WorkspaceMembership[]
-  roles       Role[]
-  teams       Team[]
-  outboxEvents OutboxEvent[]
-  auditLogs   AuditLog[]
-  providerAccounts ProviderAccount[]
-  providerEvents   ProviderEvent[]
-  attachments      Attachment[]
+  memberships       WorkspaceMembership[]
+  roles             Role[]
+  teams             Team[]
+  outboxEvents      OutboxEvent[]
+  auditLogs         AuditLog[]
+  providerAccounts  ProviderAccount[]
+  providerEvents    ProviderEvent[]
+  attachments       Attachment[]
+  contacts          Contact[]
+  contactIdentities ContactIdentity[]
+  conversations     Conversation[]
+  messages          Message[]
 
   @@map("workspaces")
 }
@@ -141,6 +164,10 @@ model WorkspaceMembership {
   userProfile UserProfile      @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
   roles       MembershipRole[]
   teams       TeamMember[]
+
+  channelAssignments    ProviderAccountMember[]
+  assignedConversations Conversation[]
+  sentMessages          Message[]
 
   @@unique([workspaceId, userProfileId], map: "uq_workspace_memberships_workspace_user")
   @@index([workspaceId], map: "idx_workspace_memberships_workspace_id")
@@ -187,7 +214,7 @@ model Role {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  workspace   Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace   Workspace?       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   permissions RolePermission[]
   memberships MembershipRole[]
 
@@ -210,9 +237,9 @@ model Permission {
 }
 
 model RolePermission {
-  roleId       String     @map("role_id")
-  permissionId String     @map("permission_id")
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -238,15 +265,15 @@ model MembershipRole {
 }
 
 model OutboxEvent {
-  id            String            @id @default(uuid())
-  workspaceId   String            @map("workspace_id")
-  eventType     String            @map("event_type") @db.VarChar(100)
-  payload       Json
-  status        OutboxEventStatus @default(PENDING)
-  correlationId String?           @map("correlation_id") @db.VarChar(128)
-  causationId   String?           @map("causation_id") @db.VarChar(128)
-  actorId       String?           @map("actor_id") @db.VarChar(64)
-  traceparent   String?           @db.VarChar(128)
+  id                  String            @id @default(uuid())
+  workspaceId         String            @map("workspace_id")
+  eventType           String            @map("event_type") @db.VarChar(100)
+  payload             Json
+  status              OutboxEventStatus @default(PENDING)
+  correlationId       String?           @map("correlation_id") @db.VarChar(128)
+  causationId         String?           @map("causation_id") @db.VarChar(128)
+  actorId             String?           @map("actor_id") @db.VarChar(64)
+  traceparent         String?           @db.VarChar(128)
   retryCount          Int               @default(0) @map("retry_count")
   lastError           String?           @map("last_error") @db.Text
   claimedAt           DateTime?         @map("claimed_at") @db.Timestamptz(6)
@@ -294,23 +321,40 @@ model AuditLog {
 }
 
 model ProviderAccount {
-  id                String                @id @default(cuid())
-  workspaceId       String                @map("workspace_id")
-  channelType       ChannelType           @map("channel_type")
-  provider          String                @db.VarChar(50)
-  name              String                @db.VarChar(100)
-  accountIdentifier String                @map("account_identifier") @db.VarChar(255)
-  status            ProviderAccountStatus @default(ACTIVE)
-  credentials       Json
-  config            Json?
-  capabilities      Json?
-  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt         DateTime?             @map("deleted_at") @db.Timestamptz(6)
+  id                 String                @id @default(cuid())
+  workspaceId        String                @map("workspace_id")
+  channelType        ChannelType           @map("channel_type")
+  provider           String                @db.VarChar(50)
+  name               String                @db.VarChar(100)
+  accountIdentifier  String                @map("account_identifier") @db.VarChar(255)
+  status             ProviderAccountStatus @default(ACTIVE)
+  credentials        Json
+  config             Json?
+  capabilities       Json?
+  description        String?               @db.VarChar(255)
+  displayIdentifier  String?               @map("display_identifier") @db.VarChar(255)
+  /// Unguessable token in the webhook URL path (/api/v1/webhooks/:provider/:webhookKey).
+  webhookKey         String?               @unique(map: "uq_provider_accounts_webhook_key") @map("webhook_key") @db.VarChar(64)
+  statusReason       String?               @map("status_reason") @db.Text
+  lastErrorAt        DateTime?             @map("last_error_at") @db.Timestamptz(6)
+  lastHealthCheckAt  DateTime?             @map("last_health_check_at") @db.Timestamptz(6)
+  connectedAt        DateTime?             @map("connected_at") @db.Timestamptz(6)
+  /// Inbox routing settings (InboxSettings contract).
+  settings           Json?
+  /// Polling cursor (Telegram update offset, IMAP UIDVALIDITY/UID) and inbound mode.
+  syncState          Json?                 @map("sync_state")
+  syncLeaseExpiresAt DateTime?             @map("sync_lease_expires_at") @db.Timestamptz(6)
+  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?             @map("deleted_at") @db.Timestamptz(6)
 
-  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  providerEvents ProviderEvent[]
-  attachments    Attachment[]
+  workspace         Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerEvents    ProviderEvent[]
+  attachments       Attachment[]
+  members           ProviderAccountMember[]
+  contactIdentities ContactIdentity[]
+  conversations     Conversation[]
+  messages          Message[]
 
   @@unique([workspaceId, channelType, accountIdentifier], map: "uq_provider_accounts_workspace_channel_identifier")
   @@index([workspaceId], map: "idx_provider_accounts_workspace_id")
@@ -381,4 +425,140 @@ model Attachment {
   @@index([providerAccountId], map: "idx_attachments_provider_account_id")
   @@index([purgeAfter], map: "idx_attachments_purge_after")
   @@map("attachments")
+}
+
+/// Human agents who answer a channel's inbox.
+model ProviderAccountMember {
+  providerAccountId String   @map("provider_account_id")
+  membershipId      String   @map("membership_id")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  providerAccount ProviderAccount     @relation(fields: [providerAccountId], references: [id], onDelete: Cascade)
+  membership      WorkspaceMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([providerAccountId, membershipId])
+  @@index([membershipId], map: "idx_provider_account_members_membership_id")
+  @@map("provider_account_members")
+}
+
+/// A customer, independent of the channels they use (AD-003).
+model Contact {
+  id          String    @id @default(cuid())
+  workspaceId String    @map("workspace_id")
+  displayName String    @map("display_name") @db.VarChar(255)
+  email       String?   @db.VarChar(255)
+  phone       String?   @db.VarChar(64)
+  avatarUrl   String?   @map("avatar_url") @db.VarChar(1024)
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  identities    ContactIdentity[]
+  conversations Conversation[]
+
+  @@index([workspaceId, createdAt], map: "idx_contacts_workspace_created_at")
+  @@index([workspaceId, email], map: "idx_contacts_workspace_email")
+  @@index([workspaceId, phone], map: "idx_contacts_workspace_phone")
+  @@map("contacts")
+}
+
+/// How a contact is addressed on one channel account (wa_id, Telegram chat ID, email, PSID, …).
+model ContactIdentity {
+  id                String      @id @default(cuid())
+  workspaceId       String      @map("workspace_id")
+  contactId         String      @map("contact_id")
+  providerAccountId String      @map("provider_account_id")
+  channelType       ChannelType @map("channel_type")
+  externalId        String      @map("external_id") @db.VarChar(255)
+  displayName       String?     @map("display_name") @db.VarChar(255)
+  username          String?     @db.VarChar(255)
+  metadata          Json?
+  lastSeenAt        DateTime?   @map("last_seen_at") @db.Timestamptz(6)
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact         Contact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  providerAccount ProviderAccount @relation(fields: [providerAccountId], references: [id], onDelete: Cascade)
+  conversations   Conversation[]
+
+  @@unique([providerAccountId, externalId], map: "uq_contact_identities_account_external_id")
+  @@index([workspaceId], map: "idx_contact_identities_workspace_id")
+  @@index([contactId], map: "idx_contact_identities_contact_id")
+  @@map("contact_identities")
+}
+
+model Conversation {
+  id                   String             @id @default(cuid())
+  workspaceId          String             @map("workspace_id")
+  providerAccountId    String             @map("provider_account_id")
+  contactId            String             @map("contact_id")
+  contactIdentityId    String             @map("contact_identity_id")
+  status               ConversationStatus @default(OPEN)
+  assigneeMembershipId String?            @map("assignee_membership_id")
+  subject              String?            @db.VarChar(500)
+  /// Provider thread reference, e.g. the root Message-ID of an email thread.
+  externalThreadId     String?            @map("external_thread_id") @db.VarChar(512)
+  unreadCount          Int                @default(0) @map("unread_count")
+  lastMessageAt        DateTime?          @map("last_message_at") @db.Timestamptz(6)
+  lastMessagePreview   String?            @map("last_message_preview") @db.VarChar(500)
+  lastMessageDirection MessageDirection?  @map("last_message_direction")
+  lastInboundAt        DateTime?          @map("last_inbound_at") @db.Timestamptz(6)
+  resolvedAt           DateTime?          @map("resolved_at") @db.Timestamptz(6)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerAccount ProviderAccount      @relation(fields: [providerAccountId], references: [id], onDelete: Cascade)
+  contact         Contact              @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactIdentity ContactIdentity      @relation(fields: [contactIdentityId], references: [id], onDelete: Cascade)
+  assignee        WorkspaceMembership? @relation(fields: [assigneeMembershipId], references: [id], onDelete: SetNull)
+  messages        Message[]
+
+  @@index([workspaceId, status, lastMessageAt(sort: Desc)], map: "idx_conversations_workspace_status_last_message")
+  @@index([workspaceId, assigneeMembershipId, status], map: "idx_conversations_workspace_assignee_status")
+  @@index([providerAccountId, contactIdentityId, status], map: "idx_conversations_account_identity_status")
+  @@index([providerAccountId, externalThreadId], map: "idx_conversations_account_thread")
+  @@index([contactId], map: "idx_conversations_contact_id")
+  @@map("conversations")
+}
+
+/// Channel-agnostic message (AD-003): no provider-specific columns.
+model Message {
+  id                 String                @id
+  workspaceId        String                @map("workspace_id")
+  conversationId     String                @map("conversation_id")
+  providerAccountId  String                @map("provider_account_id")
+  direction          MessageDirection
+  senderType         MessageSenderType     @map("sender_type")
+  senderMembershipId String?               @map("sender_membership_id")
+  senderName         String?               @map("sender_name") @db.VarChar(255)
+  isPrivate          Boolean               @default(false) @map("is_private")
+  contentType        String                @map("content_type") @db.VarChar(32)
+  content            Json
+  text               String?               @db.Text
+  providerMessageId  String?               @map("provider_message_id") @db.VarChar(512)
+  replyToMessageId   String?               @map("reply_to_message_id")
+  status             MessageDeliveryStatus @default(PENDING)
+  errorCode          String?               @map("error_code") @db.VarChar(100)
+  errorMessage       String?               @map("error_message") @db.Text
+  providerEventId    String?               @map("provider_event_id")
+  sentAt             DateTime?             @map("sent_at") @db.Timestamptz(6)
+  deliveredAt        DateTime?             @map("delivered_at") @db.Timestamptz(6)
+  readAt             DateTime?             @map("read_at") @db.Timestamptz(6)
+  failedAt           DateTime?             @map("failed_at") @db.Timestamptz(6)
+  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace        Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversation     Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  providerAccount  ProviderAccount      @relation(fields: [providerAccountId], references: [id], onDelete: Cascade)
+  senderMembership WorkspaceMembership? @relation(fields: [senderMembershipId], references: [id], onDelete: SetNull)
+
+  @@unique([providerAccountId, providerMessageId], map: "uq_messages_account_provider_message_id")
+  @@index([conversationId, createdAt], map: "idx_messages_conversation_created_at")
+  @@index([workspaceId, status, createdAt], map: "idx_messages_workspace_status_created_at")
+  @@map("messages")
 }

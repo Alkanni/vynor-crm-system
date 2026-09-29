@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ChannelRuntimeEnvSchema, requiresEncryptionKey } from './channels.js';
 import { BaseServerEnvSchema } from './common.js';
 
 export const ApiEnvSchema = BaseServerEnvSchema.extend({
@@ -30,9 +31,31 @@ export const ApiEnvSchema = BaseServerEnvSchema.extend({
   // Optional Redis
   REDIS_URL: z.string().url().optional(),
 
-  // Channel Providers (WhatsApp Meta API)
-  WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
-  WHATSAPP_APP_SECRET: z.string().optional(),
-});
+  /**
+   * Public HTTPS origin providers use to reach this API (e.g. https://crm.example.com or a
+   * tunnel URL). Webhook URLs are built from it. Defaults to APP_URL. Without https, Telegram
+   * falls back to polling and Meta/LINE webhooks cannot be registered.
+   */
+  PUBLIC_WEBHOOK_BASE_URL: z.string().url().optional(),
+
+  /**
+   * Local-only helper: POST /api/v1/auth/dev-session issues a session for a seeded user so
+   * the web app can be used without a Supabase project. Ignored outside local/test profiles.
+   */
+  AUTH_DEV_SESSION_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+})
+  .extend(ChannelRuntimeEnvSchema.shape)
+  .superRefine((env, ctx) => {
+    if (requiresEncryptionKey(env.APP_ENV) && !env.ENCRYPTION_MASTER_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ENCRYPTION_MASTER_KEY'],
+        message: 'ENCRYPTION_MASTER_KEY is required in staging and production',
+      });
+    }
+  });
 
 export type ApiEnv = z.infer<typeof ApiEnvSchema>;
