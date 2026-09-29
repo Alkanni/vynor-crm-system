@@ -1,245 +1,225 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Radio, RefreshCw, X, Check } from 'lucide-react';
-import { ChannelHealthList } from '@/components/channels/ChannelHealthList';
-import type { ChannelAccount } from '@/components/channels/types';
+import React, { useCallback, useState } from 'react';
+import { Check, Plus } from 'lucide-react';
+import type { ChannelProviderType } from '@vynor/contracts';
+import { ConnectPlatformModal } from '@/components/channels/ConnectPlatformModal';
+import { InboxList } from '@/components/channels/InboxList';
+import { InboxSettingsPanel } from '@/components/channels/InboxSettingsPanel';
+import type {
+  InboxAccount,
+  InboxAgent,
+  InboxDraft,
+  InboxSettings,
+} from '@/components/channels/types';
 
-const INITIAL_ACCOUNTS: ChannelAccount[] = [
+const AI_AGENTS: InboxAgent[] = [
+  { id: 'ai_support', name: 'VYNOR Support AI' },
+  { id: 'ai_sales', name: 'VYNOR Sales AI' },
+];
+
+const HUMAN_AGENTS: InboxAgent[] = [
+  { id: 'agt_sarah', name: 'Sarah Jenkins' },
+  { id: 'agt_alex', name: 'Alex Rivera' },
+  { id: 'agt_nanda', name: 'Nanda Rusmana' },
+  { id: 'agt_budi', name: 'Budi Hartono' },
+  { id: 'agt_dewi', name: 'Dewi Lestari' },
+  { id: 'agt_rizky', name: 'Rizky Pratama' },
+];
+
+const DEFAULT_SETTINGS: InboxSettings = {
+  maxConversationsEnabled: false,
+  maxConversationsPerAgent: 10,
+  preferredAgent: false,
+  csatEnabled: false,
+  reassignWhenOffline: false,
+};
+
+const INITIAL_INBOXES: InboxAccount[] = [
   {
     id: 'chan_01',
-    name: 'WhatsApp Business Official',
-    channel: 'WHATSAPP',
-    accountIdentifier: '+62 812-3456-7890 (WABA ID: 10928374)',
-    status: 'OPERATIONAL',
-    inbound24h: 3412,
-    outbound24h: 4210,
-    webhookLatencyMs: 38,
-    lastMessageAt: '2m ago',
-    assignedTeam: 'Customer Care',
-    isAiBotActive: true,
+    name: 'WhatsApp Customer Care',
+    description: 'Main support number printed on invoices and packaging.',
+    provider: 'WHATSAPP_CLOUD',
+    identifier: '+62 812-3456-7890',
+    aiAgentId: 'ai_support',
+    humanAgentIds: ['agt_sarah', 'agt_alex', 'agt_nanda', 'agt_budi', 'agt_dewi'],
+    distributionMethod: 'LEAST_ASSIGNED',
+    settings: { ...DEFAULT_SETTINGS, csatEnabled: true },
+    needsReconnect: false,
   },
   {
     id: 'chan_02',
-    name: 'Instagram Direct (@vynor_support)',
-    channel: 'INSTAGRAM',
-    accountIdentifier: '@vynor_support (IGID: 994821)',
-    status: 'DISCONNECTED',
-    inbound24h: 890,
-    outbound24h: 620,
-    webhookLatencyMs: 412,
-    lastMessageAt: '2h ago',
-    errorSnippet: 'OAuth token expired (Meta API Error 190). Inbound webhooks paused.',
-    assignedTeam: 'Social Sales',
-    isAiBotActive: false,
+    name: 'Instagram Support',
+    description: '',
+    provider: 'META_INSTAGRAM',
+    identifier: '@vynor_support',
+    aiAgentId: 'ai_support',
+    humanAgentIds: ['agt_dewi', 'agt_rizky'],
+    distributionMethod: 'ROUND_ROBIN',
+    settings: DEFAULT_SETTINGS,
+    needsReconnect: true,
   },
   {
     id: 'chan_03',
     name: 'Telegram Support Bot',
-    channel: 'TELEGRAM',
-    accountIdentifier: '@VynorSupportBot (Bot ID: 8812903)',
-    status: 'OPERATIONAL',
-    inbound24h: 1205,
-    outbound24h: 1180,
-    webhookLatencyMs: 24,
-    lastMessageAt: '12m ago',
-    assignedTeam: 'Tier 1 Support',
-    isAiBotActive: true,
+    description: '',
+    provider: 'TELEGRAM_BOT',
+    identifier: '@VynorSupportBot',
+    aiAgentId: 'ai_support',
+    humanAgentIds: ['agt_budi', 'agt_rizky'],
+    distributionMethod: 'LEAST_ASSIGNED',
+    settings: DEFAULT_SETTINGS,
+    needsReconnect: false,
   },
   {
     id: 'chan_04',
-    name: 'Enterprise Email Ingress',
-    channel: 'EMAIL',
-    accountIdentifier: 'support@vynor.io (IMAP/SMTP)',
-    status: 'OPERATIONAL',
-    inbound24h: 410,
-    outbound24h: 385,
-    webhookLatencyMs: 95,
-    lastMessageAt: '34m ago',
-    assignedTeam: 'Billing & Enterprise',
-    isAiBotActive: false,
+    name: 'Support Email',
+    description: 'Billing and enterprise requests.',
+    provider: 'EMAIL_SMTP_IMAP',
+    identifier: 'support@vynor.io',
+    aiAgentId: null,
+    humanAgentIds: ['agt_sarah', 'agt_nanda'],
+    distributionMethod: 'MANUAL',
+    settings: DEFAULT_SETTINGS,
+    needsReconnect: false,
   },
   {
     id: 'chan_05',
-    name: 'E-Commerce Marketing WhatsApp',
-    channel: 'WHATSAPP',
-    accountIdentifier: '+62 811-9876-5432 (WABA ID: 22894101)',
-    status: 'RATE_LIMITED',
-    inbound24h: 9200,
-    outbound24h: 8950,
-    webhookLatencyMs: 280,
-    lastMessageAt: '5m ago',
-    errorSnippet: 'Outbound broadcast tier limit reached: 10,000 msgs/24h. Cooling down.',
-    assignedTeam: 'Marketing Operations',
-    isAiBotActive: false,
+    name: 'WhatsApp E-Commerce',
+    description: 'Order updates and promotions.',
+    provider: 'WHATSAPP_CLOUD',
+    identifier: '+62 811-9876-5432',
+    aiAgentId: 'ai_sales',
+    humanAgentIds: ['agt_alex', 'agt_budi', 'agt_rizky', 'agt_dewi'],
+    distributionMethod: 'ROUND_ROBIN',
+    settings: { ...DEFAULT_SETTINGS, preferredAgent: true },
+    needsReconnect: false,
   },
   {
     id: 'chan_06',
-    name: 'Live Webchat Widget',
-    channel: 'WEBCHAT',
-    accountIdentifier: 'vynor.io/embed/widget.js',
-    status: 'OPERATIONAL',
-    inbound24h: 640,
-    outbound24h: 615,
-    webhookLatencyMs: 18,
-    lastMessageAt: 'Just now',
-    assignedTeam: 'Customer Care',
-    isAiBotActive: true,
+    name: 'Website Live Chat',
+    description: '',
+    provider: 'WEBCHAT_EMBED',
+    identifier: 'vynor.io',
+    aiAgentId: 'ai_sales',
+    humanAgentIds: ['agt_sarah', 'agt_alex', 'agt_dewi'],
+    distributionMethod: 'LEAST_ASSIGNED',
+    settings: DEFAULT_SETTINGS,
+    needsReconnect: false,
   },
 ];
 
-export default function ConnectedPlatformsPage() {
-  const [channels, setChannels] = useState<ChannelAccount[]>(INITIAL_ACCOUNTS);
-  const [connectModalOpen, setConnectModalOpen] = useState(false);
+export default function ChannelsPage() {
+  const [inboxes, setInboxes] = useState<InboxAccount[]>(INITIAL_INBOXES);
+  const [selectedId, setSelectedId] = useState<string | null>(INITIAL_INBOXES[0]?.id ?? null);
+  const [connectOpen, setConnectOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const selected = inboxes.find((inbox) => inbox.id === selectedId) ?? null;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // 1-Click Re-authenticate action (Resolves UX-CHANNELS-001 acceptance criteria)
-  const handleReauthenticate = (id: string) => {
-    setChannels((prev) =>
-      prev.map((c) => {
-        if (c.id === id) {
-          return {
-            ...c,
-            status: 'OPERATIONAL',
-            errorSnippet: undefined,
-            webhookLatencyMs: 42,
-          };
-        }
-        return c;
-      }),
-    );
-    showToast('Platform token re-authenticated successfully! Webhook listener restored.');
+  const openConnect = () => setConnectOpen(true);
+  const closeConnect = useCallback(() => setConnectOpen(false), []);
+
+  const handleSave = (id: string, draft: InboxDraft) => {
+    setInboxes((prev) => prev.map((inbox) => (inbox.id === id ? { ...inbox, ...draft } : inbox)));
+    showToast(`${draft.name} saved.`);
   };
 
-  // Toggle AI Bot
-  const handleToggleAiBot = (id: string) => {
-    setChannels((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isAiBotActive: !c.isAiBotActive } : c)),
-    );
+  const handleDelete = (id: string) => {
+    const removed = inboxes.find((inbox) => inbox.id === id);
+    const remaining = inboxes.filter((inbox) => inbox.id !== id);
+    setInboxes(remaining);
+    setSelectedId(remaining[0]?.id ?? null);
+    if (removed) showToast(`${removed.name} deleted.`);
   };
 
-  // Ping Webhook
-  const handleTestWebhook = (id: string) => {
-    showToast(`Webhook ping sent to platform [${id}]. Response: 200 OK (32ms).`);
+  const handleReconnect = (id: string) => {
+    setInboxes((prev) =>
+      prev.map((inbox) => (inbox.id === id ? { ...inbox, needsReconnect: false } : inbox)),
+    );
+    showToast('Reconnected. New messages will arrive in this inbox again.');
+  };
+
+  const handleConnect = (provider: ChannelProviderType, name: string) => {
+    const inbox: InboxAccount = {
+      id: `chan_${Date.now()}`,
+      name,
+      description: '',
+      provider,
+      identifier: '',
+      aiAgentId: null,
+      humanAgentIds: [],
+      distributionMethod: 'LEAST_ASSIGNED',
+      settings: DEFAULT_SETTINGS,
+      needsReconnect: false,
+    };
+    setInboxes((prev) => [...prev, inbox]);
+    setSelectedId(inbox.id);
+    setConnectOpen(false);
+    showToast(`${name} connected. Add agents to start answering chats.`);
   };
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-7xl mx-auto w-full select-none">
-      {/* Toast Notification */}
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row">
       {toastMessage && (
-        <div className="fixed top-14 right-6 z-50 flex items-center gap-2 rounded-xs border border-emerald-500/40 bg-card p-3 text-xs text-foreground shadow-lg animate-in slide-in-from-top-2">
-          <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed right-6 top-14 z-50 flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-[hsl(var(--surface))] px-3 py-2.5 text-sm text-n-slate-12 shadow-lg"
+        >
+          <Check className="size-4 shrink-0 text-emerald-600" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Radio className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Connected Platforms & Inboxes
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Administrative configuration, credential rotation, and telemetry for omnichannel
-            providers
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => showToast('Refreshed telemetry across all provider endpoints.')}
-            className="inline-flex items-center gap-1.5 rounded-xs border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>Refresh Telemetry</span>
-          </button>
-        </div>
+      <div className="flex min-h-0 flex-col lg:w-[380px] lg:shrink-0">
+        <InboxList
+          inboxes={inboxes}
+          selectedId={selectedId}
+          aiAgents={AI_AGENTS}
+          humanAgents={HUMAN_AGENTS}
+          onSelect={setSelectedId}
+          onConnect={openConnect}
+        />
       </div>
 
-      {/* Main Channel Health List */}
-      <ChannelHealthList
-        channels={channels}
-        onConnectChannel={() => setConnectModalOpen(true)}
-        onReauthenticate={handleReauthenticate}
-        onToggleAiBot={handleToggleAiBot}
-        onTestWebhook={handleTestWebhook}
-      />
-
-      {/* Connect Platform Modal */}
-      {connectModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
-          onClick={() => setConnectModalOpen(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="connect-channel-title"
-            className="w-full max-w-md rounded-md border border-border bg-card p-5 shadow-2xl animate-in fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <h2 id="connect-channel-title" className="text-sm font-semibold text-foreground">
-                Connect Omnichannel Provider
-              </h2>
-              <button
-                type="button"
-                onClick={() => setConnectModalOpen(false)}
-                className="rounded-xs p-1 text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3 text-xs">
-              <p className="text-muted-foreground">
-                Choose the messaging provider account to integrate with VYNOR CRM:
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { name: 'WhatsApp Cloud API', channel: 'WHATSAPP' },
-                  { name: 'Instagram Direct', channel: 'INSTAGRAM' },
-                  { name: 'Telegram Bot API', channel: 'TELEGRAM' },
-                  { name: 'Email SMTP / IMAP', channel: 'EMAIL' },
-                ].map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => {
-                      setConnectModalOpen(false);
-                      showToast(`Redirecting to ${p.name} OAuth authorization portal...`);
-                    }}
-                    className="flex flex-col items-center justify-center gap-1.5 rounded-xs border border-border bg-surface p-3 text-center hover:border-primary hover:bg-primary/5 transition-all"
-                  >
-                    <span className="font-semibold text-foreground text-xs">{p.name}</span>
-                    <span className="text-[10px] text-muted-foreground">Official API</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 border-t border-border pt-3 text-right">
-              <button
-                type="button"
-                onClick={() => setConnectModalOpen(false)}
-                className="rounded-xs bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground"
-              >
-                Cancel
-              </button>
-            </div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {selected ? (
+          <InboxSettingsPanel
+            key={selected.id}
+            inbox={selected}
+            aiAgents={AI_AGENTS}
+            humanAgents={HUMAN_AGENTS}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onReconnect={handleReconnect}
+          />
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[hsl(var(--border-strong))] px-6 py-16 text-center">
+            <p className="text-base font-semibold text-n-slate-12">No channels yet</p>
+            <p className="max-w-sm text-sm text-n-slate-11">
+              Connect WhatsApp, Instagram, email or another platform to start receiving customer
+              messages here.
+            </p>
+            <button
+              type="button"
+              onClick={openConnect}
+              className="mt-2 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg bg-[#e5484d] px-4 text-sm font-medium text-white hover:bg-[#dc3e42]"
+            >
+              <Plus className="size-4" />
+              Connect a platform
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {connectOpen && <ConnectPlatformModal onClose={closeConnect} onConnect={handleConnect} />}
     </div>
   );
 }
