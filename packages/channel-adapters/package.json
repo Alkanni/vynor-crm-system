@@ -19,10 +19,16 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/mailparser": "3.4.6",
     "@types/node": "^26.6.2",
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@vynor/contracts": "workspace:*"
+    "@vynor/contracts": "workspace:*",
+    "@vynor/shared": "workspace:*",
+    "imapflow": "2.0.6",
+    "mailparser": "3.9.28",
+    "nodemailer": "10.0.10",
+    "zod": "^4.6.5"
   }
 }
