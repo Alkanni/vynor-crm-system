@@ -95,7 +95,7 @@ export function mapMailError(
   let message: string;
   if (err.authenticationFailed === true || code === 'EAUTH' || code === 'ENOAUTH') {
     category = 'AUTHENTICATION';
-    message = `${where} rejected the username or password. For Gmail and Outlook, use an app password instead of your normal password.`;
+    message = `${where} rejected the username or password. For Gmail, Yahoo and Zoho, use an app password instead of your normal password. Microsoft 365 and Outlook.com only allow OAuth sign-in, which is not supported yet.`;
   } else if (TLS_ERROR_CODES.has(code) || /ssl|tls|certificate/i.test(underlying)) {
     category = 'CONFIGURATION';
     message = `Secure connection to ${where} failed (${underlying}). Check the SSL/TLS setting: port 993/465 usually need SSL on, 143/587 need it off (STARTTLS).`;

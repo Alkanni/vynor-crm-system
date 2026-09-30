@@ -208,7 +208,7 @@ export interface ChannelAdapter<TCredentials = unknown> {
     account: AdapterAccount<TCredentials>,
   ): Promise<MediaDownloadResult>;
 
-  /** Active probe used by "Test connection" and the periodic health check. */
+  /** Active probe behind "Test connection". */
   healthCheck(account: AdapterAccount<TCredentials>): Promise<ChannelHealthResult>;
 }
 

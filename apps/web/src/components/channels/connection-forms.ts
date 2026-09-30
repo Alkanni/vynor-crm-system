@@ -272,7 +272,8 @@ export const CONNECT_FORMS: Record<ChannelProviderType, ConnectForm> = {
     intro: 'Connect a mailbox. VYNOR reads new mail over IMAP and sends your replies over SMTP.',
     steps: [
       'Make sure IMAP is enabled in the mailbox settings.',
-      'For Gmail, Outlook and Yahoo, turn on 2-step verification and create an app password; your normal password will be rejected.',
+      'For Gmail, Yahoo and Zoho, turn on 2-step verification and create an app password; your normal password will be rejected.',
+      'Microsoft 365 and Outlook.com mailboxes only allow OAuth sign-in for IMAP and SMTP, which VYNOR does not support yet.',
       'Only mail that arrives after connecting is imported.',
     ],
     docsUrl: 'https://support.google.com/mail/answer/185833',
@@ -287,17 +288,6 @@ export const CONNECT_FORMS: Record<ChannelProviderType, ConnectForm> = {
           'smtp.host': 'smtp.gmail.com',
           'smtp.port': '465',
           'smtp.secure': true,
-        },
-      },
-      {
-        label: 'Outlook / Microsoft 365',
-        values: {
-          'imap.host': 'outlook.office365.com',
-          'imap.port': '993',
-          'imap.secure': true,
-          'smtp.host': 'smtp.office365.com',
-          'smtp.port': '587',
-          'smtp.secure': false,
         },
       },
       {
