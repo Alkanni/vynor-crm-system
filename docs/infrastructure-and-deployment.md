@@ -29,7 +29,7 @@ flowchart TD
 
     Client -->|HTTPS / WSS| Caddy
     Caddy -->|/* Default| Web
-    Caddy -->|/api/*, /socket.io/*, /webhooks/*| API
+    Caddy -->|/api/*, /socket.io/*, /api/v1/webhooks/*| API
     API -->|DB Pooler / Direct| Postgres
     Worker -->|DB Queries & Outbox Claims| Postgres
     API -->|SigV4 Signed Downloads & S3 Put| RustFS
@@ -143,7 +143,7 @@ Caddy acts as the perimeter ingress gateway. All external client traffic enters 
 ### Route Dispatch Rules
 
 - `/api/v1/attachments/*` -> `api:3001` (Bounded by `max_size 50MB` for binary uploads).
-- `/webhooks/*` -> `api:3001` (Bounded by `max_size 5MB` and low timeouts for <500ms webhook ACK).
+- `/api/v1/webhooks/*` -> `api:3001` (Bounded by `max_size 5MB` and low timeouts for <500ms webhook ACK). Provider callback URLs have the form `/api/v1/webhooks/<provider>/<channel key>`.
 - `/socket.io/*` & `/realtime/*` -> `api:3001` (WebSocket connection upgrade support).
 - `/api/*` & `/health/*` -> `api:3001` (General REST APIs and probes).
 - `/*` (Default) -> `web:3000` (Next.js frontend user interface).

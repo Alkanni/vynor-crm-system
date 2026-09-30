@@ -31,6 +31,9 @@ This document defines the four official configuration profiles for VYNOR CRM: **
   - `DATABASE_URL`: `postgresql://postgres:postgres@localhost:5432/vynor_crm?schema=public`
   - `STORAGE_ENDPOINT`: `http://localhost:9000` (`STORAGE_USE_SSL=false`)
   - `LOG_LEVEL`: `debug` or `info`
+  - `ENCRYPTION_MASTER_KEY`: any locally generated key (`openssl rand -base64 32`), the same for API and worker; without it channels cannot be connected.
+  - `PUBLIC_WEBHOOK_BASE_URL`: unset (Telegram polls, Email and Web chat work) or a tunnel URL to receive WhatsApp, Meta and LINE webhooks.
+  - `AUTH_DEV_SESSION_ENABLED`: `true` to sign in as a seeded user without Supabase.
 
 ### 2.2 `test` Profile
 
@@ -41,6 +44,7 @@ This document defines the four official configuration profiles for VYNOR CRM: **
   - `STORAGE_BUCKET`: `vynor-crm-test`
   - `LOG_LEVEL`: `silent` (except when debugging failed tests)
   - `SENTRY_DSN`: unset
+  - Provider base URLs (`META_GRAPH_API_BASE_URL`, `TELEGRAM_API_BASE_URL`, `LINE_API_BASE_URL`, …) may point at local mock servers; they default to the real providers.
 
 ### 2.3 `staging` Profile
 
@@ -51,6 +55,8 @@ This document defines the four official configuration profiles for VYNOR CRM: **
   - Direct connection for migrations (`DIRECT_URL`, port 5432).
   - Storage bucket with strict TLS (`STORAGE_USE_SSL=true`).
   - Sentry enabled with staging release tag.
+  - `ENCRYPTION_MASTER_KEY` is mandatory (startup fails without it) and must differ from production; `PUBLIC_WEBHOOK_BASE_URL` is the public HTTPS origin providers call.
+  - `AUTH_DEV_SESSION_ENABLED` has no effect; the development sign-in only exists in `local` and `test`.
 
 ### 2.4 `production` Profile
 
@@ -61,6 +67,7 @@ This document defines the four official configuration profiles for VYNOR CRM: **
   - Strict CORS origin allowlists (e.g. `https://crm.vynor.internal`).
   - Database pooler with connection limits.
   - Sentry configured with sensitive field scrubbing and trace sampling.
+  - `ENCRYPTION_MASTER_KEY` is mandatory and held only in the secret manager ([rotation](secret-management-and-rotation.md#25-channel-credential-encryption-key)); `PUBLIC_WEBHOOK_BASE_URL` is the public HTTPS origin behind Caddy.
 
 ---
 

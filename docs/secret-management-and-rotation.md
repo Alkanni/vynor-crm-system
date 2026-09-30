@@ -66,28 +66,45 @@ To remain **hosting-platform agnostic** while maintaining strict security:
 
 ---
 
-### 2.4 Meta WhatsApp Cloud API Access Token
+### 2.4 Channel Credentials (WhatsApp, Meta, Telegram, LINE, Email)
 
-- **Rotation Interval:** 60 days (or before system user token expiration).
-- **Impact:** Affects outbound WhatsApp message delivery.
+- **Rotation Interval:** Follow the provider: system user tokens for WhatsApp and Messenger can be issued without expiry, long-lived Instagram tokens expire after 60 days, mailbox app passwords and bot tokens only change when revoked. Rotate immediately on suspected leakage.
+- **Impact:** Affects receiving webhooks (app secret, channel secret) and sending replies (tokens, SMTP password) for that channel only.
 - **Procedure:**
-  1. In Meta Business Manager -> System Users, generate a new permanent access token with `whatsapp_business_messaging` permissions.
-  2. Encrypt the new credentials into a `ProviderCredentialEnvelope` using the current active master key.
-  3. Update the `ChannelAccount` record in PostgreSQL with the new envelope ciphertext and set `rotatedAt = NOW()`.
-  4. Dispatch a test outbound message template.
-  5. Revoke the previous token in Meta Business Manager.
+  1. Issue the new credential at the provider (a new system user token, a new app password, and so on). For Telegram, `/revoke` in @BotFather issues a new token and disables the old one at once, so update VYNOR right after.
+  2. In VYNOR, open **Channels**, select the channel and choose **Update credentials**. VYNOR verifies the new values with the provider before saving, encrypts them with the active key and registers the webhook again. If verification fails the old credentials stay in use.
+  3. Press **Test connection** and send a test message. The change is recorded in the audit log as `channel.reconnected`.
+  4. Revoke the old credential at the provider.
+
+Channel credentials are never configured through environment variables; see [Channel Setup Guide](channel-setup-guide.md).
 
 ---
 
-### 2.5 Master Envelope Encryption Key (Key Re-encryption)
+### 2.5 Channel Credential Encryption Key
 
-- **Rotation Interval:** Annual.
+`ENCRYPTION_MASTER_KEY` (32 random bytes, base64) encrypts every channel credential with AES-256-GCM. Each stored envelope records the `keyId` it was encrypted with, so keys can be rotated without downtime. The API and the worker must always share the same key settings.
+
+- **Rotation Interval:** Annual, or immediately on suspected leakage.
 - **Procedure:**
-  1. Add new master key version (`ENCRYPTION_KEY_V2`) to the Secret Manager.
-  2. Run the administrative re-encryption utility:
-     - Fetch all rows from `ChannelAccount` where `keyId = 'v1'`.
-     - Decrypt payload using `ENCRYPTION_KEY_V1`.
-     - Re-encrypt payload using `ENCRYPTION_KEY_V2` with a fresh IV.
-     - Update records with `keyId = 'v2'`.
-  3. Verify all adapters can decrypt credentials with key `v2`.
-  4. Deprecate and archive `ENCRYPTION_KEY_V1`.
+  1. Generate a new key: `openssl rand -base64 32`.
+  2. On the API and the worker, make the new key active and keep the old one for decryption:
+
+     ```dotenv
+     ENCRYPTION_MASTER_KEY=<new key>
+     ENCRYPTION_KEY_ID=v2
+     ENCRYPTION_PREVIOUS_KEYS=v1:<old key>
+     ```
+
+     `ENCRYPTION_PREVIOUS_KEYS` takes a comma-separated list of `keyId:key` pairs.
+
+  3. Perform a rolling restart of `apps/worker` and `apps/api`. New and updated credentials are encrypted with `v2`; existing credentials still decrypt with `v1`.
+  4. Re-encrypt existing channels by choosing **Update credentials** on each one.
+  5. Confirm nothing depends on the old key any more:
+
+     ```sql
+     SELECT id, name, deleted_at FROM provider_accounts WHERE credentials->>'keyId' = 'v1';
+     ```
+
+  6. Remove the old key from `ENCRYPTION_PREVIOUS_KEYS`, restart both services, and archive it in the Secret Manager.
+
+Losing the active key makes every stored channel credential unreadable; channels then have to be connected again. Back the key up in the Secret Manager before first use.

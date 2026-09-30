@@ -11,7 +11,7 @@ VYNOR CRM unifies customer communications across multiple external messaging cha
 VYNOR CRM is engineered as a **modular monolith** with a dedicated asynchronous background worker, sharing one PostgreSQL database and typed domain packages:
 
 ```text
-External Providers (e.g. Meta WhatsApp Cloud API)
+External Providers (WhatsApp Cloud API, Telegram, Email, Messenger, Instagram, LINE, Web chat, Custom API)
   │
   ▼
 [ apps/api ]  ── Webhook Verification & Journaling (ProviderEvent)
@@ -49,7 +49,7 @@ vynor-crm/
 │   └── worker/                  # NestJS background worker, pg-boss queues, outbox dispatch
 ├── packages/
 │   ├── ai/                      # AI provider abstraction, pgvector embeddings, and RAG
-│   ├── channel-adapters/        # WhatsApp Cloud API and external channel adapters
+│   ├── channel-adapters/        # Provider adapters: WhatsApp, Telegram, Email, Meta, LINE, Web chat, Custom API
 │   ├── contracts/               # Zod contracts for API, events, jobs, and normalized messages
 │   ├── database/                # Prisma ORM, migrations, client, and test helpers
 │   ├── observability/           # Structured Pino logging, correlation tracking, redaction
@@ -119,6 +119,10 @@ pnpm build
 pnpm dev
 ```
 
+### 4. Connect Channels
+
+Set the same `ENCRYPTION_MASTER_KEY` (`openssl rand -base64 32`) for the API and the worker, then connect platforms from **Channels → Connect a platform**. WhatsApp, Messenger, Instagram and LINE need a public HTTPS address for webhooks (`PUBLIC_WEBHOOK_BASE_URL`); Telegram, Email and Web Live Chat also work locally without one. For local testing without Supabase, `AUTH_DEV_SESSION_ENABLED=true` adds **Sign in as local admin (development)** to `/login`. Step-by-step instructions per platform are in the [Channel Setup Guide](docs/channel-setup-guide.md).
+
 ---
 
 ## Documentation & Standards
@@ -144,7 +148,8 @@ pnpm dev
 - **[Health Checks & Probes (docs/health-checks-and-probes.md)](docs/health-checks-and-probes.md):** Liveness probes, readiness probes, and subsystem health indicators.
 - **[Background Jobs & Queues (docs/background-jobs-and-queues.md)](docs/background-jobs-and-queues.md):** `pg-boss` queues, versioned job envelopes, failure classification, backoff, and DLQ operations.
 - **[Transactional Outbox Pattern (docs/transactional-outbox-and-dispatch.md)](docs/transactional-outbox-and-dispatch.md):** Atomic outbox persistence, `SKIP LOCKED` claiming, lease recovery, and idempotent dispatch.
-- **[Channel Architecture & Contracts (docs/channel-architecture-and-contracts.md)](docs/channel-architecture-and-contracts.md):** Channel types, capability matrix, normalized message contracts, monotonic delivery, and adapter registry.
+- **[Channel Architecture & Contracts (docs/channel-architecture-and-contracts.md)](docs/channel-architecture-and-contracts.md):** Channel types, capability matrix, normalized message contracts, monotonic delivery, adapter registry, and the webhook → worker → Inbox runtime flow.
+- **[Channel Setup Guide (docs/channel-setup-guide.md)](docs/channel-setup-guide.md):** Connecting WhatsApp Cloud API, Telegram, Email, Messenger, Instagram, LINE, Web Live Chat and the Custom API, plus local testing and troubleshooting.
 - **[Provider Event Journal & Deduplication (docs/provider-event-journal-and-deduplication.md)](docs/provider-event-journal-and-deduplication.md):** Raw webhook journal, fallback SHA-256 fingerprinting, unique constraints, and replay semantics.
 - **[Storage & Attachment Security (docs/storage-and-attachment-security.md)](docs/storage-and-attachment-security.md):** S3-compatible interface, object keys, attachment metadata, quarantine/scanning policy, and signed downloads.
 - **[Realtime Contracts & Resynchronization (docs/realtime-contracts-and-resynchronization.md)](docs/realtime-contracts-and-resynchronization.md):** Socket.IO authentication, room authorization, event envelopes, reconnect, and REST recovery.
