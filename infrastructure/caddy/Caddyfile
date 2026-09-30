@@ -44,8 +44,10 @@
         }
     }
 
-    # 2. Inbound Provider Webhooks (WhatsApp Meta, Telegram, etc.) - 5MB cap & fast proxy
-    handle /webhooks/* {
+    # 2. Inbound Provider Webhooks (WhatsApp, Meta, Telegram, LINE, Custom API) - 5MB cap & fast proxy
+    # Providers call https://<DOMAIN>/api/v1/webhooks/<provider>/<channel key>; set the API's
+    # PUBLIC_WEBHOOK_BASE_URL to https://<DOMAIN> so the app shows these URLs.
+    handle /api/v1/webhooks/* {
         request_body {
             max_size 5MB
         }
