@@ -17,13 +17,13 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { Public } from '../iam/decorators.js';
 import {
   WebchatMessageRequestSchema,
-  WebchatService,
   WebchatSessionRequestSchema,
   type WebchatConfig,
   type WebchatMessage,
   type WebchatMessageRequest,
   type WebchatSessionRequest,
-} from './webchat.service.js';
+} from './webchat.schemas.js';
+import { WebchatService } from './webchat.service.js';
 import { renderWidgetScript } from './widget-script.js';
 
 type CorrelatedRequest = Request & { correlationId?: string };

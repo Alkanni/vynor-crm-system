@@ -7,22 +7,15 @@ import {
 } from '@vynor/contracts';
 import { prisma } from '@vynor/database';
 import * as jose from 'jose';
-import { z } from 'zod';
 import { apiError } from '../common/errors/api-error.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { API_ENV } from '../config/api-env.js';
 import { CurrentActor, Public } from '../iam/decorators.js';
-
-const DevSessionRequestSchema = z.object({
-  email: z.string().trim().toLowerCase().email().default('admin@vynor.local'),
-});
-type DevSessionRequest = z.infer<typeof DevSessionRequestSchema>;
-
-export interface DevSessionResponse {
-  accessToken: string;
-  expiresAt: string;
-  user: { id: string; email: string; displayName: string };
-}
+import {
+  DevSessionRequestSchema,
+  type DevSessionRequest,
+  type DevSessionResponse,
+} from './dev-session.schemas.js';
 
 const DEV_SESSION_TTL_SECONDS = 12 * 60 * 60;
 
@@ -61,7 +54,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(DevSessionRequestSchema)) body: DevSessionRequest,
   ): Promise<ApiSuccessResponse<DevSessionResponse>> {
     if (!this.devSessionEnabled) {
-      throw apiError(404, 'NOT_FOUND', 'Not found.');
+      throw apiError(404, 'RESOURCE_NOT_FOUND', 'Not found.');
     }
     const user = await prisma.userProfile.findFirst({
       where: { email: body.email, isActive: true, deletedAt: null },

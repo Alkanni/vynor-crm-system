@@ -23,6 +23,36 @@ assert.ok(paths['/attachments/{id}/download-url'], 'Missing /attachments/{id}/do
 assert.ok(paths['/openapi.json'], 'Missing /openapi.json path');
 assert.ok(paths['/error-catalog'], 'Missing /error-catalog path');
 
+// Channels, webhooks, conversations and web chat (issue #37).
+for (const path of [
+  '/auth/me',
+  '/auth/dev-session',
+  '/channels',
+  '/channels/{id}',
+  '/channels/{id}/credentials',
+  '/channels/{id}/test',
+  '/workspace/members',
+  '/webhooks/{provider}/{webhookKey}',
+  '/conversations',
+  '/conversations/{id}',
+  '/conversations/{id}/read',
+  '/conversations/{id}/messages',
+  '/messages/{id}/retry',
+  '/media/{messageId}',
+  '/webchat/{widgetKey}/widget.js',
+  '/webchat/{widgetKey}/config',
+  '/webchat/{widgetKey}/sessions',
+  '/webchat/{widgetKey}/messages',
+]) {
+  assert.ok(paths[path], `Missing ${path} path`);
+}
+const componentSchemas = (doc.components as { schemas: Record<string, unknown> }).schemas;
+const serializedDoc = JSON.stringify(doc);
+for (const ref of new Set(serializedDoc.match(/#\/components\/schemas\/[A-Za-z]+/g) ?? [])) {
+  assert.ok(componentSchemas[ref.split('/').pop()!], `Unresolved schema reference ${ref}`);
+}
+assert.ok(!serializedDoc.includes('#/$defs/'), 'Generated schemas must not use local $defs');
+
 assert.ok(ERROR_CATALOG.length >= 10, 'Error catalog should contain at least 10 canonical errors');
 const requiredCodes = [
   'AUTH_TOKEN_MISSING',
@@ -31,6 +61,13 @@ const requiredCodes = [
   'ATTACHMENT_NOT_FOUND',
   'ATTACHMENT_NOT_CLEAN',
   'ATTACHMENT_QUARANTINED',
+  'CHANNEL_NOT_FOUND',
+  'CHANNEL_VERIFICATION_FAILED',
+  'CHANNEL_PROVIDER_UNREACHABLE',
+  'CREDENTIAL_ENCRYPTION_NOT_CONFIGURED',
+  'CHANNEL_NEEDS_RECONNECT',
+  'CONVERSATION_NOT_FOUND',
+  'VISITOR_TOKEN_INVALID',
 ];
 for (const code of requiredCodes) {
   assert.ok(

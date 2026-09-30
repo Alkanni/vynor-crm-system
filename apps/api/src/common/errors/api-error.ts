@@ -16,4 +16,5 @@ export function apiError(
   );
 }
 
-export const notFound = (message: string, code = 'NOT_FOUND') => apiError(404, code, message);
+export const notFound = (message: string, code = 'RESOURCE_NOT_FOUND') =>
+  apiError(404, code, message);
