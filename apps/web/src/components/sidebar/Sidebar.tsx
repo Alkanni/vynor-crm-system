@@ -7,7 +7,7 @@ import { useActor } from '@/lib/auth/auth-context';
 import { CRM_NAV_ITEMS, getVisibleNavItems } from '@/lib/auth/navigation';
 import { SIDEBAR_COLLAPSED_THRESHOLD, useUiStore } from '@/lib/store/ui-store';
 import { VynorLogo } from '@/components/common/VynorLogo';
-import { SEED_UNREAD_CONVERSATIONS } from '@/components/inbox/mock-data';
+import { useInboxUnreadCount } from '@/lib/inbox/use-inbox-unread-count';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { SidebarAccountSwitcher } from './SidebarAccountSwitcher';
@@ -37,6 +37,7 @@ export function useIsMobile(): boolean {
  */
 export function Sidebar() {
   const pathname = usePathname();
+  const unreadCount = useInboxUnreadCount();
   const router = useRouter();
   const actor = useActor();
   const {
@@ -203,8 +204,8 @@ export function Sidebar() {
               item={item}
               pathname={pathname}
               collapsed={collapsed}
-              showBadge={item.id === 'inbox' && SEED_UNREAD_CONVERSATIONS > 0}
-              count={item.id === 'inbox' ? SEED_UNREAD_CONVERSATIONS : undefined}
+              showBadge={item.id === 'inbox' && unreadCount > 0}
+              count={item.id === 'inbox' ? unreadCount : undefined}
               onNavigate={closeMobile}
             />
           ))}

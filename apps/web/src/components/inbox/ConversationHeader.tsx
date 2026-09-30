@@ -32,7 +32,8 @@ export function ConversationHeader({
   onBack,
 }: ConversationHeaderProps) {
   const isResolved = conversation.status === 'RESOLVED';
-  const shortId = conversation.id.replace(/^conv_/, '');
+  // Live conversations carry long generated IDs; their inbox name is the more useful reference.
+  const reference = conversation.channelName ?? `#${conversation.id.replace(/^conv_/, '')}`;
 
   return (
     <div className="flex min-h-12 w-full min-w-0 shrink-0 flex-col items-center justify-between gap-3 border-b border-b-n-weak px-3 pb-2 pt-2 sm:flex-row">
@@ -71,7 +72,7 @@ export function ConversationHeader({
             )}
           </div>
           <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap text-xs text-n-slate-11">
-            <span className="truncate text-label-small text-n-slate-11">#{shortId}</span>
+            <span className="truncate text-label-small text-n-slate-11">{reference}</span>
             <span aria-hidden="true">•</span>
             <span className="truncate">{conversation.customerIdentifier}</span>
             <span aria-hidden="true" className="hidden sm:inline">

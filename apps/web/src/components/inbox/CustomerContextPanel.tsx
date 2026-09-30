@@ -14,6 +14,8 @@ interface CustomerContextPanelProps {
   onUpdateAssignee?: ((assignee: string) => void) | undefined;
   onAddTag?: ((tag: string) => void) | undefined;
   onRemoveTag?: ((tag: string) => void) | undefined;
+  /** Real assignee choices (value = membership ID); sample agents are used when absent. */
+  assigneeOptions?: { value: string; label: string }[] | undefined;
   className?: string | undefined;
 }
 
@@ -117,6 +119,7 @@ export function CustomerContextPanel({
   onUpdateAssignee,
   onAddTag,
   onRemoveTag,
+  assigneeOptions,
   className,
 }: CustomerContextPanelProps) {
   const [newTagInput, setNewTagInput] = useState('');
@@ -156,16 +159,20 @@ export function CustomerContextPanel({
                 {customer.name}
               </h3>
               <div className="flex w-full flex-col items-start gap-2">
-                <ContactInfoRow
-                  icon={Mail}
-                  value={customer.email}
-                  href={`mailto:${customer.email}`}
-                />
-                <ContactInfoRow
-                  icon={Phone}
-                  value={customer.phone}
-                  href={`tel:${customer.phone}`}
-                />
+                {customer.email && (
+                  <ContactInfoRow
+                    icon={Mail}
+                    value={customer.email}
+                    href={`mailto:${customer.email}`}
+                  />
+                )}
+                {customer.phone && (
+                  <ContactInfoRow
+                    icon={Phone}
+                    value={customer.phone}
+                    href={`tel:${customer.phone}`}
+                  />
+                )}
                 {customer.customFields['Client ID'] && (
                   <ContactInfoRow icon={User} value={customer.customFields['Client ID']} />
                 )}
@@ -182,17 +189,19 @@ export function CustomerContextPanel({
             defaultOpen
           >
             <div className="flex flex-col gap-3">
-              <Select
-                label="Priority SLA"
-                size="sm"
-                value={customer.priority}
-                onChange={(e) => onUpdatePriority?.(e.target.value as PriorityLevel)}
-              >
-                <option value="URGENT">Urgent (15m SLA)</option>
-                <option value="HIGH">High (1h SLA)</option>
-                <option value="MEDIUM">Medium (4h SLA)</option>
-                <option value="LOW">Low (24h SLA)</option>
-              </Select>
+              {onUpdatePriority && (
+                <Select
+                  label="Priority SLA"
+                  size="sm"
+                  value={customer.priority}
+                  onChange={(e) => onUpdatePriority(e.target.value as PriorityLevel)}
+                >
+                  <option value="URGENT">Urgent (15m SLA)</option>
+                  <option value="HIGH">High (1h SLA)</option>
+                  <option value="MEDIUM">Medium (4h SLA)</option>
+                  <option value="LOW">Low (24h SLA)</option>
+                </Select>
+              )}
               <Select
                 label="Assigned agent"
                 size="sm"
@@ -200,10 +209,20 @@ export function CustomerContextPanel({
                 onChange={(e) => onUpdateAssignee?.(e.target.value)}
               >
                 <option value="Unassigned">Unassigned (Queue)</option>
-                <option value="Agent Smith">Agent Smith (You)</option>
-                <option value="Agent Sarah">Agent Sarah</option>
-                <option value="Agent Alex">Agent Alex</option>
-                <option value="Billing Support Team">Billing Support Team</option>
+                {assigneeOptions ? (
+                  assigneeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Agent Smith">Agent Smith (You)</option>
+                    <option value="Agent Sarah">Agent Sarah</option>
+                    <option value="Agent Alex">Agent Alex</option>
+                    <option value="Billing Support Team">Billing Support Team</option>
+                  </>
+                )}
               </Select>
             </div>
           </AccordionItem>
