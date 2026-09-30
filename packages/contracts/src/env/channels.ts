@@ -7,6 +7,14 @@ const booleanFlag = (defaultValue: 'true' | 'false') =>
     .transform((v) => v === 'true');
 
 /**
+ * Optional variable where a blank value (`KEY=` copied from .env.example, or compose's
+ * `${KEY:-}`) means "not set" instead of failing validation.
+ */
+export function blankAsUnset<T extends z.ZodType>(schema: T) {
+  return z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+}
+
+/**
  * Environment shared by the API and worker for channel integrations (issue #37).
  *
  * Provider base URLs only change in tests, where they point at a local mock server.
@@ -16,14 +24,14 @@ export const ChannelRuntimeEnvSchema = z.object({
    * AES-256-GCM key (32 bytes, base64) that encrypts channel credentials at rest.
    * Generate with: openssl rand -base64 32. Required in staging and production.
    */
-  ENCRYPTION_MASTER_KEY: z.string().min(1).optional(),
+  ENCRYPTION_MASTER_KEY: blankAsUnset(z.string().min(1)),
   /** Identifier stored next to each ciphertext so keys can be rotated. */
   ENCRYPTION_KEY_ID: z
     .string()
     .regex(/^[A-Za-z0-9_-]{1,32}$/)
     .default('v1'),
   /** Retired keys still accepted for decryption, e.g. `v0:BASE64KEY,v00:BASE64KEY`. */
-  ENCRYPTION_PREVIOUS_KEYS: z.string().optional(),
+  ENCRYPTION_PREVIOUS_KEYS: blankAsUnset(z.string()),
 
   META_GRAPH_API_VERSION: z
     .string()

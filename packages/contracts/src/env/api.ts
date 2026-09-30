@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ChannelRuntimeEnvSchema, requiresEncryptionKey } from './channels.js';
+import { blankAsUnset, ChannelRuntimeEnvSchema, requiresEncryptionKey } from './channels.js';
 import { BaseServerEnvSchema } from './common.js';
 
 export const ApiEnvSchema = BaseServerEnvSchema.extend({
@@ -36,7 +36,7 @@ export const ApiEnvSchema = BaseServerEnvSchema.extend({
    * tunnel URL). Webhook URLs are built from it. Defaults to APP_URL. Without https, Telegram
    * falls back to polling and Meta/LINE webhooks cannot be registered.
    */
-  PUBLIC_WEBHOOK_BASE_URL: z.string().url().optional(),
+  PUBLIC_WEBHOOK_BASE_URL: blankAsUnset(z.string().url()),
 
   /**
    * Local-only helper: POST /api/v1/auth/dev-session issues a session for a seeded user so
