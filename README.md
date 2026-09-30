@@ -119,6 +119,8 @@ pnpm build
 pnpm dev
 ```
 
+The API and worker load workspace packages from their `dist/` output, so run `pnpm build` once before the first `pnpm dev`. In development they are compiled by `tsc-watch` with the same `tsconfig.build.json` as `pnpm build` and restarted from `dist/` after every compile without type errors; a compile with type errors prints them and leaves the app stopped until they are fixed. Do not switch them back to `tsx`: esbuild does not emit the decorator metadata NestJS needs to inject constructor dependencies by type.
+
 ### 4. Connect Channels
 
 Set the same `ENCRYPTION_MASTER_KEY` (`openssl rand -base64 32`) for the API and the worker, then connect platforms from **Channels → Connect a platform**. WhatsApp, Messenger, Instagram and LINE need a public HTTPS address for webhooks (`PUBLIC_WEBHOOK_BASE_URL`); Telegram, Email and Web Live Chat also work locally without one. For local testing without Supabase, `AUTH_DEV_SESSION_ENABLED=true` adds **Sign in as local admin (development)** to `/login`. Step-by-step instructions per platform are in the [Channel Setup Guide](docs/channel-setup-guide.md).
