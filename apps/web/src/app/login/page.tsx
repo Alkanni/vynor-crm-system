@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react';
+import { fetchApi } from '@/lib/api/api-client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { VynorLogo } from '@/components/common/VynorLogo';
 import { Banner, Button } from '@/components/ui';
@@ -17,7 +18,19 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/';
 
-  const { actor, signIn, signInDemo } = useAuth();
+  const { actor, signIn, signInDemo, signInDevSession } = useAuth();
+  // Local development: the API can issue sessions for seeded users (no Supabase needed).
+  const [devSessionEnabled, setDevSessionEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchApi<{ enabled: boolean }>('/auth/dev-session')
+      .then((status) => !cancelled && setDevSessionEnabled(status.enabled))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -48,6 +61,21 @@ export default function LoginPage() {
       }
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDevSessionSignIn = async () => {
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    try {
+      const { error } = await signInDevSession();
+      if (error) {
+        setErrorMessage(error.message || 'Could not start the local session.');
+      } else {
+        router.replace(returnUrl);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -160,6 +188,19 @@ export default function LoginPage() {
             <span className="bg-white px-2 uppercase text-n-slate-10 dark:bg-n-solid-2">or</span>
           </div>
         </div>
+
+        {devSessionEnabled && (
+          <Button
+            variant="faded"
+            color="blue"
+            size="lg"
+            icon={KeyRound}
+            className="mb-3 w-full"
+            label="Sign in as local admin (development)"
+            onClick={handleDevSessionSignIn}
+            disabled={isSubmitting}
+          />
+        )}
 
         <Button
           variant="faded"
