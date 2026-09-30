@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Bot, CircleCheck, PanelRight, UserPlus } from 'lucide-react';
+import { ArrowLeft, Bot, CircleCheck, PanelRight, RotateCcw, UserPlus } from 'lucide-react';
 import type { ConversationSummary } from './types';
 import { ChannelBadge } from './ChannelBadge';
 import { PRIORITY_LABELS } from './PriorityIcon';
@@ -14,6 +14,8 @@ interface ConversationHeaderProps {
   onToggleContextPanel: () => void;
   onClaim: () => void;
   onResolve: () => void;
+  /** Reopens a resolved conversation; without it the resolved state is shown read-only. */
+  onReopen?: (() => void) | undefined;
   /** Mobile: return to the conversation list. */
   onBack?: (() => void) | undefined;
 }
@@ -29,10 +31,12 @@ export function ConversationHeader({
   onToggleContextPanel,
   onClaim,
   onResolve,
+  onReopen,
   onBack,
 }: ConversationHeaderProps) {
   const isResolved = conversation.status === 'RESOLVED';
-  const shortId = conversation.id.replace(/^conv_/, '');
+  // Live conversations carry long generated IDs; their inbox name is the more useful reference.
+  const reference = conversation.channelName ?? `#${conversation.id.replace(/^conv_/, '')}`;
 
   return (
     <div className="flex min-h-12 w-full min-w-0 shrink-0 flex-col items-center justify-between gap-3 border-b border-b-n-weak px-3 pb-2 pt-2 sm:flex-row">
@@ -71,7 +75,7 @@ export function ConversationHeader({
             )}
           </div>
           <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap text-xs text-n-slate-11">
-            <span className="truncate text-label-small text-n-slate-11">#{shortId}</span>
+            <span className="truncate text-label-small text-n-slate-11">{reference}</span>
             <span aria-hidden="true">•</span>
             <span className="truncate">{conversation.customerIdentifier}</span>
             <span aria-hidden="true" className="hidden sm:inline">
@@ -97,17 +101,30 @@ export function ConversationHeader({
           />
         )}
         <div className="shrink-0 rounded-lg shadow outline outline-1 outline-n-container">
-          <Button
-            size="sm"
-            color="slate"
-            noAnimation
-            icon={CircleCheck}
-            label={isResolved ? 'Resolved' : 'Resolve'}
-            title="Resolve conversation (E)"
-            disabled={isResolved}
-            onClick={onResolve}
-            className="!outline-0"
-          />
+          {isResolved && onReopen ? (
+            <Button
+              size="sm"
+              color="slate"
+              noAnimation
+              icon={RotateCcw}
+              label="Reopen"
+              title="Reopen conversation"
+              onClick={onReopen}
+              className="!outline-0"
+            />
+          ) : (
+            <Button
+              size="sm"
+              color="slate"
+              noAnimation
+              icon={CircleCheck}
+              label={isResolved ? 'Resolved' : 'Resolve'}
+              title="Resolve conversation (E)"
+              disabled={isResolved}
+              onClick={onResolve}
+              className="!outline-0"
+            />
+          )}
         </div>
         <Button
           size="sm"

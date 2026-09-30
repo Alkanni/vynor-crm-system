@@ -1,6 +1,6 @@
 # Channel Architecture, Normalized Contracts, and Adapter Registry
 
-This document defines the omnichannel architecture, standardized message contracts, and adapter interface for VYNOR CRM according to [AD-003](file:///home/acgix/vynor-crm/docs/adr/0003-channel-agnostic-conversation-core.md) and [AD-014](file:///home/acgix/vynor-crm/docs/adr/0014-incremental-channel-adapter-development.md).
+This document defines the omnichannel architecture, standardized message contracts, and adapter interface for VYNOR CRM according to [AD-003](adr/0003-channel-agnostic-conversation-core.md) and [AD-014](adr/0014-incremental-channel-adapter-development.md). How to connect each platform is described in the [Channel Setup Guide](channel-setup-guide.md).
 
 ---
 
@@ -10,7 +10,7 @@ VYNOR CRM communicates with diverse external platforms (WhatsApp Cloud API, Inst
 
 To maintain a channel-agnostic core:
 
-1. **Raw Webhook Ingress:** External webhooks are validated and committed to the immutable `provider_events` journal before side effects ([AD-004](file:///home/acgix/vynor-crm/docs/adr/0004-durable-state-before-side-effects.md)).
+1. **Raw Webhook Ingress:** External webhooks are validated and committed to the immutable `provider_events` journal before side effects ([AD-004](adr/0004-durable-state-before-side-effects.md)).
 2. **Adapter Normalization:** The adapter for the specific channel/provider translates raw payloads into canonical `NormalizedInboundMessage` or `NormalizedDeliveryReceipt` contracts.
 3. **Conversation Core:** Core services consume only normalized contracts. The Conversation Core never imports vendor SDKs or concrete adapter implementations.
 4. **Outbound Dispatch:** Core services emit `OutboundMessageIntent` objects. The adapter converts these into vendor-specific HTTP payloads.
@@ -37,9 +37,10 @@ flowchart LR
 - `INSTAGRAM` — Instagram Messaging via Meta Graph API
 - `MESSENGER` — Facebook Messenger via Meta Graph API
 - `TELEGRAM` — Telegram Bot API
-- `EMAIL` — SMTP / IMAP / SendGrid
+- `EMAIL` — SMTP / IMAP mailbox
 - `LINE` — LINE Messaging API
 - `WEBCHAT` — Self-hosted embedded live chat widget
+- `API` — Custom API: the customer's own system exchanges signed messages with VYNOR
 
 ### Provider Identity (`ChannelProviderType`)
 
@@ -185,43 +186,98 @@ if (result.accepted && !result.isNoop) {
 
 ## 6. Channel Adapter Interface and Registry (FND-065, FND-066)
 
-Each provider adapter implements `ChannelAdapter` (`packages/channel-adapters/src/interfaces/channel-adapter.interface.ts`):
+Each provider adapter implements `ChannelAdapter` (`packages/channel-adapters/src/interfaces/channel-adapter.interface.ts`). Adapters are stateless: every call receives the decrypted `AdapterAccount` (credentials, generated secrets, identifiers) for the channel it acts on.
 
 ```typescript
-export interface ChannelAdapter<TAccountConfig = Record<string, unknown>> {
-  readonly channelType: ChannelType;
+export interface ChannelAdapter<TCredentials = unknown> {
   readonly provider: ChannelProviderType;
+  readonly channelType: ChannelType;
   readonly capabilities: ChannelCapabilities;
+  readonly credentialsSchema: ZodType<TCredentials>;
+  readonly inbound: 'WEBHOOK' | 'POLLING' | 'WEBHOOK_OR_POLLING' | 'WIDGET';
+  readonly webhookPath?: string; // segment in /api/v1/webhooks/:provider/:webhookKey
+  readonly replyWindowHours?: number; // e.g. 24 for WhatsApp, Messenger and Instagram
+  readonly generatedSecrets: readonly (keyof GeneratedChannelSecrets)[];
 
-  validateWebhook(request: WebhookValidationRequest): Promise<WebhookValidationResult>;
-  extractEvents(
-    rawPayload: unknown,
-    headers: Record<string, string>,
-    context: EventContext,
-  ): Promise<ExtractedProviderEvent[]>;
-  normalizeInbound(event: ExtractedProviderEvent): Promise<NormalizedInboundResult>;
-  sendMessage(
-    intent: OutboundMessageIntent,
-    accountConfig: TAccountConfig,
-  ): Promise<ProviderSendResult>;
-  downloadMedia(
-    request: MediaDownloadRequest,
-    accountConfig: TAccountConfig,
-  ): Promise<MediaDownloadResult>;
-  healthCheck(accountConfig: TAccountConfig): Promise<ChannelHealthResult>;
-  mapError(error: unknown): Error;
+  verifyCredentials(credentials: TCredentials): Promise<VerifiedAccount>;
+  registerWebhook?(account, request): Promise<WebhookRegistrationResult>;
+  unregisterWebhook?(account): Promise<void>;
+  validateWebhook?(request, account): WebhookValidationResult;
+  extractEvents?(payload: unknown): ExtractedProviderEvent[];
+  normalizeInbound(payload, context, account): Promise<NormalizedInboundResult[]>;
+  pollInbound?(account, cursor): Promise<PollResult>;
+  sendMessage(intent: OutboundMessageIntent, account): Promise<ProviderSendResult>;
+  downloadMedia?(reference: MediaReference, account): Promise<MediaDownloadResult>;
+  healthCheck(account): Promise<ChannelHealthResult>;
 }
 ```
 
+Provider failures are thrown as `ChannelProviderError` with a category (`AUTHENTICATION`, `PERMISSION`, `RATE_LIMITED`, `TRANSIENT`, `INVALID_REQUEST`, `CONFIGURATION`, …), a `retryable` flag and `requiresReconnect` for credentials the provider no longer accepts. Messages are written for the admin or agent who will read them.
+
+| Provider          | Adapter                | Inbound                       | Webhook signature / verification                        |
+| :---------------- | :--------------------- | :---------------------------- | :------------------------------------------------------ |
+| `WHATSAPP_CLOUD`  | `WhatsAppCloudAdapter` | Webhook                       | `X-Hub-Signature-256` (app secret), `hub.challenge`     |
+| `TELEGRAM_BOT`    | `TelegramBotAdapter`   | Webhook, or `getUpdates` poll | `X-Telegram-Bot-Api-Secret-Token`                       |
+| `EMAIL_SMTP_IMAP` | `EmailAdapter`         | IMAP poll                     | —                                                       |
+| `META_MESSENGER`  | `MessengerAdapter`     | Webhook                       | `X-Hub-Signature-256` (app secret), `hub.challenge`     |
+| `META_INSTAGRAM`  | `InstagramAdapter`     | Webhook                       | `X-Hub-Signature-256` (app secret), `hub.challenge`     |
+| `LINE_MESSAGING`  | `LineMessagingAdapter` | Webhook                       | `x-line-signature` (channel secret, base64)             |
+| `WEBCHAT_EMBED`   | `WebchatAdapter`       | Widget API                    | Signed visitor token                                    |
+| `CUSTOM_WEBHOOK`  | `CustomApiAdapter`     | Webhook                       | `X-Vynor-Signature` over `timestamp.body`, 5 min window |
+
 ### Adapter Discovery via Registry (`ChannelAdapterRegistry`)
 
-Adapters are registered during application bootstrapping:
+The API and the worker build the same registry at startup from the validated environment:
 
 ```typescript
-const registry = new ChannelAdapterRegistry();
-registry.register(new WhatsAppCloudAdapter());
-registry.register(new TelegramBotAdapter());
+const registry = createChannelAdapterRegistry(adapterRuntimeFromEnv(env));
 
-// Look up adapter for a given channel account
-const adapter = registry.getOrThrow(account.channelType, account.provider);
+registry.getByProvider(channel.provider); // stored channels
+registry.getByWebhookPath(request.params.provider); // /api/v1/webhooks/:provider/:webhookKey
 ```
+
+---
+
+## 7. Runtime Flow (Issue #37)
+
+### 7.1 Connecting a Channel
+
+1. `POST /api/v1/channels` validates the input against `ChannelConnectionInputSchema` (`packages/contracts/src/channels/connection.ts`).
+2. The adapter's `verifyCredentials` calls the provider. Nothing is stored when it fails; the provider's reason is returned (`422 CHANNEL_VERIFICATION_FAILED`, or `502 CHANNEL_PROVIDER_UNREACHABLE`).
+3. Secrets are sealed with the `CredentialCipher` (`packages/shared/src/crypto/credential-cipher.ts`): AES-256-GCM, a random IV per value, the provider account ID as additional authenticated data, and the key ID stored next to the ciphertext for rotation. Non-secret fields and masked hints are kept for display.
+4. Generated secrets (webhook verify token, Telegram secret token, Custom API signing secret) and an unguessable `webhookKey` are created per channel.
+5. `registerInbound` points the provider at `https://<PUBLIC_WEBHOOK_BASE_URL>/api/v1/webhooks/<provider>/<webhookKey>` where the provider supports it, or switches Telegram to polling. Failures do not undo the connection; they become the setup note shown to the admin.
+6. Updates re-verify before replacing credentials, so a rejected token never breaks a working channel. Deletes are soft: history stays, the `webhookKey` is cleared and polling stops.
+
+### 7.2 Webhook Ingress
+
+`apps/api/src/webhooks` receives `GET|POST /api/v1/webhooks/:provider/:webhookKey` with the raw body preserved:
+
+1. Resolve the channel by `webhookKey`; unknown keys get `404`.
+2. `validateWebhook` checks the signature (or answers the verification handshake) against the channel's secrets; failures get `401` and nothing is written.
+3. `extractEvents` splits the payload into events with a provider event key. Events for another account of the same provider in the workspace (one Meta app or LINE callback URL serving several numbers) are filed under that channel.
+4. In one transaction the events are inserted into `provider_events` (`skipDuplicates` on the provider event key) and a `webhook.received` outbox event is written. The response is sent immediately ([Webhook Response & Security](webhook-response-and-security.md)).
+
+### 7.3 Polling
+
+`ChannelPollingService` in the worker polls IMAP mailboxes and Telegram bots that have no webhook. A lease column (`provider_accounts.sync_lease_expires_at`) guarantees that only one worker polls a channel at a time, and the cursor (`sync_state`: IMAP UID validity and last UID, Telegram update offset) is saved with the journaled events. A new mailbox starts after its newest message, so old mail is not imported.
+
+### 7.4 Inbound Processing and the Conversation Core
+
+The outbox dispatcher hands `webhook.received` to the `vynor.webhooks.process` queue. `InboundProcessorService` loads each journaled event, calls `normalizeInbound` and passes the result to `ConversationIngestService`:
+
+- **Messages:** inside a transaction holding `pg_advisory_xact_lock` for the channel and sender, find or create the `Contact` and `ContactIdentity`, reuse the open `Conversation` or open a new one (auto-assigned to the least busy or next round-robin member of the channel's human agents), then insert the `Message`. `(provider_account_id, provider_message_id)` is unique, so redelivered events are no-ops.
+- **Delivery receipts:** applied monotonically (`PENDING → SENT → DELIVERED → READ`; `FAILED` from any state before `READ`). Messenger read watermarks mark every earlier outbound message. Receipts that arrive before the send result are retried a few times.
+- **Media** is not copied: messages keep the provider media reference, and `GET /api/v1/media/:messageId` streams it through the adapter's `downloadMedia` behind an HMAC-signed, expiring URL.
+
+### 7.5 Outbound Replies
+
+`POST /api/v1/conversations/:id/messages` stores the reply as `PENDING` together with a `message.outbound.requested` outbox event. `OutboundDispatcherService` (queue `vynor.messages.outbound`) decrypts the channel credentials, calls `sendMessage` and records `SENT` with the provider message ID. Retryable provider errors are retried by pg-boss; permanent errors mark the message `FAILED` with a readable reason, and `requiresReconnect` errors mark the channel `DISCONNECTED`. The API refuses replies for deleted or disconnected channels. Outside a provider's reply window the Inbox warns before sending, and the provider's rejection is shown on the message. Messages still pending after 15 minutes are failed so agents can retry them (`POST /api/v1/messages/:id/retry`).
+
+### 7.6 Realtime
+
+Domain writes call `pg_notify('vynor_realtime', …)` inside their transaction. `RealtimeRelayService` in the API listens on a direct connection and emits `conversation.*` and `channel.*` events to the workspace and conversation rooms over Socket.IO. The web app invalidates the matching React Query caches and also polls as a fallback.
+
+### 7.7 Web Live Chat
+
+`GET /api/v1/webchat/:widgetKey/widget.js` serves a dependency-free widget (no `innerHTML`, CORS open only for the webchat routes). Visitors get an HMAC-signed visitor token from `POST …/sessions`, post messages to `POST …/messages` (journaled like webhooks) and fetch replies from `GET …/messages`. Sessions and messages are rate limited per IP and widget.

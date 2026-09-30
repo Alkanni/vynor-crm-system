@@ -11,6 +11,8 @@ export const CHANNEL_TYPES = [
   'EMAIL',
   'LINE',
   'WEBCHAT',
+  // Messages exchanged with the customer's own system through the Custom API channel.
+  'API',
 ] as const;
 
 export const ChannelTypeSchema = z.enum(CHANNEL_TYPES);
@@ -32,6 +34,18 @@ export const CHANNEL_PROVIDER_TYPES = [
 
 export const ChannelProviderTypeSchema = z.enum(CHANNEL_PROVIDER_TYPES);
 export type ChannelProviderType = z.infer<typeof ChannelProviderTypeSchema>;
+
+/** The channel type each provider integration serves. */
+export const PROVIDER_CHANNEL_TYPES: Record<ChannelProviderType, ChannelType> = {
+  WHATSAPP_CLOUD: 'WHATSAPP',
+  META_MESSENGER: 'MESSENGER',
+  META_INSTAGRAM: 'INSTAGRAM',
+  TELEGRAM_BOT: 'TELEGRAM',
+  EMAIL_SMTP_IMAP: 'EMAIL',
+  LINE_MESSAGING: 'LINE',
+  WEBCHAT_EMBED: 'WEBCHAT',
+  CUSTOM_WEBHOOK: 'API',
+};
 
 /**
  * Operational status of a provider account (FND-061).

@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Inbox, ListFilter, Menu, Search } from 'lucide-react';
 import type { ConversationSummary } from './types';
 import { ConversationRow } from './ConversationRow';
+import { CHANNEL_META } from './ChannelBadge';
 import { useUiStore } from '@/lib/store/ui-store';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button, Input, Select, UnderlineTabs } from '@/components/ui';
@@ -160,10 +161,11 @@ export function ConversationQueueList({
             containerClassName="w-32 shrink-0"
           >
             <option value="ALL">All inboxes</option>
-            <option value="WHATSAPP">WhatsApp</option>
-            <option value="INSTAGRAM">Instagram</option>
-            <option value="TELEGRAM">Telegram</option>
-            <option value="EMAIL">Email</option>
+            {Object.entries(CHANNEL_META).map(([value, meta]) => (
+              <option key={value} value={value}>
+                {meta.label}
+              </option>
+            ))}
           </Select>
         </div>
       )}

@@ -23,7 +23,7 @@ sequenceDiagram
     participant Worker as apps/worker (Normalization Job)
     participant Core as Conversation Core
 
-    Provider->>API: POST /api/v1/webhooks/whatsapp
+    Provider->>API: POST /api/v1/webhooks/whatsapp/{webhookKey}
     API->>API: Verify HMAC Signature (X-Hub-Signature-256)
     API->>DB: persistProviderEvent (INSERT into provider_events)
     alt Unique Constraint Conflict (P2002)

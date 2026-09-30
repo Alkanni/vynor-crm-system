@@ -20,7 +20,7 @@ sequenceDiagram
     participant DB as Supabase PostgreSQL
     participant Worker as apps/worker (Background Consumer)
 
-    Meta->>API: POST /api/v1/webhooks/whatsapp (Inbound Message)
+    Meta->>API: POST /api/v1/webhooks/whatsapp/{webhookKey} (Inbound Message)
     Note over API: Step 1: Verify HMAC SHA-256 signature (<10ms)
     Note over API: Step 2: Extract deduplication fingerprint (<5ms)
     API->>DB: INSERT into InboundWebhookEvent (<50ms)

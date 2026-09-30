@@ -57,7 +57,7 @@ export function InboxList({
           />
         ))}
 
-        {filtered.length === 0 && (
+        {filtered.length === 0 && search.trim() && (
           <p className="m-0 rounded-xl px-4 py-6 text-center text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak">
             No channels match &ldquo;{search.trim()}&rdquo;.
           </p>

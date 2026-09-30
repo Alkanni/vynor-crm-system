@@ -14,6 +14,14 @@ export interface CleanDatabaseOptions {
  * Ordered list of CRM domain tables for safe cleanup in reverse dependency order.
  */
 export const CRM_TABLE_CLEANUP_ORDER = [
+  'messages',
+  'conversations',
+  'contact_identities',
+  'contacts',
+  'provider_account_members',
+  'provider_events',
+  'attachments',
+  'provider_accounts',
   'audit_logs',
   'outbox_events',
   'team_members',
@@ -45,6 +53,14 @@ export async function cleanDatabase(
   if (preserveSeedData) {
     // Selectively clean dynamic data, leaving system permissions and system roles intact
     await prisma.$transaction(async (tx) => {
+      await tx.message.deleteMany();
+      await tx.conversation.deleteMany();
+      await tx.contactIdentity.deleteMany();
+      await tx.contact.deleteMany();
+      await tx.providerAccountMember.deleteMany();
+      await tx.providerEvent.deleteMany();
+      await tx.attachment.deleteMany();
+      await tx.providerAccount.deleteMany();
       await tx.outboxEvent.deleteMany();
       await tx.teamMember.deleteMany();
       await tx.membershipRole.deleteMany();

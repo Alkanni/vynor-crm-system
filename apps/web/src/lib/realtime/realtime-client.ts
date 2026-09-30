@@ -160,6 +160,11 @@ class RealtimeManager {
   private handleDomainEvent(eventType: string, envelope: RealtimeEventEnvelope) {
     if (!this.queryClient) return;
 
+    if (eventType.startsWith('channel.')) {
+      void this.queryClient.invalidateQueries({ queryKey: ['channels'] });
+      return;
+    }
+
     if (eventType.startsWith('conversation.')) {
       void this.queryClient.invalidateQueries({ queryKey: ['conversations'] });
       const conversationId = (envelope.payload as { conversationId?: string })?.conversationId;

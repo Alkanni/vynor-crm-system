@@ -1,7 +1,8 @@
 export interface ErrorCatalogEntry {
   readonly code: string;
   readonly httpStatus: number;
-  readonly category: 'AUTH' | 'IAM' | 'VALIDATION' | 'STORAGE' | 'CONCURRENCY' | 'SYSTEM';
+  readonly category:
+    'AUTH' | 'IAM' | 'VALIDATION' | 'STORAGE' | 'CONCURRENCY' | 'CHANNEL' | 'MESSAGING' | 'SYSTEM';
   readonly description: string;
   readonly safeClientMessage: string;
   readonly actionableGuidance: string;
@@ -138,6 +139,174 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     description: 'The attachment is currently in the quarantine storage zone.',
     safeClientMessage: 'Attachment is currently quarantined and cannot be downloaded.',
     actionableGuidance: 'Quarantined attachments must be validated before access is granted.',
+  },
+  {
+    code: 'DEV_USER_NOT_FOUND',
+    httpStatus: 404,
+    category: 'AUTH',
+    description: 'Development sign-in: no active seeded user with that email.',
+    safeClientMessage: 'No development user with this email exists.',
+    actionableGuidance:
+      'Run the database seed, or sign in as a user it created (admin@vynor.local).',
+  },
+  {
+    code: 'CHANNEL_NOT_FOUND',
+    httpStatus: 404,
+    category: 'CHANNEL',
+    description: 'The channel does not exist in this workspace or was deleted.',
+    safeClientMessage: 'This channel could not be found.',
+    actionableGuidance: 'Refresh the channel list; it may have been deleted.',
+  },
+  {
+    code: 'CHANNEL_VERIFICATION_FAILED',
+    httpStatus: 422,
+    category: 'CHANNEL',
+    description: 'The provider rejected the credentials or account configuration while connecting.',
+    safeClientMessage: 'The platform rejected these credentials.',
+    actionableGuidance:
+      'Compare the values with the provider console and try again; the message repeats what the provider reported.',
+  },
+  {
+    code: 'CHANNEL_PROVIDER_UNREACHABLE',
+    httpStatus: 502,
+    category: 'CHANNEL',
+    description: 'The provider API did not answer or timed out while verifying the connection.',
+    safeClientMessage: 'The platform could not be reached.',
+    actionableGuidance: 'Retry shortly and check that the API has outbound internet access.',
+  },
+  {
+    code: 'CHANNEL_ALREADY_CONNECTED',
+    httpStatus: 409,
+    category: 'CHANNEL',
+    description: 'The same provider account is already connected in this workspace.',
+    safeClientMessage: 'This account is already connected.',
+    actionableGuidance: 'Use the existing channel, or delete it before connecting again.',
+  },
+  {
+    code: 'CHANNEL_ACCOUNT_MISMATCH',
+    httpStatus: 409,
+    category: 'CHANNEL',
+    description:
+      'New credentials belong to a different provider account than the channel being updated.',
+    safeClientMessage: 'These credentials belong to a different account.',
+    actionableGuidance:
+      'Enter credentials for the same account, or connect the other account as a new channel.',
+  },
+  {
+    code: 'CHANNEL_PROVIDER_MISMATCH',
+    httpStatus: 422,
+    category: 'CHANNEL',
+    description: 'The submitted credentials are for a different platform than the channel.',
+    safeClientMessage: 'These credentials are for a different platform.',
+    actionableGuidance: 'Update the channel with credentials for its own platform.',
+  },
+  {
+    code: 'CHANNEL_PROVIDER_UNSUPPORTED',
+    httpStatus: 422,
+    category: 'CHANNEL',
+    description: 'No adapter is available for the requested provider.',
+    safeClientMessage: 'This platform is not supported.',
+    actionableGuidance: 'Choose one of the platforms listed in the connect dialog.',
+  },
+  {
+    code: 'CHANNEL_ENDPOINT_NOT_ALLOWED',
+    httpStatus: 422,
+    category: 'CHANNEL',
+    description:
+      'A mail server or endpoint URL resolves to a private or otherwise disallowed network address.',
+    safeClientMessage: 'This server address is not allowed.',
+    actionableGuidance:
+      'Use a public host name; private addresses are blocked in staging and production.',
+  },
+  {
+    code: 'CREDENTIAL_ENCRYPTION_NOT_CONFIGURED',
+    httpStatus: 503,
+    category: 'CHANNEL',
+    description:
+      'ENCRYPTION_MASTER_KEY is not set, so channel credentials cannot be stored or read.',
+    safeClientMessage: 'Channels cannot be connected until encryption is configured.',
+    actionableGuidance:
+      'Set ENCRYPTION_MASTER_KEY (openssl rand -base64 32) on the API and worker, then restart them.',
+  },
+  {
+    code: 'INVALID_HUMAN_AGENTS',
+    httpStatus: 422,
+    category: 'CHANNEL',
+    description: 'One or more selected human agents are not active members of the workspace.',
+    safeClientMessage: 'Some selected agents are not active members.',
+    actionableGuidance: 'Pick agents from the current member list.',
+  },
+  {
+    code: 'WIDGET_NOT_FOUND',
+    httpStatus: 404,
+    category: 'CHANNEL',
+    description: 'The web chat widget key is unknown or its channel was deleted.',
+    safeClientMessage: 'This chat is not available.',
+    actionableGuidance: 'Copy the current embed snippet from the channel settings.',
+  },
+  {
+    code: 'VISITOR_TOKEN_INVALID',
+    httpStatus: 401,
+    category: 'CHANNEL',
+    description: 'The web chat visitor token is missing, expired or was issued for another widget.',
+    safeClientMessage: 'Your chat session expired.',
+    actionableGuidance: 'The widget starts a new session automatically.',
+  },
+  {
+    code: 'CONVERSATION_NOT_FOUND',
+    httpStatus: 404,
+    category: 'MESSAGING',
+    description: 'The conversation does not exist in this workspace.',
+    safeClientMessage: 'This conversation could not be found.',
+    actionableGuidance: 'Refresh the Inbox.',
+  },
+  {
+    code: 'MESSAGE_NOT_FOUND',
+    httpStatus: 404,
+    category: 'MESSAGING',
+    description: 'The message does not exist in this workspace.',
+    safeClientMessage: 'This message could not be found.',
+    actionableGuidance: 'Refresh the conversation.',
+  },
+  {
+    code: 'MESSAGE_NOT_RETRYABLE',
+    httpStatus: 409,
+    category: 'MESSAGING',
+    description: 'Only failed outbound replies can be retried.',
+    safeClientMessage: 'This message cannot be retried.',
+    actionableGuidance: 'Retry only replies marked as failed.',
+  },
+  {
+    code: 'CHANNEL_DELETED',
+    httpStatus: 409,
+    category: 'MESSAGING',
+    description: "Replies cannot be sent because the conversation's channel was deleted.",
+    safeClientMessage: 'This channel was deleted, so replies cannot be sent.',
+    actionableGuidance: 'Connect the account again to continue the conversation.',
+  },
+  {
+    code: 'CHANNEL_NEEDS_RECONNECT',
+    httpStatus: 409,
+    category: 'MESSAGING',
+    description: "Replies are blocked until the channel's credentials are updated.",
+    safeClientMessage: 'This channel needs to be reconnected.',
+    actionableGuidance: 'Update the channel credentials in Channels, then retry the reply.',
+  },
+  {
+    code: 'INVALID_ASSIGNEE',
+    httpStatus: 422,
+    category: 'MESSAGING',
+    description: 'The selected assignee is not an active member of the workspace.',
+    safeClientMessage: 'This person cannot be assigned.',
+    actionableGuidance: 'Choose an active workspace member.',
+  },
+  {
+    code: 'INVALID_REPLY_TARGET',
+    httpStatus: 422,
+    category: 'MESSAGING',
+    description: 'The message being replied to is not part of this conversation.',
+    safeClientMessage: 'The quoted message is not in this conversation.',
+    actionableGuidance: 'Reply to a message from the same conversation.',
   },
   {
     code: 'RATE_LIMITED',

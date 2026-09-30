@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ApiEnvSchema, loadEnvFileIfPresent, validateEnv } from '@vynor/contracts';
 import { createLogger, generateCorrelationId } from '@vynor/observability';
 
@@ -17,7 +18,10 @@ loadEnvFileIfPresent();
 // Crashes immediately with descriptive diagnostics if configuration is invalid or missing.
 const env = validateEnv(ApiEnvSchema, process.env);
 
-const app = await NestFactory.create(AppModule);
+// rawBody keeps the exact request bytes that provider webhook signatures are computed over.
+const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+app.useBodyParser('json', { limit: '5mb' });
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 // FND-036: Set global API prefix to /api/v1
 app.setGlobalPrefix('api/v1');
@@ -31,10 +35,17 @@ app.useGlobalFilters(new ApiExceptionFilter());
 // FND-037 / FND-040: Register correlation ID and idempotency interceptors
 app.useGlobalInterceptors(new CorrelationIdInterceptor(), new IdempotencyInterceptor());
 
-// Configure CORS
-app.enableCors({
-  origin: env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
-  credentials: true,
+// Configure CORS. The embeddable web chat widget runs on customer sites, so its public
+// endpoints accept any origin (without credentials); everything else is restricted.
+const allowedOrigins = env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim());
+app.enableCors((req: { url?: string }, callback) => {
+  const isWidgetRoute = (req.url ?? '').startsWith('/api/v1/webchat/');
+  callback(
+    null,
+    isWidgetRoute
+      ? { origin: true, credentials: false }
+      : { origin: allowedOrigins, credentials: true },
+  );
 });
 
 app.enableShutdownHooks();

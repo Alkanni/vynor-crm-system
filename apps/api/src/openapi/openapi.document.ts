@@ -1,3 +1,5 @@
+import { channelOpenApiPaths, channelOpenApiSchemas } from './channel-paths.js';
+
 /**
  * Generates the complete OpenAPI 3.1.0 document for VYNOR API (FND-BE-010, FND-039).
  */
@@ -252,6 +254,7 @@ export function buildOpenApiDocument(): Record<string, unknown> {
           },
         },
       },
+      ...channelOpenApiPaths(),
     },
     components: {
       securitySchemes: {
@@ -263,6 +266,7 @@ export function buildOpenApiDocument(): Record<string, unknown> {
         },
       },
       schemas: {
+        ...channelOpenApiSchemas(),
         ApiSuccessResponse: {
           type: 'object',
           required: ['success', 'data', 'timestamp'],
@@ -351,7 +355,16 @@ export function buildOpenApiDocument(): Record<string, unknown> {
             httpStatus: { type: 'integer' },
             category: {
               type: 'string',
-              enum: ['AUTH', 'IAM', 'VALIDATION', 'STORAGE', 'CONCURRENCY', 'SYSTEM'],
+              enum: [
+                'AUTH',
+                'IAM',
+                'VALIDATION',
+                'STORAGE',
+                'CONCURRENCY',
+                'CHANNEL',
+                'MESSAGING',
+                'SYSTEM',
+              ],
             },
             description: { type: 'string' },
             safeClientMessage: { type: 'string' },

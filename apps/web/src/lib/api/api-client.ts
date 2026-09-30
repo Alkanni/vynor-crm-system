@@ -25,13 +25,27 @@ export interface ApiRequestOptions extends RequestInit {
   correlationId?: string;
 }
 
+const API_PREFIX = '/api/v1';
+
+/** Absolute URL for an API path; NEXT_PUBLIC_API_URL may be given with or without /api/v1. */
+export function apiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const baseUrl = env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+  return `${baseUrl}${baseUrl.endsWith(API_PREFIX) ? '' : API_PREFIX}${normalizedPath}`;
+}
+
+/** Status code used for requests that never reached the API (offline, wrong URL, CORS). */
+export const NETWORK_ERROR_STATUS = 0;
+
+export function isApiUnreachable(error: unknown): boolean {
+  return error instanceof ApiClientError && error.statusCode === NETWORK_ERROR_STATUS;
+}
+
 /**
  * Universal typed API fetcher adhering to RFC-7807 and VYNOR envelope standards (FND-FE-004, FND-037).
  */
 export async function fetchApi<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const baseUrl = env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
-  const url = `${baseUrl}${normalizedPath}`;
+  const url = apiUrl(path);
 
   const headers = new Headers(options.headers);
 
@@ -55,10 +69,21 @@ export async function fetchApi<T>(path: string, options: ApiRequestOptions = {})
     headers.set('x-workspace-id', options.workspaceId);
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new ApiClientError({
+      statusCode: NETWORK_ERROR_STATUS,
+      code: 'NETWORK_ERROR',
+      message: 'Cannot reach the VYNOR API. Check your connection and that the API is running.',
+      correlationId,
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   // Handle empty 204 response
   if (response.status === 204) {

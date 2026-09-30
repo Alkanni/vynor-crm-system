@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  ChannelPollingEnvSchema,
+  ChannelRuntimeEnvSchema,
+  requiresEncryptionKey,
+} from './channels.js';
 import { BaseServerEnvSchema } from './common.js';
 
 export const WorkerEnvSchema = BaseServerEnvSchema.extend({
@@ -21,6 +26,17 @@ export const WorkerEnvSchema = BaseServerEnvSchema.extend({
 
   // Optional Redis
   REDIS_URL: z.string().url().optional(),
-});
+})
+  .extend(ChannelRuntimeEnvSchema.shape)
+  .extend(ChannelPollingEnvSchema.shape)
+  .superRefine((env, ctx) => {
+    if (requiresEncryptionKey(env.APP_ENV) && !env.ENCRYPTION_MASTER_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ENCRYPTION_MASTER_KEY'],
+        message: 'ENCRYPTION_MASTER_KEY is required in staging and production',
+      });
+    }
+  });
 
 export type WorkerEnv = z.infer<typeof WorkerEnvSchema>;

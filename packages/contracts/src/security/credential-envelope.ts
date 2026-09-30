@@ -24,6 +24,8 @@ export const ProviderTypeSchema = z.enum([
   'facebook_messenger',
   'telegram',
   'email_smtp',
+  'line_messaging',
+  'webchat',
   'openai',
   'anthropic',
   'custom_webhook',

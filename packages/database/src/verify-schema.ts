@@ -143,7 +143,30 @@ export function verifyDatabaseSchema(): SchemaVerificationReport {
     details: `Prisma: vector=${hasVectorExtension}, uuid=${hasUuidExtension} | SQL: vector=${hasSqlVector}, uuid=${hasSqlUuid}`,
   });
 
-  // 7. FND-DB-007: Workspace-scoped foreign keys and indexes
+  // 7. Conversation Core (issue #37, AD-003): channel-agnostic contacts, conversations, messages
+  const conversationCoreModels = ['Contact', 'ContactIdentity', 'Conversation', 'Message'];
+  const missingCoreModels = conversationCoreModels.filter((name) => !modelMap.has(name));
+  const messageFieldNames = modelMap.get('Message')?.fields.map((f) => f.name.toLowerCase()) ?? [];
+  const vendorSpecificFields = messageFieldNames.filter((name) =>
+    ['whatsapp', 'wamid', 'telegram', 'instagram', 'messenger', 'line', 'imap', 'smtp'].some(
+      (vendor) => name.includes(vendor),
+    ),
+  );
+  const hasMessageDedupe = schemaContent.includes('uq_messages_account_provider_message_id');
+  const hasIdentityUnique = schemaContent.includes('uq_contact_identities_account_external_id');
+
+  checks.push({
+    category: 'AD-003: Channel-Agnostic Conversation Core',
+    name: 'Contacts, identities, conversations and messages exist without vendor-specific columns',
+    passed:
+      missingCoreModels.length === 0 &&
+      vendorSpecificFields.length === 0 &&
+      hasMessageDedupe &&
+      hasIdentityUnique,
+    details: `Missing models: [${missingCoreModels.join(', ')}], vendor columns on Message: [${vendorSpecificFields.join(', ')}], message dedupe uq: ${hasMessageDedupe}, identity uq: ${hasIdentityUnique}`,
+  });
+
+  // 8. FND-DB-007: Workspace-scoped foreign keys and indexes
   const workspaceScopedModels = [
     { name: 'WorkspaceMembership', cascade: 'Cascade' },
     { name: 'Team', cascade: 'Cascade' },
@@ -153,6 +176,10 @@ export function verifyDatabaseSchema(): SchemaVerificationReport {
     { name: 'ProviderAccount', cascade: 'Cascade' },
     { name: 'ProviderEvent', cascade: 'Cascade' },
     { name: 'Attachment', cascade: 'Cascade' },
+    { name: 'Contact', cascade: 'Cascade' },
+    { name: 'ContactIdentity', cascade: 'Cascade' },
+    { name: 'Conversation', cascade: 'Cascade' },
+    { name: 'Message', cascade: 'Cascade' },
   ];
 
   for (const item of workspaceScopedModels) {
@@ -189,6 +216,11 @@ export function verifyDatabaseSchema(): SchemaVerificationReport {
     'idx_attachments_workspace_scan_status',
     'idx_attachments_provider_account_id',
     'idx_attachments_purge_after',
+    'idx_conversations_workspace_status_last_message',
+    'idx_conversations_workspace_assignee_status',
+    'idx_conversations_account_identity_status',
+    'idx_messages_conversation_created_at',
+    'idx_messages_workspace_status_created_at',
   ];
 
   for (const indexName of expectedIndexes) {

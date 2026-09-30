@@ -1,76 +1,50 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
-import { MessagesSquare } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { CircleAlert, Clock3, MessagesSquare } from 'lucide-react';
 import { ConversationQueueList, filterQueue } from '@/components/inbox/ConversationQueueList';
 import { ConversationHeader } from '@/components/inbox/ConversationHeader';
 import { ConversationTimeline } from '@/components/inbox/ConversationTimeline';
 import { MessageComposer, type MessageComposerHandle } from '@/components/inbox/MessageComposer';
 import { CustomerContextPanel } from '@/components/inbox/CustomerContextPanel';
 import { CollisionBanner } from '@/components/inbox/CollisionBanner';
-import {
-  INITIAL_CONVERSATIONS,
-  INITIAL_CUSTOMERS,
-  INITIAL_MESSAGES,
-} from '@/components/inbox/mock-data';
+import { channelMeta } from '@/components/inbox/ChannelBadge';
 import { EmptyState } from '@/components/common/EmptyState';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Banner, useToast } from '@/components/ui';
 import { useInboxKeyboardShortcuts } from '@/hooks/use-inbox-keyboard-shortcuts';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useLiveInbox } from '@/lib/inbox/use-live-inbox';
+import { useMockInbox } from '@/lib/inbox/use-mock-inbox';
 import { useUiStore } from '@/lib/store/ui-store';
 import { cn } from '@/lib/utils';
-import type {
-  ConversationSummary,
-  MessageRecord,
-  CustomerDetail,
-  MessageAttachment,
-  PriorityLevel,
-} from '@/components/inbox/types';
-
-// Current logged in agent (seed identity until the conversations API is wired in)
-const CURRENT_AGENT_ID = 'usr_agent_01';
-const CURRENT_AGENT_NAME = 'Agent Smith';
+import type { MessageAttachment, PriorityLevel } from '@/components/inbox/types';
 
 const XL_QUERY = '(min-width: 1280px)';
 
 export default function UnifiedInboxPage() {
+  const { mode } = useAuth();
   const { toggleCustomerContext, customerContextOpen, setCustomerContextOpen, activeQueueTab } =
     useUiStore();
-  const [conversations, setConversations] = useState<ConversationSummary[]>(INITIAL_CONVERSATIONS);
-  const [selectedId, setSelectedId] = useState<string>(
-    () =>
-      filterQueue(INITIAL_CONVERSATIONS, {
-        tab: useUiStore.getState().activeQueueTab,
-        channel: 'ALL',
-        query: '',
-        currentUserId: CURRENT_AGENT_ID,
-      })[0]?.id ?? 'conv_01',
-  );
+  const toast = useToast();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [channelFilter, setChannelFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   // Mobile shows either the list or the open conversation (VYNOR routes them separately).
   const [mobileView, setMobileView] = useState<'list' | 'conversation'>('list');
   // Below xl the contact panel is a slide-over that starts closed.
   const [contextOverlayOpen, setContextOverlayOpen] = useState(false);
-  const [messagesMap, setMessagesMap] = useState<Record<string, MessageRecord[]>>(INITIAL_MESSAGES);
-  const [customersMap, setCustomersMap] =
-    useState<Record<string, CustomerDetail>>(INITIAL_CUSTOMERS);
 
   const composerRef = useRef<MessageComposerHandle>(null);
 
-  // Active items
-  const activeConversation = useMemo(
-    () => conversations.find((c) => c.id === selectedId) || conversations[0],
-    [conversations, selectedId],
-  );
-
-  const activeMessages = useMemo(
-    () => (activeConversation ? messagesMap[activeConversation.id] || [] : []),
-    [messagesMap, activeConversation],
-  );
-
-  const activeCustomer = useMemo(
-    () => (activeConversation ? customersMap[activeConversation.id] : undefined),
-    [customersMap, activeConversation],
-  );
+  // Connected workspaces use the Conversation Core API; preview mode uses sample data.
+  const isLive = mode === 'connected';
+  const showError = useCallback((message: string) => toast.show(message, 'error'), [toast]);
+  const live = useLiveInbox(isLive, isLive ? selectedId : null, showError);
+  const mock = useMockInbox(isLive ? null : selectedId);
+  const inbox = isLive ? live : mock;
+  const { conversations } = inbox;
 
   // The queue as rendered (tab + inbox + search) drives J/K navigation.
   const visibleConversations = useMemo(
@@ -79,10 +53,31 @@ export default function UnifiedInboxPage() {
         tab: activeQueueTab,
         channel: channelFilter,
         query: searchQuery,
-        currentUserId: CURRENT_AGENT_ID,
+        currentUserId: inbox.currentUserId,
       }),
-    [conversations, activeQueueTab, channelFilter, searchQuery],
+    [conversations, activeQueueTab, channelFilter, searchQuery, inbox.currentUserId],
   );
+
+  // Keep a valid selection as conversations load, arrive or disappear.
+  useEffect(() => {
+    if (conversations.length === 0) return;
+    if (!selectedId || !conversations.some((c) => c.id === selectedId)) {
+      setSelectedId((visibleConversations[0] ?? conversations[0])!.id);
+    }
+  }, [conversations, visibleConversations, selectedId]);
+
+  const activeConversation = conversations.find((c) => c.id === selectedId);
+  const activeCustomer = activeConversation ? inbox.customerFor(activeConversation.id) : undefined;
+  const activeMessages = inbox.messages;
+
+  // Viewing a conversation reads it, including messages that arrive while it is open.
+  const markRead = inbox.markRead;
+  const activeId = activeConversation?.id;
+  const activeUnread = activeConversation?.unreadCount ?? 0;
+  useEffect(() => {
+    // markRead is recreated every render, so the effect keys on the values it reads.
+    if (activeId && activeUnread > 0) markRead(activeId);
+  }, [activeId, activeUnread]);
 
   const toggleContextPanel = () => {
     if (typeof window !== 'undefined' && window.matchMedia(XL_QUERY).matches) {
@@ -99,32 +94,21 @@ export default function UnifiedInboxPage() {
     }
   };
 
-  // Handlers for Operational Loop
   const handleSelectConversation = (id: string) => {
     setSelectedId(id);
     setMobileView('conversation');
-    // Mark as read optimistically
-    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)));
   };
 
   const handleNextConversation = () => {
     const currentIndex = visibleConversations.findIndex((c) => c.id === selectedId);
-    if (currentIndex < visibleConversations.length - 1) {
-      const nextConv = visibleConversations[currentIndex + 1];
-      if (nextConv) {
-        handleSelectConversation(nextConv.id);
-      }
-    }
+    const nextConv = visibleConversations[currentIndex + 1];
+    if (nextConv) handleSelectConversation(nextConv.id);
   };
 
   const handlePrevConversation = () => {
     const currentIndex = visibleConversations.findIndex((c) => c.id === selectedId);
-    if (currentIndex > 0) {
-      const prevConv = visibleConversations[currentIndex - 1];
-      if (prevConv) {
-        handleSelectConversation(prevConv.id);
-      }
-    }
+    const prevConv = currentIndex > 0 ? visibleConversations[currentIndex - 1] : undefined;
+    if (prevConv) handleSelectConversation(prevConv.id);
   };
 
   const handleFocusComposer = () => {
@@ -133,264 +117,47 @@ export default function UnifiedInboxPage() {
 
   // Claim conversation action ("A" key or Claim button)
   const handleClaimConversation = () => {
-    if (!activeConversation) return;
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConversation.id
-          ? {
-              ...c,
-              assignedAgentId: CURRENT_AGENT_ID,
-              assignedAgentName: CURRENT_AGENT_NAME,
-              status: 'ASSIGNED',
-            }
-          : c,
-      ),
-    );
-
-    // Add system event message
-    const sysEvent: MessageRecord = {
-      id: `sys_${Date.now()}`,
-      conversationId: activeConversation.id,
-      senderType: 'SYSTEM',
-      senderName: 'System Engine',
-      content: `Conversation claimed by ${CURRENT_AGENT_NAME}`,
-      createdAt: 'Just now',
-    };
-
-    setMessagesMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: [...(prev[activeConversation.id] || []), sysEvent],
-    }));
-
-    if (activeCustomer) {
-      setCustomersMap((prev) => ({
-        ...prev,
-        [activeConversation.id]: {
-          ...activeCustomer,
-          assignedAgent: CURRENT_AGENT_NAME,
-        },
-      }));
-    }
+    if (activeConversation) inbox.claim(activeConversation);
   };
 
   // Complete conversation action ("E" key or Complete button)
   const handleCompleteConversation = () => {
     if (!activeConversation) return;
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConversation.id
-          ? {
-              ...c,
-              status: 'RESOLVED',
-            }
-          : c,
-      ),
-    );
-
-    // Add system resolution event
-    const sysEvent: MessageRecord = {
-      id: `sys_res_${Date.now()}`,
-      conversationId: activeConversation.id,
-      senderType: 'SYSTEM',
-      senderName: 'System Engine',
-      content: `Conversation marked as Completed by ${CURRENT_AGENT_NAME}`,
-      createdAt: 'Just now',
-    };
-
-    setMessagesMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: [...(prev[activeConversation.id] || []), sysEvent],
-    }));
-
-    // Auto navigate to next conversation
+    inbox.resolve(activeConversation);
     handleNextConversation();
+  };
+
+  const handleReopenConversation = () => {
+    if (activeConversation) inbox.reopen(activeConversation);
   };
 
   // Send message action (Ctrl+Enter or Send button)
   const handleSendMessage = (content: string, attachments: MessageAttachment[]) => {
-    if (!activeConversation) return;
-
-    const newMsg: MessageRecord = {
-      id: `msg_out_${Date.now()}`,
-      conversationId: activeConversation.id,
-      senderType: 'AGENT',
-      senderName: CURRENT_AGENT_NAME,
-      content,
-      createdAt: 'Just now',
-      deliveryStatus: 'SENT',
-      attachments: attachments.length > 0 ? attachments : undefined,
-    };
-
-    setMessagesMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: [...(prev[activeConversation.id] || []), newMsg],
-    }));
-
-    // Simulate delivery receipt transition from SENT -> DELIVERED -> READ
-    setTimeout(() => {
-      setMessagesMap((prev) => {
-        const msgs = prev[activeConversation.id];
-        if (!msgs) return prev;
-        return {
-          ...prev,
-          [activeConversation.id]: msgs.map((m) =>
-            m.id === newMsg.id ? { ...m, deliveryStatus: 'DELIVERED' } : m,
-          ),
-        };
-      });
-    }, 1200);
-
-    setTimeout(() => {
-      setMessagesMap((prev) => {
-        const msgs = prev[activeConversation.id];
-        if (!msgs) return prev;
-        return {
-          ...prev,
-          [activeConversation.id]: msgs.map((m) =>
-            m.id === newMsg.id ? { ...m, deliveryStatus: 'READ' } : m,
-          ),
-        };
-      });
-    }, 2800);
-
-    // Update conversation snippet
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConversation.id
-          ? {
-              ...c,
-              lastMessageSnippet: `You: ${content}`,
-              lastMessageAt: 'Just now',
-            }
-          : c,
-      ),
-    );
+    if (activeConversation) inbox.sendMessage(activeConversation, content, attachments);
   };
 
-  // Add internal note action
   const handleAddInternalNote = (content: string) => {
-    if (!activeConversation) return;
-
-    const noteMsg: MessageRecord = {
-      id: `note_${Date.now()}`,
-      conversationId: activeConversation.id,
-      senderType: 'INTERNAL_NOTE',
-      senderName: CURRENT_AGENT_NAME,
-      content,
-      createdAt: 'Just now',
-    };
-
-    setMessagesMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: [...(prev[activeConversation.id] || []), noteMsg],
-    }));
+    if (activeConversation) inbox.addNote(activeConversation, content);
   };
 
-  // Retry delivery action
   const handleRetryMessage = (messageId: string) => {
-    if (!activeConversation) return;
-
-    setMessagesMap((prev) => {
-      const msgs = prev[activeConversation.id];
-      if (!msgs) return prev;
-      return {
-        ...prev,
-        [activeConversation.id]: msgs.map((m) =>
-          m.id === messageId
-            ? {
-                ...m,
-                deliveryStatus: 'SENT',
-                errorMessage: undefined,
-              }
-            : m,
-        ),
-      };
-    });
-
-    // Clear failed state on conversation
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConversation.id
-          ? { ...c, hasDeliveryFailure: false, failureReason: undefined }
-          : c,
-      ),
-    );
-
-    // Transition to delivered
-    setTimeout(() => {
-      setMessagesMap((prev) => {
-        const msgs = prev[activeConversation.id];
-        if (!msgs) return prev;
-        return {
-          ...prev,
-          [activeConversation.id]: msgs.map((m) =>
-            m.id === messageId ? { ...m, deliveryStatus: 'DELIVERED' } : m,
-          ),
-        };
-      });
-    }, 1500);
+    if (activeConversation) inbox.retryMessage(activeConversation, messageId);
   };
 
-  // Update customer priority
   const handleUpdatePriority = (priority: PriorityLevel) => {
-    if (!activeConversation || !activeCustomer) return;
-    setCustomersMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: { ...activeCustomer, priority },
-    }));
-    setConversations((prev) =>
-      prev.map((c) => (c.id === activeConversation.id ? { ...c, priority } : c)),
-    );
+    if (activeConversation) inbox.updatePriority?.(activeConversation, priority);
   };
 
-  // Update customer assignee
   const handleUpdateAssignee = (assignee: string) => {
-    if (!activeConversation || !activeCustomer) return;
-    setCustomersMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: { ...activeCustomer, assignedAgent: assignee },
-    }));
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConversation.id
-          ? {
-              ...c,
-              assignedAgentName: assignee === 'Unassigned' ? null : assignee,
-              assignedAgentId: assignee === 'Unassigned' ? null : CURRENT_AGENT_ID,
-            }
-          : c,
-      ),
-    );
+    if (activeConversation) inbox.updateAssignee(activeConversation, assignee);
   };
 
-  // Add tag
   const handleAddTag = (tag: string) => {
-    if (!activeConversation || !activeCustomer) return;
-    if (activeCustomer.tags.includes(tag)) return;
-    setCustomersMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: {
-        ...activeCustomer,
-        tags: [...activeCustomer.tags, tag],
-      },
-    }));
-    setConversations((prev) =>
-      prev.map((c) => (c.id === activeConversation.id ? { ...c, tags: [...c.tags, tag] } : c)),
-    );
+    if (activeConversation) inbox.addTag?.(activeConversation, tag);
   };
 
-  // Remove tag
   const handleRemoveTag = (tag: string) => {
-    if (!activeConversation || !activeCustomer) return;
-    setCustomersMap((prev) => ({
-      ...prev,
-      [activeConversation.id]: {
-        ...activeCustomer,
-        tags: activeCustomer.tags.filter((t) => t !== tag),
-      },
-    }));
+    if (activeConversation) inbox.removeTag?.(activeConversation, tag);
   };
 
   // Attach keyboard shortcuts (J, K, C, A, E)
@@ -407,12 +174,49 @@ export default function UnifiedInboxPage() {
     ? {
         customer: activeCustomer,
         onClose: closeContextPanel,
-        onUpdatePriority: handleUpdatePriority,
+        onUpdatePriority: inbox.updatePriority ? handleUpdatePriority : undefined,
         onUpdateAssignee: handleUpdateAssignee,
-        onAddTag: handleAddTag,
-        onRemoveTag: handleRemoveTag,
+        onAddTag: inbox.addTag ? handleAddTag : undefined,
+        onRemoveTag: inbox.removeTag ? handleRemoveTag : undefined,
+        assigneeOptions: inbox.assigneeOptions,
       }
     : null;
+
+  // WhatsApp and Meta only deliver free-form replies within 24 hours of the customer's message.
+  const windowClosedAt =
+    activeConversation?.replyWindowExpiresAt &&
+    Date.parse(activeConversation.replyWindowExpiresAt) < Date.now()
+      ? new Date(activeConversation.replyWindowExpiresAt)
+      : null;
+
+  if (inbox.isLoading || inbox.error || (isLive && conversations.length === 0)) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-n-surface-1 p-6">
+        {inbox.isLoading ? (
+          <LoadingSpinner />
+        ) : inbox.error ? (
+          <EmptyState
+            icon={<CircleAlert className="size-6" />}
+            title="Conversations could not be loaded"
+            description={inbox.error.message || 'The VYNOR API did not respond.'}
+            action={{ label: 'Try again', onClick: inbox.retry }}
+          />
+        ) : (
+          <EmptyState
+            icon={<MessagesSquare className="size-6" />}
+            title="No conversations yet"
+            description="Messages from your connected channels appear here as soon as customers write in."
+            actions={
+              <Link href="/channels" className="text-sm font-medium text-n-blue-11 hover:underline">
+                Connect a channel
+              </Link>
+            }
+          />
+        )}
+        {toast.element}
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex h-full w-full overflow-hidden bg-n-surface-1">
@@ -427,7 +231,7 @@ export default function UnifiedInboxPage() {
           conversations={conversations}
           selectedId={selectedId}
           onSelectConversation={handleSelectConversation}
-          currentUserId={CURRENT_AGENT_ID}
+          currentUserId={inbox.currentUserId}
           channel={channelFilter}
           onChannelChange={setChannelFilter}
           query={searchQuery}
@@ -450,20 +254,33 @@ export default function UnifiedInboxPage() {
               onToggleContextPanel={toggleContextPanel}
               onClaim={handleClaimConversation}
               onResolve={handleCompleteConversation}
+              onReopen={handleReopenConversation}
               onBack={() => setMobileView('list')}
             />
 
-            {/* Collision Shield (simulated for the Sarah Jenkins conversation) */}
-            {activeConversation.id === 'conv_02' && (
+            {/* Collision Shield (simulated for the Sarah Jenkins sample conversation) */}
+            {!isLive && activeConversation.id === 'conv_02' && (
               <CollisionBanner viewingAgentName="Supervisor Alex" />
             )}
 
             <ConversationTimeline messages={activeMessages} onRetryMessage={handleRetryMessage} />
 
+            {windowClosedAt && (
+              <div className="mx-2 mb-2">
+                <Banner color="amber" icon={<Clock3 className="size-4" />}>
+                  The 24-hour reply window closed at{' '}
+                  {windowClosedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}.{' '}
+                  {channelMeta(activeConversation.channel).label} only delivers approved template
+                  messages until the customer writes again. Private notes still work.
+                </Banner>
+              </div>
+            )}
+
             <MessageComposer
               ref={composerRef}
               onSendMessage={handleSendMessage}
               onAddInternalNote={handleAddInternalNote}
+              isSending={inbox.isSending}
             />
           </>
         ) : (
@@ -499,6 +316,7 @@ export default function UnifiedInboxPage() {
           </div>
         </div>
       )}
+      {toast.element}
     </div>
   );
 }

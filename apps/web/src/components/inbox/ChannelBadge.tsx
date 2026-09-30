@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Mail, MessageCircle, MessageSquare, Send } from 'lucide-react';
+import { CodeXml, Globe, Mail, MessageCircle, MessageSquare, Send } from 'lucide-react';
 import type { ChannelType } from '@vynor/contracts';
 import { cn } from '@/lib/utils';
 
@@ -30,8 +30,9 @@ export const CHANNEL_META: Record<string, { label: string; icon: IconComponent }
   TELEGRAM: { label: 'Telegram', icon: Send },
   EMAIL: { label: 'Email', icon: Mail },
   MESSENGER: { label: 'Messenger', icon: MessageSquare },
-  LINE: { label: 'Line', icon: MessageSquare },
-  WEBCHAT: { label: 'Webchat', icon: Globe },
+  LINE: { label: 'LINE', icon: MessageSquare },
+  WEBCHAT: { label: 'Web chat', icon: Globe },
+  API: { label: 'Custom API', icon: CodeXml },
 };
 
 export function channelMeta(channel: ChannelType | string) {

@@ -11,7 +11,7 @@ import {
   Paperclip,
   RefreshCcw,
 } from 'lucide-react';
-import type { MessageRecord } from './types';
+import type { MessageAttachment, MessageRecord } from './types';
 import { Avatar } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -86,6 +86,58 @@ function MessageError({ error, onRetry }: { error: string; onRetry?: (() => void
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * Inbound media: images, audio and video play inline from the short-lived signed URL; other
+ * files open or download. Files without a URL (e.g. email attachments) are listed only.
+ */
+function AttachmentView({ attachment }: { attachment: MessageAttachment }) {
+  const { url, type, name, size } = attachment;
+  if (url && type.startsWith('image/')) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer noopener" className="block max-w-full">
+        {/* Plain <img>: the signed, short-lived API URL must not go through image optimisation. */}
+        <img
+          src={url}
+          alt={name}
+          loading="lazy"
+          className="max-h-72 max-w-full rounded-lg object-contain"
+        />
+      </a>
+    );
+  }
+  if (url && type.startsWith('audio/')) {
+    return <audio controls preload="none" src={url} className="max-w-full" aria-label={name} />;
+  }
+  if (url && type.startsWith('video/')) {
+    return (
+      <video controls preload="metadata" src={url} className="max-h-72 max-w-full rounded-lg" />
+    );
+  }
+  const chip = (
+    <>
+      <Paperclip className="size-3.5 shrink-0" />
+      <span className="truncate font-medium">{name}</span>
+      {size && <span className="shrink-0 opacity-70">{size}</span>}
+    </>
+  );
+  const chipClass =
+    'inline-flex max-w-full items-center gap-1.5 rounded-lg bg-n-alpha-black1 px-2 py-1 text-xs';
+  return url ? (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer noopener"
+      className={cn(chipClass, 'hover:underline')}
+    >
+      {chip}
+    </a>
+  ) : (
+    <span className={chipClass} title="Open the original message to download this file">
+      {chip}
+    </span>
   );
 }
 
@@ -180,20 +232,15 @@ export function MessageBubble({
             )}
           >
             <div className="flex flex-col gap-3">
-              <p className="mb-0 whitespace-pre-wrap break-words leading-[1.6]">
-                {message.content}
-              </p>
+              {message.content && (
+                <p className="mb-0 whitespace-pre-wrap break-words leading-[1.6]">
+                  {message.content}
+                </p>
+              )}
               {message.attachments && message.attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {message.attachments.map((att) => (
-                    <span
-                      key={att.id}
-                      className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-n-alpha-black1 px-2 py-1 text-xs"
-                    >
-                      <Paperclip className="size-3.5 shrink-0" />
-                      <span className="truncate font-medium">{att.name}</span>
-                      <span className="shrink-0 opacity-70">{att.size}</span>
-                    </span>
+                    <AttachmentView key={att.id} attachment={att} />
                   ))}
                 </div>
               )}

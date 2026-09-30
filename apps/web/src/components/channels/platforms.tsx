@@ -46,14 +46,16 @@ export interface PlatformDefinition {
 const PLATFORM_DETAILS: Record<ChannelProviderType, Omit<PlatformDefinition, 'provider'>> = {
   WHATSAPP_CLOUD: {
     label: 'WhatsApp Business',
-    connectHint: 'You will sign in with Meta and pick the WhatsApp Business number to use.',
+    connectHint:
+      'Uses the official WhatsApp Cloud API: have your Meta app details and a permanent access token ready.',
     badgeClassName: 'bg-[#25D366]',
     glyph: brandGlyph(WHATSAPP_PATH),
     glyphClassName: 'text-white',
   },
   META_INSTAGRAM: {
     label: 'Instagram',
-    connectHint: 'You will sign in with Meta and choose the Instagram professional account.',
+    connectHint:
+      'Uses the Instagram API with Instagram login: have an access token for your professional account ready.',
     badgeClassName:
       'bg-[radial-gradient(circle_at_30%_107%,#fdf497_0%,#fdf497_5%,#fd5949_45%,#d6249f_60%,#285aeb_90%)]',
     glyph: brandGlyph(INSTAGRAM_PATH),
@@ -61,7 +63,8 @@ const PLATFORM_DETAILS: Record<ChannelProviderType, Omit<PlatformDefinition, 'pr
   },
   META_MESSENGER: {
     label: 'Messenger',
-    connectHint: 'You will sign in with Meta and choose the Facebook Page to connect.',
+    connectHint:
+      'Uses the Messenger Platform: have a Page access token for your Facebook Page ready.',
     badgeClassName: 'bg-[#0866FF]',
     glyph: brandGlyph(MESSENGER_PATH),
     glyphClassName: 'text-white',
@@ -76,7 +79,8 @@ const PLATFORM_DETAILS: Record<ChannelProviderType, Omit<PlatformDefinition, 'pr
   },
   LINE_MESSAGING: {
     label: 'LINE',
-    connectHint: 'You will enter the details of your LINE Official Account.',
+    connectHint:
+      'Have the channel access token and channel secret of your LINE Official Account ready.',
     badgeClassName: 'bg-[#06C755]',
     glyph: brandGlyph(LINE_PATH),
     glyphClassName: 'text-white',
@@ -90,7 +94,7 @@ const PLATFORM_DETAILS: Record<ChannelProviderType, Omit<PlatformDefinition, 'pr
   },
   EMAIL_SMTP_IMAP: {
     label: 'Email',
-    connectHint: 'You will enter the mailbox address and the details from your email provider.',
+    connectHint: 'Have the mailbox address and its IMAP and SMTP server settings ready.',
     badgeClassName: 'bg-[#1F7AE0]',
     glyph: Mail,
     glyphClassName: 'text-white',

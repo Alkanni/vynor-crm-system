@@ -11,6 +11,8 @@ export interface ConversationSummary {
   /** Customer presence, drives the avatar status dot. */
   isOnline?: boolean | undefined;
   channel: ChannelType;
+  /** Inbox (channel account) name, for live conversations. */
+  channelName?: string | undefined;
   lastMessageSnippet: string;
   lastMessageAt: string;
   unreadCount: number;
@@ -21,6 +23,8 @@ export interface ConversationSummary {
   isHandledByAi: boolean;
   hasDeliveryFailure?: boolean | undefined;
   failureReason?: string | undefined;
+  /** ISO time after which the platform only accepts template messages (WhatsApp, Meta). */
+  replyWindowExpiresAt?: string | null | undefined;
   tags: string[];
 }
 

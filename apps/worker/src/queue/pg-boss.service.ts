@@ -86,6 +86,52 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Registers a handler for a queue (one job at a time per worker slot). Throwing fails the
+   * job so pg-boss retries it with the queue's retry policy.
+   */
+  async work<T extends Record<string, unknown>>(
+    queue: QueueName,
+    handler: (job: {
+      id: string;
+      data: T;
+      retryCount: number;
+      retryLimit: number;
+    }) => Promise<void>,
+    options: { localConcurrency?: number; pollingIntervalSeconds?: number } = {},
+  ): Promise<boolean> {
+    if (!this.boss) {
+      this.logger.warn(
+        { correlationId: 'queue_work_skipped', queue },
+        'pg-boss not available; worker not registered.',
+      );
+      return false;
+    }
+    await this.boss.work<
+      T,
+      unknown,
+      { includeMetadata: true; localConcurrency: number; pollingIntervalSeconds: number }
+    >(
+      queue,
+      {
+        includeMetadata: true,
+        localConcurrency: options.localConcurrency ?? QUEUE_CONFIGS[queue].concurrency,
+        pollingIntervalSeconds: options.pollingIntervalSeconds ?? 1,
+      },
+      async (jobs) => {
+        for (const job of jobs) {
+          await handler({
+            id: job.id,
+            data: job.data,
+            retryCount: job.retryCount,
+            retryLimit: job.retryLimit,
+          });
+        }
+      },
+    );
+    return true;
+  }
+
+  /**
    * Enqueue a job with a deterministic singleton key for idempotent dispatch (FND-059).
    */
   async sendJob(
