@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Bot, CircleCheck, PanelRight, UserPlus } from 'lucide-react';
+import { ArrowLeft, Bot, CircleCheck, PanelRight, RotateCcw, UserPlus } from 'lucide-react';
 import type { ConversationSummary } from './types';
 import { ChannelBadge } from './ChannelBadge';
 import { PRIORITY_LABELS } from './PriorityIcon';
@@ -14,6 +14,8 @@ interface ConversationHeaderProps {
   onToggleContextPanel: () => void;
   onClaim: () => void;
   onResolve: () => void;
+  /** Reopens a resolved conversation; without it the resolved state is shown read-only. */
+  onReopen?: (() => void) | undefined;
   /** Mobile: return to the conversation list. */
   onBack?: (() => void) | undefined;
 }
@@ -29,6 +31,7 @@ export function ConversationHeader({
   onToggleContextPanel,
   onClaim,
   onResolve,
+  onReopen,
   onBack,
 }: ConversationHeaderProps) {
   const isResolved = conversation.status === 'RESOLVED';
@@ -98,17 +101,30 @@ export function ConversationHeader({
           />
         )}
         <div className="shrink-0 rounded-lg shadow outline outline-1 outline-n-container">
-          <Button
-            size="sm"
-            color="slate"
-            noAnimation
-            icon={CircleCheck}
-            label={isResolved ? 'Resolved' : 'Resolve'}
-            title="Resolve conversation (E)"
-            disabled={isResolved}
-            onClick={onResolve}
-            className="!outline-0"
-          />
+          {isResolved && onReopen ? (
+            <Button
+              size="sm"
+              color="slate"
+              noAnimation
+              icon={RotateCcw}
+              label="Reopen"
+              title="Reopen conversation"
+              onClick={onReopen}
+              className="!outline-0"
+            />
+          ) : (
+            <Button
+              size="sm"
+              color="slate"
+              noAnimation
+              icon={CircleCheck}
+              label={isResolved ? 'Resolved' : 'Resolve'}
+              title="Resolve conversation (E)"
+              disabled={isResolved}
+              onClick={onResolve}
+              className="!outline-0"
+            />
+          )}
         </div>
         <Button
           size="sm"

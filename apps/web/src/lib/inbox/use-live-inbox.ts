@@ -84,6 +84,8 @@ export function useLiveInbox(
       ),
     resolve: (conversation) =>
       update.mutate({ id: conversation.id, body: { status: 'RESOLVED' } }, { onError: report }),
+    reopen: (conversation) =>
+      update.mutate({ id: conversation.id, body: { status: 'OPEN' } }, { onError: report }),
     sendMessage: (conversation, content, attachments) => {
       if (attachments.length > 0) {
         onError('Sending attachments is not supported yet. Only the text was sent.');

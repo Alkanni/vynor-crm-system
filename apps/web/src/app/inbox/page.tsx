@@ -127,6 +127,10 @@ export default function UnifiedInboxPage() {
     handleNextConversation();
   };
 
+  const handleReopenConversation = () => {
+    if (activeConversation) inbox.reopen(activeConversation);
+  };
+
   // Send message action (Ctrl+Enter or Send button)
   const handleSendMessage = (content: string, attachments: MessageAttachment[]) => {
     if (activeConversation) inbox.sendMessage(activeConversation, content, attachments);
@@ -250,6 +254,7 @@ export default function UnifiedInboxPage() {
               onToggleContextPanel={toggleContextPanel}
               onClaim={handleClaimConversation}
               onResolve={handleCompleteConversation}
+              onReopen={handleReopenConversation}
               onBack={() => setMobileView('list')}
             />
 

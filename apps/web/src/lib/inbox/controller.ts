@@ -24,6 +24,7 @@ export interface InboxController {
   markRead: (conversationId: string) => void;
   claim: (conversation: ConversationSummary) => void;
   resolve: (conversation: ConversationSummary) => void;
+  reopen: (conversation: ConversationSummary) => void;
   sendMessage: (
     conversation: ConversationSummary,
     content: string,

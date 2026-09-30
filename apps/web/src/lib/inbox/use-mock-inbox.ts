@@ -94,6 +94,20 @@ export function useMockInbox(activeConversationId: string | null): InboxControll
       });
     },
 
+    reopen: (conversation) => {
+      updateConversation(conversation.id, {
+        status: conversation.assignedAgentId ? 'ASSIGNED' : 'OPEN',
+      });
+      appendMessage(conversation.id, {
+        id: `sys_reopen_${Date.now()}`,
+        conversationId: conversation.id,
+        senderType: 'SYSTEM',
+        senderName: 'System Engine',
+        content: `Conversation reopened by ${CURRENT_AGENT_NAME}`,
+        createdAt: 'Just now',
+      });
+    },
+
     sendMessage: (conversation, content, attachments: MessageAttachment[]) => {
       const newMsg: MessageRecord = {
         id: `msg_out_${Date.now()}`,
