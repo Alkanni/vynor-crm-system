@@ -10,6 +10,7 @@ import type {
   InboxSettings,
 } from './types';
 import { PlatformIcon, getPlatform } from './platforms';
+import { ConnectionSection } from './ConnectionSection';
 import { FIELD_CLASS, SelectField, Toggle } from '@/components/common/form-controls';
 import { Avatar, Banner, Button, Dialog } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,8 @@ const SETTING_ROWS: {
   key: Exclude<keyof InboxSettings, 'maxConversationsPerAgent'>;
   title: string;
   description: string;
+  /** Saved now, applied once the feature ships. */
+  comingSoon?: boolean;
 }[] = [
   {
     key: 'maxConversationsEnabled',
@@ -40,12 +43,14 @@ const SETTING_ROWS: {
     key: 'csatEnabled',
     title: 'Customer Satisfaction (CSAT)',
     description: 'Send a review link to the chat after it is resolved by an agent.',
+    comingSoon: true,
   },
   {
     key: 'reassignWhenOffline',
     title: 'Reassign Chat When Agent is Offline',
     description:
       'Automatically reassign conversations to an available agent when the assigned agent goes offline.',
+    comingSoon: true,
   },
 ];
 
@@ -64,9 +69,12 @@ interface InboxSettingsPanelProps {
   inbox: InboxAccount;
   aiAgents: InboxAgent[];
   humanAgents: InboxAgent[];
-  onSave: (id: string, draft: InboxDraft) => void;
-  onDelete: (id: string) => void;
+  onSave: (id: string, draft: InboxDraft) => void | Promise<void>;
+  onDelete: (id: string) => void | Promise<void>;
   onReconnect: (id: string) => void;
+  /** Integration managers may test, update and delete connections. */
+  canManage?: boolean | undefined;
+  onTestConnection?: ((id: string) => Promise<{ ok: boolean; message: string }>) | undefined;
 }
 
 /**
@@ -80,14 +88,26 @@ export function InboxSettingsPanel({
   onSave,
   onDelete,
   onReconnect,
+  canManage = true,
+  onTestConnection,
 }: InboxSettingsPanelProps) {
   const [draft, setDraft] = useState<InboxDraft>(() => toDraft(inbox));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onSave(inbox.id, { ...draft, name: draft.name.trim() });
+    } finally {
+      setSaving(false);
+    }
+  };
   // Raw text so the limit field can be cleared while typing a new number.
   const [limitInput, setLimitInput] = useState(String(inbox.settings.maxConversationsPerAgent));
 
   const isDirty = JSON.stringify(draft) !== JSON.stringify(toDraft(inbox));
-  const canSave = isDirty && draft.name.trim().length > 0;
+  const canSave = canManage && isDirty && draft.name.trim().length > 0 && !saving;
   const platform = getPlatform(inbox.provider);
   const assigned = humanAgents.filter((a) => draft.humanAgentIds.includes(a.id));
   const unassigned = humanAgents.filter((a) => !draft.humanAgentIds.includes(a.id));
@@ -106,19 +126,22 @@ export function InboxSettingsPanel({
       <div className="flex items-center justify-end gap-2 border-b border-n-weak px-4 py-3 sm:px-6">
         <Button
           size="sm"
-          label="Save"
+          label={saving ? 'Saving…' : 'Save'}
+          isLoading={saving}
           disabled={!canSave}
-          onClick={() => onSave(inbox.id, { ...draft, name: draft.name.trim() })}
+          onClick={save}
         />
-        <Button
-          size="sm"
-          variant="faded"
-          color="ruby"
-          icon={Trash2}
-          onClick={() => setConfirmDelete(true)}
-          aria-label="Delete inbox"
-          title="Delete inbox"
-        />
+        {canManage && (
+          <Button
+            size="sm"
+            variant="faded"
+            color="ruby"
+            icon={Trash2}
+            onClick={() => setConfirmDelete(true)}
+            aria-label="Delete inbox"
+            title="Delete inbox"
+          />
+        )}
       </div>
 
       <div className="flex min-h-0 flex-col gap-7 px-4 py-6 sm:px-6">
@@ -153,8 +176,19 @@ export function InboxSettingsPanel({
             actionLabel="Reconnect"
             onAction={() => onReconnect(inbox.id)}
           >
-            This inbox is disconnected. Reconnect it to keep receiving messages.
+            {inbox.connection?.statusReason
+              ? `This inbox is disconnected (${inbox.connection.statusReason}). Reconnect it to keep receiving messages.`
+              : 'This inbox is disconnected. Reconnect it to keep receiving messages.'}
           </Banner>
+        )}
+
+        {inbox.connection && onTestConnection && (
+          <ConnectionSection
+            inbox={inbox}
+            canManage={canManage}
+            onTestConnection={onTestConnection}
+            onUpdateCredentials={onReconnect}
+          />
         )}
 
         {/* AI Agent */}
@@ -253,7 +287,14 @@ export function InboxSettingsPanel({
             <div key={row.key} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
               <div className="flex items-center justify-between gap-6">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-n-slate-12">{row.title}</p>
+                  <p className="flex items-center gap-2 text-sm font-medium text-n-slate-12">
+                    {row.title}
+                    {row.comingSoon && (
+                      <span className="rounded-md bg-n-alpha-2 px-1.5 py-0.5 text-xxs font-medium text-n-slate-11">
+                        Coming soon
+                      </span>
+                    )}
+                  </p>
                   <p className="mt-1 text-sm text-n-slate-11">{row.description}</p>
                 </div>
                 <Toggle
