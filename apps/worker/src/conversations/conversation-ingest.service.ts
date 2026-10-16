@@ -1,12 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  DEFAULT_INBOX_SETTINGS,
-  InboxSettingsSchema,
   isDeliveryStatusMonotonic,
+  readInboxSettings,
   summarizeMessageContent,
   truncatePreview,
   type DeliveryStatus,
-  type InboxSettings,
   type NormalizedDeliveryReceipt,
   type NormalizedInboundMessage,
 } from '@vynor/contracts';
@@ -41,14 +39,6 @@ const OPEN_STATUSES = ['OPEN', 'PENDING'] as const;
 /** Provider timestamps outside this window are replaced by the receive time. */
 const MAX_BACKDATE_MS = 7 * 24 * 3600_000;
 const MAX_FUTURE_MS = 5 * 60_000;
-
-function readSettings(value: unknown): InboxSettings {
-  const parsed = InboxSettingsSchema.safeParse({
-    ...DEFAULT_INBOX_SETTINGS,
-    ...(value && typeof value === 'object' ? value : {}),
-  });
-  return parsed.success ? parsed.data : DEFAULT_INBOX_SETTINGS;
-}
 
 function metadataString(
   metadata: Record<string, unknown> | undefined,
@@ -341,7 +331,7 @@ export class ConversationIngestService {
     channel: ProviderAccount,
     contactIdentityId: string,
   ): Promise<string | null> {
-    const settings = readSettings(channel.settings);
+    const settings = readInboxSettings(channel.settings);
     if (settings.distributionMethod === 'MANUAL') return null;
 
     const members = await tx.providerAccountMember.findMany({

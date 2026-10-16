@@ -1,10 +1,8 @@
 import {
-  DEFAULT_INBOX_SETTINGS,
-  InboxSettingsSchema,
+  readInboxSettings,
   type Channel,
   type ChannelProviderType,
   type ChannelType,
-  type InboxSettings,
   type ProviderAccountStatus,
 } from '@vynor/contracts';
 import { readConnectionConfig, type GeneratedChannelSecrets } from '@vynor/channel-adapters';
@@ -32,14 +30,6 @@ export interface ChannelRow {
   createdAt: Date;
   updatedAt: Date;
   members: { membershipId: string }[];
-}
-
-export function readInboxSettings(value: unknown): InboxSettings {
-  const parsed = InboxSettingsSchema.safeParse({
-    ...DEFAULT_INBOX_SETTINGS,
-    ...(value && typeof value === 'object' ? value : {}),
-  });
-  return parsed.success ? parsed.data : DEFAULT_INBOX_SETTINGS;
 }
 
 export function webchatScriptUrl(runtime: ChannelRuntimeService, widgetKey: string): string {

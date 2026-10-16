@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   hasPermission,
   PROVIDER_CHANNEL_TYPES,
+  readInboxSettings,
   type ActorContext,
   type Channel,
   type ChannelConnectionInput,
@@ -26,7 +27,7 @@ import {
 import { generateId, notifyRealtime, prisma, Prisma } from '@vynor/database';
 import { AuditService } from '../audit/audit.service.js';
 import { apiError, notFound } from '../common/errors/api-error.js';
-import { presentChannel, readInboxSettings, type ChannelRow } from './channel-presenter.js';
+import { presentChannel, type ChannelRow } from './channel-presenter.js';
 import { ChannelRuntimeService } from './channel-runtime.service.js';
 import { assertConnectionEndpointsAllowed } from './endpoint-policy.js';
 
