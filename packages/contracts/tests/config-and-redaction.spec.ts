@@ -130,6 +130,49 @@ describe('Configuration Validation (FND-017 & FND-TST-007)', () => {
     expect(config.PORT).toBe(8080);
     expect(config.STORAGE_USE_SSL).toBe(true);
   });
+
+  const serverSchemas = [
+    ['API', ApiEnvSchema, validApiEnv],
+    ['worker', WorkerEnvSchema, validWorkerEnv],
+  ] as const;
+
+  it.each(serverSchemas)(
+    'requires ENCRYPTION_MASTER_KEY for the %s in staging and production only',
+    (_name, schema, env) => {
+      for (const APP_ENV of ['staging', 'production']) {
+        const missing = schema.safeParse({ ...env, APP_ENV });
+        expect(missing.success).toBe(false);
+        expect(missing.error?.issues.map((issue) => issue.path.join('.'))).toEqual([
+          'ENCRYPTION_MASTER_KEY',
+        ]);
+        expect(schema.safeParse({ ...env, APP_ENV, ENCRYPTION_MASTER_KEY: 'key' }).success).toBe(
+          true,
+        );
+      }
+      for (const APP_ENV of ['local', 'test']) {
+        expect(schema.safeParse({ ...env, APP_ENV }).success).toBe(true);
+      }
+    },
+  );
+
+  it.each(serverSchemas)(
+    'applies the shared storage defaults and requirements to the %s',
+    (_name, schema, env) => {
+      const { STORAGE_ENDPOINT: _endpoint, STORAGE_USE_SSL: _ssl, ...withoutOptional } = env;
+      expect(schema.parse(withoutOptional)).toMatchObject({
+        STORAGE_ENDPOINT: 'http://localhost:9000',
+        STORAGE_REGION: 'us-east-1',
+        STORAGE_BUCKET: 'vynor-crm-attachments',
+        STORAGE_USE_SSL: false,
+      });
+
+      const { STORAGE_SECRET_ACCESS_KEY: _secret, ...withoutSecret } = env;
+      const missing = schema.safeParse(withoutSecret);
+      expect(missing.error?.issues.map((issue) => issue.path.join('.'))).toEqual([
+        'STORAGE_SECRET_ACCESS_KEY',
+      ]);
+    },
+  );
 });
 
 describe('Sensitive Field Redaction (FND-046 & FND-TST-007)', () => {

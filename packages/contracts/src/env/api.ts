@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { blankAsUnset, ChannelRuntimeEnvSchema, requiresEncryptionKey } from './channels.js';
+import { blankAsUnset, ChannelRuntimeEnvSchema, refineEncryptionKeyRequired } from './channels.js';
 import { BaseServerEnvSchema } from './common.js';
+import { StorageEnvSchema } from './storage.js';
 
 export const ApiEnvSchema = BaseServerEnvSchema.extend({
   PORT: z.coerce.number().int().positive().default(3001),
@@ -16,17 +17,6 @@ export const ApiEnvSchema = BaseServerEnvSchema.extend({
   SUPABASE_ANON_KEY: z.string().min(1, 'SUPABASE_ANON_KEY is required'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
   SUPABASE_JWT_SECRET: z.string().min(1, 'SUPABASE_JWT_SECRET is required'),
-
-  // S3 / RustFS Object Storage
-  STORAGE_ENDPOINT: z.string().min(1).default('http://localhost:9000'),
-  STORAGE_REGION: z.string().default('us-east-1'),
-  STORAGE_BUCKET: z.string().default('vynor-crm-attachments'),
-  STORAGE_ACCESS_KEY_ID: z.string().min(1, 'STORAGE_ACCESS_KEY_ID is required'),
-  STORAGE_SECRET_ACCESS_KEY: z.string().min(1, 'STORAGE_SECRET_ACCESS_KEY is required'),
-  STORAGE_USE_SSL: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform((v) => v === 'true'),
 
   // Optional Redis
   REDIS_URL: z.string().url().optional(),
@@ -47,15 +37,8 @@ export const ApiEnvSchema = BaseServerEnvSchema.extend({
     .default('false')
     .transform((v) => v === 'true'),
 })
+  .extend(StorageEnvSchema.shape)
   .extend(ChannelRuntimeEnvSchema.shape)
-  .superRefine((env, ctx) => {
-    if (requiresEncryptionKey(env.APP_ENV) && !env.ENCRYPTION_MASTER_KEY) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['ENCRYPTION_MASTER_KEY'],
-        message: 'ENCRYPTION_MASTER_KEY is required in staging and production',
-      });
-    }
-  });
+  .superRefine(refineEncryptionKeyRequired);
 
 export type ApiEnv = z.infer<typeof ApiEnvSchema>;
