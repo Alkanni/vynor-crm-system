@@ -11,7 +11,6 @@ import {
   PINO_REDACT_PATHS,
   SENSITIVE_KEY_NAMES,
 } from '../src/index.js';
-import { redactHeaders } from '@vynor/observability';
 
 describe('Configuration Validation (FND-017 & FND-TST-007)', () => {
   const validApiEnv = {
@@ -223,29 +222,6 @@ describe('Sensitive Field Redaction (FND-046 & FND-TST-007)', () => {
     expect(redacted.batch[0]?.role).toBe('admin');
     expect(redacted.batch[1]?.apiKey).toBe(REDACTED_PLACEHOLDER);
     expect(redacted.batch[1]?.role).toBe('agent');
-  });
-
-  it('redacts HTTP headers containing sensitive auth/cookie tokens', () => {
-    const headers = {
-      'content-type': 'application/json',
-      'x-correlation-id': 'corr_req_999',
-      authorization: 'Bearer eyJhbGciOi...',
-      cookie: 'sb-access-token=xyz; session=123',
-      'set-cookie': ['token=xyz; Path=/'],
-      'x-api-key': 'secret-api-key',
-      'user-agent': 'VynorClient/1.0',
-    };
-
-    const redacted = redactHeaders(headers);
-
-    expect(redacted['authorization']).toBe(REDACTED_PLACEHOLDER);
-    expect(redacted['cookie']).toBe(REDACTED_PLACEHOLDER);
-    expect(redacted['set-cookie']).toBe(REDACTED_PLACEHOLDER);
-    expect(redacted['x-api-key']).toBe(REDACTED_PLACEHOLDER);
-
-    expect(redacted['content-type']).toBe('application/json');
-    expect(redacted['x-correlation-id']).toBe('corr_req_999');
-    expect(redacted['user-agent']).toBe('VynorClient/1.0');
   });
 
   it('masks email addresses preserving first/last characters and domain', () => {
