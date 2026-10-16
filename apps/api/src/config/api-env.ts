@@ -10,8 +10,3 @@ export function getApiEnv(): ApiEnv {
   cached ??= validateEnv(ApiEnvSchema, process.env);
   return cached;
 }
-
-/** Test hook: forget the cached env after changing process.env. */
-export function resetApiEnvCache(): void {
-  cached = null;
-}

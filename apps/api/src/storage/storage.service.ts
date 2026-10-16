@@ -40,10 +40,6 @@ export class StorageService {
     });
   }
 
-  getStorageClient(): S3CompatibleStorage {
-    return this.storageClient;
-  }
-
   /**
    * Authorizes and generates a short-lived presigned GET URL for an attachment (FND-BE-008, FND-075).
    * Fail closed: never signs quarantine, pending scan, or infected attachments.

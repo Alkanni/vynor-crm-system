@@ -7,3 +7,4 @@ coverage
 .git
 .github/CODEOWNERS
 apps/web/next-env.d.ts
+.claude/worktrees

@@ -78,10 +78,6 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  getClient(): PgBoss | null {
-    return this.boss;
-  }
-
   /**
    * Registers a handler for a queue (one job at a time per worker slot). Throwing fails the
    * job so pg-boss retries it with the queue's retry policy.
