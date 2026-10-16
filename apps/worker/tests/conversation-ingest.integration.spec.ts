@@ -370,4 +370,24 @@ describe('ConversationIngestService', () => {
       [note]: 'SENT',
     });
   });
+
+  it('keeps the reply window anchored to the newest customer message when an older one arrives late', async () => {
+    const sender = { identifier: `sender-${suffix}-late`, displayName: 'Late' };
+    const recent = new Date(Date.now() - MINUTE);
+    const first = await store(chat, inbound(chat, { sender, timestamp: recent.toISOString() }));
+    const late = await store(
+      chat,
+      inbound(chat, {
+        sender,
+        timestamp: new Date(recent.getTime() - 2 * DAY).toISOString(),
+      }),
+    );
+
+    expect(late.conversationId).toBe(first.conversationId);
+    const conversation = await db.conversation.findUniqueOrThrow({
+      where: { id: first.conversationId },
+    });
+    expect(conversation.unreadCount).toBe(2);
+    expect(conversation.lastInboundAt?.getTime()).toBe(recent.getTime());
+  });
 });

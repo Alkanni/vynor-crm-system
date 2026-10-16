@@ -178,11 +178,13 @@ export class ConversationIngestService {
 
     // A customer message reopens pending or resolved threads.
     const isLatest = !conversation.lastMessageAt || createdAt >= conversation.lastMessageAt;
+    // A late-delivered older message must not pull the reply window backwards.
+    const isLatestInbound = !conversation.lastInboundAt || createdAt > conversation.lastInboundAt;
     await tx.conversation.update({
       where: { id: conversation.id },
       data: {
         unreadCount: { increment: 1 },
-        lastInboundAt: createdAt,
+        ...(isLatestInbound ? { lastInboundAt: createdAt } : {}),
         ...(isLatest
           ? {
               lastMessageAt: createdAt,
