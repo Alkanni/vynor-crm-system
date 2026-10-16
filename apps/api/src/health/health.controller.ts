@@ -54,24 +54,7 @@ export class HealthController {
   @Public()
   @Get()
   async getSystemHealth(): Promise<ApiSuccessResponse<SystemHealthReport>> {
-    const [dbHealth, outboxHealth] = await Promise.all([
-      checkDatabaseHealth(prisma),
-      checkOutboxHealth(prisma),
-    ]);
-
-    const report = buildSystemHealthReport({
-      service: 'vynor-api',
-      environment: process.env.NODE_ENV || 'development',
-      version: '1.0.0',
-      database: dbHealth,
-      outbox: outboxHealth,
-      webhooks: {
-        status: 'UP',
-        details: { ingressBuffer: 'active', fastAckTargetMs: 500 },
-      },
-    });
-
-    return createSuccessEnvelope(report);
+    return createSuccessEnvelope(await this.buildSystemHealth());
   }
 
   /**
@@ -81,23 +64,25 @@ export class HealthController {
   @Public()
   @Get('indicators')
   async getIndicators(): Promise<ApiSuccessResponse<SystemHealthReport['indicators']>> {
+    const report = await this.buildSystemHealth();
+    return createSuccessEnvelope(report.indicators);
+  }
+
+  private async buildSystemHealth(): Promise<SystemHealthReport> {
     const [dbHealth, outboxHealth] = await Promise.all([
       checkDatabaseHealth(prisma),
       checkOutboxHealth(prisma),
     ]);
 
-    const report = buildSystemHealthReport({
+    return buildSystemHealthReport({
       service: 'vynor-api',
-      environment: process.env.NODE_ENV || 'development',
-      version: '1.0.0',
       database: dbHealth,
       outbox: outboxHealth,
+      // Webhook ingress has no probe of its own; it is up whenever the API answers.
       webhooks: {
         status: 'UP',
         details: { ingressBuffer: 'active', fastAckTargetMs: 500 },
       },
     });
-
-    return createSuccessEnvelope(report.indicators);
   }
 }
