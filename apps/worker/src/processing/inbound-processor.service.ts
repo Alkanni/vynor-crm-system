@@ -90,13 +90,9 @@ export class InboundProcessorService implements OnApplicationBootstrap {
             await this.ingest.applyReceipt(channel, result.data);
             handled += 1;
           } catch (error) {
-            if (
-              error instanceof ReceiptNotYetMatchableError &&
-              event.processingAttempts + 1 < RECEIPT_MATCH_ATTEMPTS
-            ) {
-              throw error;
-            }
-            if (!(error instanceof ReceiptNotYetMatchableError)) throw error;
+            // `processingAttempts` was read before this attempt was counted.
+            const attemptsLeft = event.processingAttempts + 1 < RECEIPT_MATCH_ATTEMPTS;
+            if (!(error instanceof ReceiptNotYetMatchableError) || attemptsLeft) throw error;
             ignored.push('Receipt for a message VYNOR did not send.');
           }
         } else {
