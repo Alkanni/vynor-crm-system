@@ -12,9 +12,6 @@ describe('Concurrent Outbox Claiming & Repeated Dispatch Idempotency (FND-TST-00
   let prisma: PrismaClient;
 
   beforeAll(async () => {
-    process.env.DATABASE_URL =
-      process.env.DATABASE_URL ||
-      'postgresql://postgres:postgres@localhost:5434/vynor?schema=public';
     prisma = createTestPrismaClient();
   });
 

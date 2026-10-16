@@ -83,22 +83,23 @@ export async function cleanDatabase(
 }
 
 /**
- * Creates an isolated PrismaClient instance for test suites.
- * Ensures tests connect to the designated test database URL (TEST_DATABASE_URL or DATABASE_URL).
+ * Creates an isolated PrismaClient instance for test suites, connected to TEST_DATABASE_URL
+ * (or DATABASE_URL).
+ *
+ * @throws Error when neither variable is set. Integration suites write to and clean whatever
+ *   database they get, so there is deliberately no fallback to a local development database.
  */
 export function createTestPrismaClient(options: DatabaseClientOptions = {}): PrismaClient {
-  const testUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-
-  const clientOpts: DatabaseClientOptions = {
-    logging: false,
-    ...options,
-  };
-
-  if (testUrl) {
-    clientOpts.databaseUrl = testUrl;
+  // `||` rather than `??`: an exported but empty variable counts as unset.
+  const testUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  if (!testUrl) {
+    throw new Error(
+      'No test database configured. Set TEST_DATABASE_URL (or DATABASE_URL) to a disposable ' +
+        'database such as vynor_test before running integration tests.',
+    );
   }
 
-  return createDatabaseClient(clientOpts);
+  return createDatabaseClient({ logging: false, ...options, databaseUrl: testUrl });
 }
 
 /**
