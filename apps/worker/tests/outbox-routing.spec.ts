@@ -18,8 +18,8 @@ describe('outbox event routing (issue #40)', () => {
     expect(queueForEventType('Webhook.Received')).toBe(QUEUE_NAMES.WEBHOOKS_PROCESS);
   });
 
-  it('sends event types no queue handles to the outbound message queue', () => {
-    expect(queueForEventType('workspace.created')).toBe(QUEUE_NAMES.MESSAGES_OUTBOUND);
-    expect(queueForEventType('webhook')).toBe(QUEUE_NAMES.MESSAGES_OUTBOUND);
+  it('reports event types that no queue handles', () => {
+    expect(queueForEventType('workspace.created')).toBeNull();
+    expect(queueForEventType('webhook')).toBeNull();
   });
 });

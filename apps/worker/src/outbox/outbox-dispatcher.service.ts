@@ -1,6 +1,11 @@
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { createJobEnvelope, QUEUE_NAMES, type QueueName } from '@vynor/contracts';
-import { claimPendingOutboxEvents, prisma, recoverExpiredOutboxLeases } from '@vynor/database';
+import {
+  claimPendingOutboxEvents,
+  prisma,
+  recoverExpiredOutboxLeases,
+  type OutboxEvent,
+} from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
 import { randomUUID } from 'node:crypto';
 import { PgBossService } from '../queue/pg-boss.service.js';
@@ -28,10 +33,10 @@ const QUEUE_BY_EVENT_PREFIX: ReadonlyArray<readonly [prefix: string, queue: Queu
 ];
 
 /** Queue for an outbox event type, chosen by its (case-insensitive) domain prefix. */
-export function queueForEventType(eventType: string): QueueName {
+export function queueForEventType(eventType: string): QueueName | null {
   const lower = eventType.toLowerCase();
   const match = QUEUE_BY_EVENT_PREFIX.find(([prefix]) => lower.startsWith(prefix));
-  return match ? match[1] : QUEUE_NAMES.MESSAGES_OUTBOUND;
+  return match ? match[1] : null;
 }
 
 @Injectable()
@@ -128,8 +133,8 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       for (const event of claimedEvents) {
         if (this.isShuttingDown) break;
 
-        const queueName = queueForEventType(event.eventType);
         const correlationId = event.correlationId || `evt_${event.id}`;
+        const queueName = this.queueFor(event, correlationId);
 
         try {
           const envelope = createJobEnvelope({
@@ -205,6 +210,17 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     }
 
     return dispatchedCount;
+  }
+
+  /** Unrouted event types still go to the outbound queue (as before), but visibly. */
+  private queueFor(event: OutboxEvent, correlationId: string): QueueName {
+    const queue = queueForEventType(event.eventType);
+    if (queue) return queue;
+    this.logger.warn(
+      { correlationId, eventId: event.id, eventType: event.eventType },
+      'No queue handles this outbox event type; dispatching it to the outbound message queue',
+    );
+    return QUEUE_NAMES.MESSAGES_OUTBOUND;
   }
 
   /**
