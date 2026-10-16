@@ -1,5 +1,5 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { type ActorContext, type AttachmentMetadata } from '@vynor/contracts';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { type ActorContext, type ApiEnv, type AttachmentMetadata } from '@vynor/contracts';
 import { prisma } from '@vynor/database';
 import {
   authorizeSignedDownload,
@@ -8,6 +8,7 @@ import {
   type SignedDownloadDenialReason,
 } from '@vynor/storage';
 import { AuditService } from '../audit/audit.service.js';
+import { API_ENV } from '../config/api-env.js';
 
 export interface SignedDownloadResponse {
   readonly attachmentId: string;
@@ -24,13 +25,16 @@ export interface SignedDownloadResponse {
 export class StorageService {
   private readonly storageClient: S3CompatibleStorage;
 
-  constructor(private readonly auditService: AuditService) {
+  constructor(
+    private readonly auditService: AuditService,
+    @Inject(API_ENV) env: ApiEnv,
+  ) {
     this.storageClient = createStorageClient({
-      endpoint: process.env.STORAGE_ENDPOINT || 'http://localhost:9000',
-      region: process.env.STORAGE_REGION || 'us-east-1',
-      accessKeyId: process.env.STORAGE_ACCESS_KEY_ID || 'local_storage_access_key',
-      secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY || 'local_storage_secret_key',
-      defaultBucket: process.env.STORAGE_BUCKET || 'vynor-crm-attachments',
+      endpoint: env.STORAGE_ENDPOINT,
+      region: env.STORAGE_REGION,
+      accessKeyId: env.STORAGE_ACCESS_KEY_ID,
+      secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY,
+      defaultBucket: env.STORAGE_BUCKET,
       forcePathStyle: true,
     });
   }

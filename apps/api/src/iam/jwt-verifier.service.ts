@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { type IamErrorCode } from '@vynor/contracts';
+import { Inject, Injectable } from '@nestjs/common';
+import { type ApiEnv, type IamErrorCode } from '@vynor/contracts';
 import * as jose from 'jose';
+import { API_ENV } from '../config/api-env.js';
 
 export interface VerifiedJwtClaims {
   sub: string;
@@ -23,27 +24,18 @@ export class JwtVerificationException extends Error {
   }
 }
 
+const VERIFY_OPTIONS: jose.JWTVerifyOptions = { audience: 'authenticated' };
+
 @Injectable()
 export class JwtVerifierService {
-  private readonly secretKey: Uint8Array | null = null;
-  private readonly jwksUrl: URL | null = null;
-  private remoteJwks: jose.JWTVerifyGetKey | null = null;
+  private readonly secretKey: Uint8Array;
+  private readonly remoteJwks: jose.JWTVerifyGetKey;
 
-  constructor() {
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (secret) {
-      this.secretKey = new TextEncoder().encode(secret);
-    }
-
-    const supabaseUrl = process.env.SUPABASE_URL;
-    if (supabaseUrl) {
-      try {
-        this.jwksUrl = new URL('/auth/v1/.well-known/jwks.json', supabaseUrl);
-        this.remoteJwks = jose.createRemoteJWKSet(this.jwksUrl);
-      } catch {
-        // Fallback to symmetric secret only if URL parsing fails
-      }
-    }
+  constructor(@Inject(API_ENV) env: ApiEnv) {
+    this.secretKey = new TextEncoder().encode(env.SUPABASE_JWT_SECRET);
+    this.remoteJwks = jose.createRemoteJWKSet(
+      new URL('/auth/v1/.well-known/jwks.json', env.SUPABASE_URL),
+    );
   }
 
   /**
@@ -61,58 +53,40 @@ export class JwtVerifierService {
       );
     }
 
-    // Try symmetric secret verification first (preferred, zero-latency local verification)
-    if (this.secretKey) {
-      try {
-        const { payload } = await jose.jwtVerify(token, this.secretKey, {
-          audience: 'authenticated',
-        });
-        return payload as VerifiedJwtClaims;
-      } catch (err) {
-        if (err instanceof jose.errors.JWTExpired) {
-          throw new JwtVerificationException(
-            'AUTH_TOKEN_EXPIRED',
-            'Authentication token has expired. Please refresh your session.',
-            err,
-          );
-        }
-        // If symmetric verification fails and we have a JWKS endpoint, try JWKS before erroring
-        if (!this.remoteJwks) {
-          throw new JwtVerificationException(
-            'AUTH_TOKEN_INVALID',
-            'Authentication token signature verification failed.',
-            err,
-          );
-        }
-      }
+    // The project's symmetric secret first: verified locally, without a network round trip.
+    try {
+      return await claimsOf(jose.jwtVerify(token, this.secretKey, VERIFY_OPTIONS));
+    } catch (err) {
+      if (err instanceof JwtVerificationException) throw err;
     }
 
-    // Fallback to asymmetric remote JWKS verification
-    if (this.remoteJwks) {
-      try {
-        const { payload } = await jose.jwtVerify(token, this.remoteJwks, {
-          audience: 'authenticated',
-        });
-        return payload as VerifiedJwtClaims;
-      } catch (err) {
-        if (err instanceof jose.errors.JWTExpired) {
-          throw new JwtVerificationException(
-            'AUTH_TOKEN_EXPIRED',
-            'Authentication token has expired. Please refresh your session.',
-            err,
-          );
-        }
-        throw new JwtVerificationException(
-          'AUTH_TOKEN_INVALID',
-          'Authentication token is invalid or signature verification failed.',
-          err,
-        );
-      }
+    // Projects that sign with asymmetric keys are verified against Supabase's JWKS endpoint.
+    try {
+      return await claimsOf(jose.jwtVerify(token, this.remoteJwks, VERIFY_OPTIONS));
+    } catch (err) {
+      if (err instanceof JwtVerificationException) throw err;
+      throw new JwtVerificationException(
+        'AUTH_TOKEN_INVALID',
+        'Authentication token is invalid or signature verification failed.',
+        err,
+      );
     }
+  }
+}
 
-    throw new JwtVerificationException(
-      'AUTH_TOKEN_INVALID',
-      'JWT verification service is misconfigured: neither SUPABASE_JWT_SECRET nor valid SUPABASE_URL configured.',
-    );
+/** Unwraps verified claims. An expired token is final; other failures are rethrown as-is. */
+async function claimsOf(verification: Promise<jose.JWTVerifyResult>): Promise<VerifiedJwtClaims> {
+  try {
+    const { payload } = await verification;
+    return payload as VerifiedJwtClaims;
+  } catch (err) {
+    if (err instanceof jose.errors.JWTExpired) {
+      throw new JwtVerificationException(
+        'AUTH_TOKEN_EXPIRED',
+        'Authentication token has expired. Please refresh your session.',
+        err,
+      );
+    }
+    throw err;
   }
 }
