@@ -1,16 +1,17 @@
 import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';
-import { loadEnvFileIfPresent, validateEnv, WorkerEnvSchema } from '@vynor/contracts';
+import { loadEnvFileIfPresent } from '@vynor/contracts';
 import { createLogger, generateCorrelationId } from '@vynor/observability';
 
+import { getWorkerEnv } from './config/worker-env.js';
 import { WorkerModule } from './worker.module.js';
 
 // Load local .env if present
 loadEnvFileIfPresent();
 
 // FND-011 / FND-017: Validate environment variables on startup.
-const env = validateEnv(WorkerEnvSchema, process.env);
+const env = getWorkerEnv();
 
 // FND-043: Initialize Pino structured logger
 const logger = createLogger({

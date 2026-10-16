@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import {
@@ -19,6 +20,8 @@ import { IS_PUBLIC_KEY, REQUIRED_PERMISSIONS_KEY } from './decorators.js';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
+  private readonly logger = new Logger(PermissionGuard.name);
+
   constructor(
     private readonly reflector: Reflector,
     private readonly auditService: AuditService,
@@ -81,8 +84,13 @@ export class PermissionGuard implements CanActivate {
             method: request.method,
           },
         });
-      } catch {
+      } catch (error) {
         // Audit recording failure must not mask authorization denial
+        this.logger.warn(
+          `Could not record permission-denied audit event (${request.correlationId}): ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
       }
 
       const payload: IamErrorResponse = {

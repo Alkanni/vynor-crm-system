@@ -59,3 +59,17 @@ export type ChannelPollingEnv = z.infer<typeof ChannelPollingEnvSchema>;
 export function requiresEncryptionKey(appEnv: string): boolean {
   return appEnv === 'staging' || appEnv === 'production';
 }
+
+/** `superRefine` check: staging and production must set ENCRYPTION_MASTER_KEY. */
+export function refineEncryptionKeyRequired(
+  env: { APP_ENV: string; ENCRYPTION_MASTER_KEY?: string | undefined },
+  ctx: z.RefinementCtx,
+): void {
+  if (requiresEncryptionKey(env.APP_ENV) && !env.ENCRYPTION_MASTER_KEY) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['ENCRYPTION_MASTER_KEY'],
+      message: 'ENCRYPTION_MASTER_KEY is required in staging and production',
+    });
+  }
+}

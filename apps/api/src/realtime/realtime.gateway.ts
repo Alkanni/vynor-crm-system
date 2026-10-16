@@ -33,10 +33,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly jwtVerifier: JwtVerifierService,
     private readonly actorContextService: ActorContextService,
   ) {
-    this.logger = createLogger({
-      service: 'vynor-api',
-      environment: process.env.NODE_ENV || 'development',
-    });
+    this.logger = createLogger({ service: 'vynor-api' });
   }
 
   getServer(): Server | undefined {
@@ -106,7 +103,12 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         },
         'Realtime client authenticated and joined workspace room',
       );
-    } catch {
+    } catch (error) {
+      // Missing memberships and lookup failures both end up here; the log tells them apart.
+      this.logger.warn(
+        { socketId: socket.id, workspaceId, err: { message: errorMessage(error) } },
+        'Realtime client rejected while joining its workspace room',
+      );
       this.rejectConnection(
         socket,
         'WORKSPACE_ACCESS_DENIED',
@@ -162,7 +164,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       socket.emit('resync', resyncInstruction);
 
       return { success: true };
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        { socketId: socket.id, err: { message: errorMessage(error) } },
+        'Realtime client could not join a conversation room',
+      );
       return { success: false, error: 'Failed to join conversation room' };
     }
   }
@@ -190,7 +196,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       return { success: true };
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        { socketId: socket.id, err: { message: errorMessage(error) } },
+        'Realtime client could not leave a conversation room',
+      );
       return { success: false };
     }
   }
@@ -199,4 +209,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     socket.emit('auth:error', { code, message, timestamp: new Date().toISOString() });
     socket.disconnect(true);
   }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

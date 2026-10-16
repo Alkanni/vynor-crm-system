@@ -11,9 +11,6 @@ describe('Database Integration Test Harness & Outbox Rollback (FND-TST-003, FND-
   let prisma: PrismaClient;
 
   beforeAll(async () => {
-    process.env.DATABASE_URL =
-      process.env.DATABASE_URL ||
-      'postgresql://postgres:postgres@localhost:5434/vynor?schema=public';
     prisma = createTestPrismaClient();
 
     // Ensure system seed roles exist for test asserting on preserved seed data

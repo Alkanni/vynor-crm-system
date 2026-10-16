@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 import type { ReplayProviderEventRequest, ReplayProviderEventResult } from '@vynor/contracts';
 import { prisma, type AnyPrismaClient } from './client.js';
+import { isUniqueConstraintViolation } from './errors.js';
 import { generateUuidV7 } from './id.js';
 import { createOutboxEvent } from './outbox.js';
 
@@ -67,7 +68,7 @@ export async function persistProviderEvent(
       event,
     };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (isUniqueConstraintViolation(error)) {
       // Duplicate delivery detected (FND-069, AD-005)
       const existing = await client.providerEvent.findUnique({
         where: {

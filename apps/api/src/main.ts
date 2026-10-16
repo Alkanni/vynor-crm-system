@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { ApiEnvSchema, loadEnvFileIfPresent, validateEnv } from '@vynor/contracts';
+import { loadEnvFileIfPresent } from '@vynor/contracts';
 import { createLogger, generateCorrelationId } from '@vynor/observability';
 
 import { AppModule } from './app.module.js';
@@ -10,13 +10,14 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter.js';
 import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor.js';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor.js';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe.js';
+import { getApiEnv } from './config/api-env.js';
 
 // Load local .env if present
 loadEnvFileIfPresent();
 
 // FND-011 / FND-017: Validate environment variables on startup.
 // Crashes immediately with descriptive diagnostics if configuration is invalid or missing.
-const env = validateEnv(ApiEnvSchema, process.env);
+const env = getApiEnv();
 
 // rawBody keeps the exact request bytes that provider webhook signatures are computed over.
 const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });

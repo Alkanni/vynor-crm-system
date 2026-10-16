@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { ExecutionContext, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { ActorContext } from '@vynor/contracts';
 import { PolicyService } from '../src/iam/policy.service.js';
@@ -168,6 +168,23 @@ describe('Authentication Failure & Permission Matrix Paths (FND-TST-004)', () =>
           resourceId: 'campaign:manage',
         }),
       );
+    });
+
+    it('still denies access, and logs the cause, when the audit write fails', async () => {
+      vi.mocked(mockReflector.getAllAndOverride)
+        .mockReturnValueOnce(false) // IS_PUBLIC = false
+        .mockReturnValueOnce(['campaign:manage']); // REQUIRED_PERMISSIONS
+      vi.mocked(mockAuditService.recordForActor).mockRejectedValueOnce(new Error('db down'));
+      const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+
+      const denial = await permissionGuard
+        .canActivate(createMockContext(mockAgentActor))
+        .catch((error: unknown) => error);
+
+      expect(denial).toBeInstanceOf(HttpException);
+      expect((denial as HttpException).getStatus()).toBe(HttpStatus.FORBIDDEN);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('db down'));
+      warn.mockRestore();
     });
   });
 

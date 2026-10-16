@@ -1,34 +1,23 @@
-import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import { QUEUE_CONFIGS, type QueueName } from '@vynor/contracts';
+import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { QUEUE_CONFIGS, type QueueName, type WorkerEnv } from '@vynor/contracts';
 import { createLogger, type Logger } from '@vynor/observability';
 import { PgBoss } from 'pg-boss';
+import { WORKER_ENV } from '../config/worker-env.js';
 
 @Injectable()
 export class PgBossService implements OnModuleInit, OnModuleDestroy {
   private boss: PgBoss | null = null;
   private readonly logger: Logger;
 
-  constructor() {
-    this.logger = createLogger({
-      service: 'vynor-worker',
-      environment: process.env.NODE_ENV || 'development',
-    });
+  constructor(@Inject(WORKER_ENV) private readonly env: WorkerEnv) {
+    this.logger = createLogger({ service: 'vynor-worker' });
   }
 
   async onModuleInit(): Promise<void> {
-    const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
-    if (!connectionString) {
-      this.logger.warn(
-        { correlationId: 'queue_init' },
-        'DATABASE_URL not configured. pg-boss queue service skipped in current environment.',
-      );
-      return;
-    }
-
     try {
       this.boss = new PgBoss({
-        connectionString,
-        schema: 'pgboss',
+        connectionString: this.env.DATABASE_URL,
+        schema: this.env.PG_BOSS_SCHEMA,
         max: 10,
       });
 
@@ -55,8 +44,16 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
             retryLimit: config.retryLimit,
             retryDelay: config.retryDelaySeconds,
           });
-        } catch {
-          // Queue may already exist; safe to ignore
+        } catch (err) {
+          // createQueue is idempotent in pg-boss 12, so this is a real failure; keep creating the rest.
+          this.logger.warn(
+            {
+              correlationId: 'queue_init',
+              queue: config.name,
+              err: { message: (err as Error).message },
+            },
+            'Failed to create pg-boss queue',
+          );
         }
       }
     } catch (err) {
@@ -79,10 +76,6 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
       await this.boss.stop({ graceful: true, timeout: 15000 });
       this.boss = null;
     }
-  }
-
-  getClient(): PgBoss | null {
-    return this.boss;
   }
 
   /**

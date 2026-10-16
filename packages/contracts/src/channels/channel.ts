@@ -41,6 +41,18 @@ export const DEFAULT_INBOX_SETTINGS: InboxSettings = {
 };
 
 /**
+ * Reads inbox settings stored as JSON. Missing keys take their defaults; a stored value that
+ * fails validation yields the defaults as a whole.
+ */
+export function readInboxSettings(value: unknown): InboxSettings {
+  const parsed = InboxSettingsSchema.safeParse({
+    ...DEFAULT_INBOX_SETTINGS,
+    ...(value && typeof value === 'object' ? value : {}),
+  });
+  return parsed.success ? parsed.data : DEFAULT_INBOX_SETTINGS;
+}
+
+/**
  * How messages reach VYNOR: provider webhooks, polling by the worker (IMAP, or Telegram when no
  * public HTTPS URL is configured), or the embedded web widget.
  */

@@ -1,21 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  DEFAULT_INBOX_SETTINGS,
-  InboxSettingsSchema,
   isDeliveryStatusMonotonic,
+  readInboxSettings,
   summarizeMessageContent,
   truncatePreview,
   type DeliveryStatus,
-  type InboxSettings,
   type NormalizedDeliveryReceipt,
   type NormalizedInboundMessage,
 } from '@vynor/contracts';
 import {
   generateUuidV7,
+  isUniqueConstraintViolation,
   notifyRealtime,
   prisma,
   Prisma,
   withTransaction,
+  type ContactIdentity,
   type Conversation,
   type ProviderAccount,
 } from '@vynor/database';
@@ -42,14 +42,6 @@ const OPEN_STATUSES = ['OPEN', 'PENDING'] as const;
 const MAX_BACKDATE_MS = 7 * 24 * 3600_000;
 const MAX_FUTURE_MS = 5 * 60_000;
 
-function readSettings(value: unknown): InboxSettings {
-  const parsed = InboxSettingsSchema.safeParse({
-    ...DEFAULT_INBOX_SETTINGS,
-    ...(value && typeof value === 'object' ? value : {}),
-  });
-  return parsed.success ? parsed.data : DEFAULT_INBOX_SETTINGS;
-}
-
 function metadataString(
   metadata: Record<string, unknown> | undefined,
   key: string,
@@ -58,8 +50,18 @@ function metadataString(
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function isUniqueViolation(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+/** Unique key of a message as the provider identifies it on one channel. */
+function providerMessageKey(providerAccountId: string, providerMessageId: string) {
+  return { providerAccountId_providerMessageId: { providerAccountId, providerMessageId } };
+}
+
+/** The provider's send time when plausible, otherwise the receive time. Orders the timeline. */
+function timelineTimestamp(sentAt: Date, receivedAt: Date): Date {
+  const sent = sentAt.getTime();
+  const received = receivedAt.getTime();
+  const plausible =
+    !Number.isNaN(sent) && received - MAX_BACKDATE_MS <= sent && sent <= received + MAX_FUTURE_MS;
+  return plausible ? sentAt : receivedAt;
 }
 
 /**
@@ -82,23 +84,8 @@ export class ConversationIngestService {
     providerEventId: string,
     messageId: string = generateUuidV7(),
   ): Promise<IngestResult> {
-    const existing = await prisma.message.findUnique({
-      where: {
-        providerAccountId_providerMessageId: {
-          providerAccountId: channel.id,
-          providerMessageId: message.providerMessageId,
-        },
-      },
-      select: { id: true, conversationId: true },
-    });
-    if (existing) {
-      return {
-        messageId: existing.id,
-        conversationId: existing.conversationId,
-        duplicate: true,
-        createdConversation: false,
-      };
-    }
+    const existing = await this.findDuplicate(channel, message.providerMessageId);
+    if (existing) return existing;
 
     try {
       return await withTransaction(prisma, (tx) =>
@@ -106,27 +93,30 @@ export class ConversationIngestService {
       );
     } catch (error) {
       // A concurrent job stored the same provider message first.
-      if (isUniqueViolation(error)) {
-        const stored = await prisma.message.findUnique({
-          where: {
-            providerAccountId_providerMessageId: {
-              providerAccountId: channel.id,
-              providerMessageId: message.providerMessageId,
-            },
-          },
-          select: { id: true, conversationId: true },
-        });
-        if (stored) {
-          return {
-            messageId: stored.id,
-            conversationId: stored.conversationId,
-            duplicate: true,
-            createdConversation: false,
-          };
-        }
+      if (isUniqueConstraintViolation(error)) {
+        const stored = await this.findDuplicate(channel, message.providerMessageId);
+        if (stored) return stored;
       }
       throw error;
     }
+  }
+
+  /** The already stored copy of a provider message, reported as a duplicate. */
+  private async findDuplicate(
+    channel: ProviderAccount,
+    providerMessageId: string,
+  ): Promise<IngestResult | null> {
+    const stored = await prisma.message.findUnique({
+      where: providerMessageKey(channel.id, providerMessageId),
+      select: { id: true, conversationId: true },
+    });
+    if (!stored) return null;
+    return {
+      messageId: stored.id,
+      conversationId: stored.conversationId,
+      duplicate: true,
+      createdConversation: false,
+    };
   }
 
   private async ingestInTransaction(
@@ -141,142 +131,24 @@ export class ConversationIngestService {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`ingest:${channel.id}:${message.sender.identifier}`}, 0))`;
 
     const now = new Date();
-    const sender = message.sender;
-    const senderMeta = sender.metadata;
-    const email = metadataString(senderMeta, 'email');
-    const phone = metadataString(senderMeta, 'phone');
-    const username = metadataString(senderMeta, 'username');
-    const displayName = (sender.displayName ?? sender.identifier).slice(0, 255);
+    const displayName = (message.sender.displayName ?? message.sender.identifier).slice(0, 255);
+    const identity = await this.upsertSenderIdentity(tx, channel, message.sender, displayName, now);
+    const { conversation, created: createdConversation } = await this.resolveConversation(
+      tx,
+      channel,
+      message,
+      identity,
+    );
 
-    // 1. Contact + channel identity.
-    let identity = await tx.contactIdentity.findUnique({
-      where: {
-        providerAccountId_externalId: {
-          providerAccountId: channel.id,
-          externalId: sender.identifier,
-        },
-      },
-      include: { contact: true },
-    });
-    if (!identity) {
-      const contact = await tx.contact.create({
-        data: {
-          workspaceId: channel.workspaceId,
-          displayName,
-          email: email ?? null,
-          phone: phone ?? null,
-          avatarUrl: sender.avatarUrl ?? null,
-        },
-      });
-      identity = await tx.contactIdentity.create({
-        data: {
-          workspaceId: channel.workspaceId,
-          contactId: contact.id,
-          providerAccountId: channel.id,
-          channelType: channel.channelType,
-          externalId: sender.identifier,
-          displayName,
-          username: username ?? null,
-          lastSeenAt: now,
-        },
-        include: { contact: true },
-      });
-    } else {
-      // Keep names fresh unless someone renamed the contact by hand.
-      const contactWasAutoNamed = identity.contact.displayName === identity.displayName;
-      await tx.contactIdentity.update({
-        where: { id: identity.id },
-        data: { displayName, lastSeenAt: now, ...(username ? { username } : {}) },
-      });
-      await tx.contact.update({
-        where: { id: identity.contactId },
-        data: {
-          ...(contactWasAutoNamed && displayName !== identity.contact.displayName
-            ? { displayName }
-            : {}),
-          ...(!identity.contact.email && email ? { email } : {}),
-          ...(!identity.contact.phone && phone ? { phone } : {}),
-          ...(!identity.contact.avatarUrl && sender.avatarUrl
-            ? { avatarUrl: sender.avatarUrl }
-            : {}),
-        },
-      });
-    }
-
-    // 2. Conversation: email threads by Message-ID chain, chats by the open conversation.
-    const threadId = metadataString(message.metadata, 'threadId');
-    const subject = metadataString(message.metadata, 'subject');
-    let conversation: Conversation | null;
-
-    if (threadId) {
-      conversation = await tx.conversation.findFirst({
-        where: { providerAccountId: channel.id, externalThreadId: threadId },
-        orderBy: { createdAt: 'desc' },
-      });
-      if (!conversation && message.replyContext) {
-        const target = await tx.message.findUnique({
-          where: {
-            providerAccountId_providerMessageId: {
-              providerAccountId: channel.id,
-              providerMessageId: message.replyContext.targetProviderMessageId,
-            },
-          },
-          select: { conversationId: true },
-        });
-        if (target)
-          conversation = await tx.conversation.findUnique({ where: { id: target.conversationId } });
-      }
-    } else {
-      conversation = await tx.conversation.findFirst({
-        where: {
-          providerAccountId: channel.id,
-          contactIdentityId: identity.id,
-          status: { in: [...OPEN_STATUSES] },
-        },
-        orderBy: [{ lastMessageAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
-      });
-    }
-
-    let createdConversation = false;
-    if (!conversation) {
-      const assignee = await this.chooseAssignee(tx, channel, identity.id);
-      conversation = await tx.conversation.create({
-        data: {
-          workspaceId: channel.workspaceId,
-          providerAccountId: channel.id,
-          contactId: identity.contactId,
-          contactIdentityId: identity.id,
-          status: 'OPEN',
-          assigneeMembershipId: assignee,
-          subject: subject?.slice(0, 500) ?? null,
-          externalThreadId: threadId?.slice(0, 512) ?? null,
-        },
-      });
-      createdConversation = true;
-    }
-
-    // 3. Message.
     const text = summarizeMessageContent(message.content);
     const sentAt = new Date(message.timestamp);
-    const createdAt =
-      Number.isNaN(sentAt.getTime()) ||
-      sentAt.getTime() < now.getTime() - MAX_BACKDATE_MS ||
-      sentAt.getTime() > now.getTime() + MAX_FUTURE_MS
-        ? now
-        : sentAt;
-    let replyToMessageId: string | null = null;
-    if (message.replyContext) {
-      const target = await tx.message.findUnique({
-        where: {
-          providerAccountId_providerMessageId: {
-            providerAccountId: channel.id,
-            providerMessageId: message.replyContext.targetProviderMessageId,
-          },
-        },
-        select: { id: true },
-      });
-      replyToMessageId = target?.id ?? null;
-    }
+    const createdAt = timelineTimestamp(sentAt, now);
+    const replyTarget = message.replyContext
+      ? await tx.message.findUnique({
+          where: providerMessageKey(channel.id, message.replyContext.targetProviderMessageId),
+          select: { id: true },
+        })
+      : null;
 
     const content = {
       ...message.content,
@@ -295,7 +167,7 @@ export class ConversationIngestService {
         content,
         text,
         providerMessageId: message.providerMessageId,
-        replyToMessageId,
+        replyToMessageId: replyTarget?.id ?? null,
         status: 'DELIVERED',
         providerEventId,
         sentAt,
@@ -304,7 +176,7 @@ export class ConversationIngestService {
       },
     });
 
-    // 4. Conversation counters; a customer message reopens pending or resolved threads.
+    // A customer message reopens pending or resolved threads.
     const isLatest = !conversation.lastMessageAt || createdAt >= conversation.lastMessageAt;
     await tx.conversation.update({
       where: { id: conversation.id },
@@ -332,6 +204,131 @@ export class ConversationIngestService {
     return { messageId, conversationId: conversation.id, duplicate: false, createdConversation };
   }
 
+  /** Finds or creates the sender's identity on this channel and keeps its contact details fresh. */
+  private async upsertSenderIdentity(
+    tx: Prisma.TransactionClient,
+    channel: ProviderAccount,
+    sender: InboundMessageInput['sender'],
+    displayName: string,
+    now: Date,
+  ): Promise<Pick<ContactIdentity, 'id' | 'contactId'>> {
+    const email = metadataString(sender.metadata, 'email');
+    const phone = metadataString(sender.metadata, 'phone');
+    const username = metadataString(sender.metadata, 'username');
+
+    const identity = await tx.contactIdentity.findUnique({
+      where: {
+        providerAccountId_externalId: {
+          providerAccountId: channel.id,
+          externalId: sender.identifier,
+        },
+      },
+      include: { contact: true },
+    });
+    if (!identity) {
+      const contact = await tx.contact.create({
+        data: {
+          workspaceId: channel.workspaceId,
+          displayName,
+          email: email ?? null,
+          phone: phone ?? null,
+          avatarUrl: sender.avatarUrl ?? null,
+        },
+      });
+      return tx.contactIdentity.create({
+        data: {
+          workspaceId: channel.workspaceId,
+          contactId: contact.id,
+          providerAccountId: channel.id,
+          channelType: channel.channelType,
+          externalId: sender.identifier,
+          displayName,
+          username: username ?? null,
+          lastSeenAt: now,
+        },
+      });
+    }
+
+    // Keep names fresh unless someone renamed the contact by hand.
+    const contactWasAutoNamed = identity.contact.displayName === identity.displayName;
+    await tx.contactIdentity.update({
+      where: { id: identity.id },
+      data: { displayName, lastSeenAt: now, ...(username ? { username } : {}) },
+    });
+    await tx.contact.update({
+      where: { id: identity.contactId },
+      data: {
+        ...(contactWasAutoNamed && displayName !== identity.contact.displayName
+          ? { displayName }
+          : {}),
+        ...(!identity.contact.email && email ? { email } : {}),
+        ...(!identity.contact.phone && phone ? { phone } : {}),
+        ...(!identity.contact.avatarUrl && sender.avatarUrl ? { avatarUrl: sender.avatarUrl } : {}),
+      },
+    });
+    return identity;
+  }
+
+  /**
+   * The conversation a message belongs to: email threads by Message-ID chain (in any status),
+   * chats by the sender's open or pending conversation. Starts one when nothing matches.
+   */
+  private async resolveConversation(
+    tx: Prisma.TransactionClient,
+    channel: ProviderAccount,
+    message: InboundMessageInput,
+    identity: Pick<ContactIdentity, 'id' | 'contactId'>,
+  ): Promise<{ conversation: Conversation; created: boolean }> {
+    const threadId = metadataString(message.metadata, 'threadId');
+    const existing = threadId
+      ? await this.findEmailThread(tx, channel.id, threadId, message.replyContext)
+      : await tx.conversation.findFirst({
+          where: {
+            providerAccountId: channel.id,
+            contactIdentityId: identity.id,
+            status: { in: [...OPEN_STATUSES] },
+          },
+          orderBy: [{ lastMessageAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
+        });
+    if (existing) return { conversation: existing, created: false };
+
+    const subject = metadataString(message.metadata, 'subject');
+    const assignee = await this.chooseAssignee(tx, channel, identity.id);
+    const conversation = await tx.conversation.create({
+      data: {
+        workspaceId: channel.workspaceId,
+        providerAccountId: channel.id,
+        contactId: identity.contactId,
+        contactIdentityId: identity.id,
+        status: 'OPEN',
+        assigneeMembershipId: assignee,
+        subject: subject?.slice(0, 500) ?? null,
+        externalThreadId: threadId?.slice(0, 512) ?? null,
+      },
+    });
+    return { conversation, created: true };
+  }
+
+  /** The thread's latest conversation, else the conversation of the message being replied to. */
+  private async findEmailThread(
+    tx: Prisma.TransactionClient,
+    providerAccountId: string,
+    threadId: string,
+    replyContext: InboundMessageInput['replyContext'],
+  ): Promise<Conversation | null> {
+    const byThread = await tx.conversation.findFirst({
+      where: { providerAccountId, externalThreadId: threadId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (byThread || !replyContext) return byThread;
+
+    const target = await tx.message.findUnique({
+      where: providerMessageKey(providerAccountId, replyContext.targetProviderMessageId),
+      select: { conversationId: true },
+    });
+    return target ? tx.conversation.findUnique({ where: { id: target.conversationId } }) : null;
+  }
+
   /**
    * Chat Distribution Method for new conversations: Preferred Agent first (if enabled), then
    * Least Assigned or Round Robin among the inbox's human agents, honouring the per-agent cap.
@@ -341,7 +338,7 @@ export class ConversationIngestService {
     channel: ProviderAccount,
     contactIdentityId: string,
   ): Promise<string | null> {
-    const settings = readSettings(channel.settings);
+    const settings = readInboxSettings(channel.settings);
     if (settings.distributionMethod === 'MANUAL') return null;
 
     const members = await tx.providerAccountMember.findMany({
@@ -416,12 +413,7 @@ export class ConversationIngestService {
     }
 
     const message = await prisma.message.findUnique({
-      where: {
-        providerAccountId_providerMessageId: {
-          providerAccountId: channel.id,
-          providerMessageId: receipt.providerMessageId,
-        },
-      },
+      where: providerMessageKey(channel.id, receipt.providerMessageId),
     });
     if (!message) {
       // Also matches Custom API status callbacks that reference VYNOR's own message ID.
@@ -500,14 +492,15 @@ export class ConversationIngestService {
         ? receipt.metadata.watermark
         : receipt.timestamp,
     );
-    const lowerStatuses: DeliveryStatus[] =
-      receipt.status === 'READ' ? ['PENDING', 'SENT', 'DELIVERED'] : ['PENDING', 'SENT'];
+    // Replies still PENDING were never sent, so no watermark covers them.
+    const advanceable: DeliveryStatus[] =
+      receipt.status === 'READ' ? ['SENT', 'DELIVERED'] : ['SENT'];
     const candidates = await prisma.message.findMany({
       where: {
         providerAccountId: channel.id,
         direction: 'OUTBOUND',
         isPrivate: false,
-        status: { in: lowerStatuses.filter((s) => s !== 'PENDING') },
+        status: { in: advanceable },
         sentAt: { lte: watermark },
         conversation: { contactIdentityId: identity.id },
       },

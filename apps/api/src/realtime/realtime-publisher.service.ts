@@ -12,10 +12,7 @@ export class RealtimePublisherService {
   private readonly logger: Logger;
 
   constructor(private readonly gateway: RealtimeGateway) {
-    this.logger = createLogger({
-      service: 'vynor-api',
-      environment: process.env.NODE_ENV || 'development',
-    });
+    this.logger = createLogger({ service: 'vynor-api' });
   }
 
   /**
