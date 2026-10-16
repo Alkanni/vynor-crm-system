@@ -5,6 +5,35 @@ import { createLogger, type Logger } from '@vynor/observability';
 import { randomUUID } from 'node:crypto';
 import { PgBossService } from '../queue/pg-boss.service.js';
 
+/** How often pending outbox rows are claimed and handed to pg-boss. */
+const POLL_INTERVAL_MS = 1_000;
+/** How often leases left behind by crashed workers are reclaimed. */
+const LEASE_RECOVERY_INTERVAL_MS = 30_000;
+const CLAIM_BATCH_SIZE = 50;
+const CLAIM_LEASE_SECONDS = 60;
+/** Dispatch attempts before an event is moved to DEAD_LETTER. */
+const MAX_DISPATCH_ATTEMPTS = 5;
+/** Shutdown waits up to SHUTDOWN_WAIT_STEPS × SHUTDOWN_WAIT_STEP_MS for a running poll cycle. */
+const SHUTDOWN_WAIT_STEP_MS = 100;
+const SHUTDOWN_WAIT_STEPS = 30;
+
+/** Outbox event type prefix → pg-boss queue that handles it. */
+const QUEUE_BY_EVENT_PREFIX: ReadonlyArray<readonly [prefix: string, queue: QueueName]> = [
+  ['message.', QUEUE_NAMES.MESSAGES_OUTBOUND],
+  ['webhook.', QUEUE_NAMES.WEBHOOKS_PROCESS],
+  ['campaign.', QUEUE_NAMES.CAMPAIGNS_DISPATCH],
+  ['conversation.', QUEUE_NAMES.CONVERSATIONS_ROUTE],
+  ['ai.', QUEUE_NAMES.AI_GENERATE],
+  ['audit.', QUEUE_NAMES.AUDIT_EXPORT],
+];
+
+/** Queue for an outbox event type, chosen by its (case-insensitive) domain prefix. */
+export function queueForEventType(eventType: string): QueueName {
+  const lower = eventType.toLowerCase();
+  const match = QUEUE_BY_EVENT_PREFIX.find(([prefix]) => lower.startsWith(prefix));
+  return match ? match[1] : QUEUE_NAMES.MESSAGES_OUTBOUND;
+}
+
 @Injectable()
 export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
   private readonly workerId = `worker_${process.pid}_${randomUUID().slice(0, 8)}`;
@@ -28,15 +57,13 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       'Starting Transactional Outbox dispatcher loop and lease recovery...',
     );
 
-    // Poll outbox every 1 second
     this.pollTimer = setInterval(() => {
       void this.pollAndDispatch();
-    }, 1000);
+    }, POLL_INTERVAL_MS);
 
-    // Run lease recovery every 30 seconds
     this.recoverTimer = setInterval(() => {
       void this.runLeaseRecovery();
-    }, 30000);
+    }, LEASE_RECOVERY_INTERVAL_MS);
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -53,8 +80,8 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
 
     // Wait if a poll cycle is actively running
     let waitCount = 0;
-    while (this.isProcessing && waitCount < 30) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    while (this.isProcessing && waitCount < SHUTDOWN_WAIT_STEPS) {
+      await new Promise((resolve) => setTimeout(resolve, SHUTDOWN_WAIT_STEP_MS));
       waitCount++;
     }
 
@@ -77,7 +104,12 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
 
     try {
       // 1. Claim pending events safely with SKIP LOCKED (FND-058)
-      const claimedEvents = await claimPendingOutboxEvents(prisma, this.workerId, 50, 60);
+      const claimedEvents = await claimPendingOutboxEvents(
+        prisma,
+        this.workerId,
+        CLAIM_BATCH_SIZE,
+        CLAIM_LEASE_SECONDS,
+      );
 
       if (claimedEvents.length === 0) {
         return 0;
@@ -96,7 +128,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       for (const event of claimedEvents) {
         if (this.isShuttingDown) break;
 
-        const queueName = this.resolveQueueName(event.eventType);
+        const queueName = queueForEventType(event.eventType);
         const correlationId = event.correlationId || `evt_${event.id}`;
 
         try {
@@ -146,7 +178,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
             'Failed to dispatch outbox event to pg-boss',
           );
 
-          const isExhausted = event.retryCount + 1 >= 5;
+          const isExhausted = event.retryCount + 1 >= MAX_DISPATCH_ATTEMPTS;
           await prisma.outboxEvent.update({
             where: { id: event.id },
             data: {
@@ -180,7 +212,10 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
    */
   async runLeaseRecovery(): Promise<void> {
     try {
-      const { recoveredCount, deadLetterCount } = await recoverExpiredOutboxLeases(prisma, 5);
+      const { recoveredCount, deadLetterCount } = await recoverExpiredOutboxLeases(
+        prisma,
+        MAX_DISPATCH_ATTEMPTS,
+      );
 
       if (recoveredCount > 0 || deadLetterCount > 0) {
         this.logger.warn(
@@ -201,33 +236,5 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
         'Failed to execute outbox lease recovery',
       );
     }
-  }
-
-  /**
-   * Maps domain eventType to target pg-boss queue name.
-   */
-  private resolveQueueName(eventType: string): QueueName {
-    const lower = eventType.toLowerCase();
-
-    if (lower.startsWith('message.')) {
-      return QUEUE_NAMES.MESSAGES_OUTBOUND;
-    }
-    if (lower.startsWith('webhook.')) {
-      return QUEUE_NAMES.WEBHOOKS_PROCESS;
-    }
-    if (lower.startsWith('campaign.')) {
-      return QUEUE_NAMES.CAMPAIGNS_DISPATCH;
-    }
-    if (lower.startsWith('conversation.')) {
-      return QUEUE_NAMES.CONVERSATIONS_ROUTE;
-    }
-    if (lower.startsWith('ai.')) {
-      return QUEUE_NAMES.AI_GENERATE;
-    }
-    if (lower.startsWith('audit.')) {
-      return QUEUE_NAMES.AUDIT_EXPORT;
-    }
-
-    return QUEUE_NAMES.MESSAGES_OUTBOUND;
   }
 }
