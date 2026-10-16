@@ -44,8 +44,16 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
             retryLimit: config.retryLimit,
             retryDelay: config.retryDelaySeconds,
           });
-        } catch {
-          // Queue may already exist; safe to ignore
+        } catch (err) {
+          // createQueue is idempotent in pg-boss 12, so this is a real failure; keep creating the rest.
+          this.logger.warn(
+            {
+              correlationId: 'queue_init',
+              queue: config.name,
+              err: { message: (err as Error).message },
+            },
+            'Failed to create pg-boss queue',
+          );
         }
       }
     } catch (err) {

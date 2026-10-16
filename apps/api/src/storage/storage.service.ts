@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { type ActorContext, type ApiEnv, type AttachmentMetadata } from '@vynor/contracts';
 import { prisma } from '@vynor/database';
 import {
@@ -23,6 +23,7 @@ export interface SignedDownloadResponse {
 
 @Injectable()
 export class StorageService {
+  private readonly logger = new Logger(StorageService.name);
   private readonly storageClient: S3CompatibleStorage;
 
   constructor(
@@ -126,8 +127,13 @@ export class StorageService {
           purpose: attachment.purpose,
         },
       });
-    } catch {
+    } catch (error) {
       // Audit write must not fail download delivery
+      this.logger.warn(
+        `Could not record download audit event for attachment ${attachment.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
 
     return {
