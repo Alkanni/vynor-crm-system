@@ -14,6 +14,7 @@ import {
   type RealtimeResyncInstruction,
   type RealtimeSocketContext,
 } from '@vynor/contracts';
+import { prisma } from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
 import type { Server, Socket } from 'socket.io';
 import { ActorContextService } from '../iam/actor-context.service.js';
@@ -123,7 +124,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   /**
    * Subscribe to conversation events room (FND-076).
-   * Enforces conversation:read permission before joining.
+   * Enforces conversation:read permission and the workspace boundary (AD-008) before joining.
    */
   @SubscribeMessage('join:conversation')
   async handleJoinConversation(
@@ -144,6 +145,15 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     try {
+      // Unknown and other-workspace conversations get the same answer, so IDs cannot be probed.
+      const conversation = await prisma.conversation.findFirst({
+        where: { id: payload.conversationId, workspaceId: context.actor.workspace.id },
+        select: { id: true },
+      });
+      if (!conversation) {
+        return { success: false, error: 'Conversation not found' };
+      }
+
       const room = conversationRoomName(payload.conversationId);
       await socket.join(room);
 
