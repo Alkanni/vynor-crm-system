@@ -36,10 +36,7 @@ interface Schedule {
  */
 @Injectable()
 export class ChannelPollingService implements OnApplicationBootstrap, OnApplicationShutdown {
-  private readonly logger: Logger = createLogger({
-    service: 'vynor-worker',
-    environment: process.env.NODE_ENV || 'development',
-  });
+  private readonly logger: Logger = createLogger({ service: 'vynor-worker' });
   private readonly schedules = new Map<string, Schedule>();
   private readonly inFlight = new Set<string>();
   private channels: ProviderAccount[] = [];

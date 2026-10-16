@@ -33,10 +33,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly jwtVerifier: JwtVerifierService,
     private readonly actorContextService: ActorContextService,
   ) {
-    this.logger = createLogger({
-      service: 'vynor-api',
-      environment: process.env.NODE_ENV || 'development',
-    });
+    this.logger = createLogger({ service: 'vynor-api' });
   }
 
   getServer(): Server | undefined {

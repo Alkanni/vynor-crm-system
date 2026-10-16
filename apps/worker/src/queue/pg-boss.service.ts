@@ -10,10 +10,7 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
   private readonly logger: Logger;
 
   constructor(@Inject(WORKER_ENV) private readonly env: WorkerEnv) {
-    this.logger = createLogger({
-      service: 'vynor-worker',
-      environment: process.env.NODE_ENV || 'development',
-    });
+    this.logger = createLogger({ service: 'vynor-worker' });
   }
 
   async onModuleInit(): Promise<void> {

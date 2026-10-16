@@ -15,10 +15,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
   private isShuttingDown = false;
 
   constructor(private readonly queueService: PgBossService) {
-    this.logger = createLogger({
-      service: 'vynor-worker',
-      environment: process.env.NODE_ENV || 'development',
-    });
+    this.logger = createLogger({ service: 'vynor-worker' });
   }
 
   onModuleInit(): void {

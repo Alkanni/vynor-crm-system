@@ -24,10 +24,7 @@ const RECEIPT_MATCH_ATTEMPTS = 4;
  */
 @Injectable()
 export class InboundProcessorService implements OnApplicationBootstrap {
-  private readonly logger: Logger = createLogger({
-    service: 'vynor-worker',
-    environment: process.env.NODE_ENV || 'development',
-  });
+  private readonly logger: Logger = createLogger({ service: 'vynor-worker' });
 
   constructor(
     private readonly queue: PgBossService,
