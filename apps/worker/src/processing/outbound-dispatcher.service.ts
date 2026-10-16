@@ -26,8 +26,9 @@ interface OutboundJob extends Record<string, unknown> {
   payload?: { messageId?: string };
 }
 
-/** Replies still PENDING after this long are failed so agents can retry them (AD-012). */
-const STUCK_PENDING_MS = 15 * 60_000;
+/** Replies still PENDING after this many minutes are failed so agents can retry them (AD-012). */
+const STUCK_PENDING_MINUTES = 15;
+const STUCK_PENDING_MS = STUCK_PENDING_MINUTES * 60_000;
 const RECONCILE_INTERVAL_MS = 60_000;
 /** Email references kept when replying (first message plus the most recent ones). */
 const MAX_EMAIL_REFERENCES = 20;
@@ -297,7 +298,7 @@ export class OutboundDispatcherService implements OnApplicationBootstrap, OnAppl
       await this.fail(
         message,
         'SEND_TIMEOUT',
-        'This reply was not sent within 15 minutes. Retry it.',
+        `This reply was not sent within ${STUCK_PENDING_MINUTES} minutes. Retry it.`,
       );
     }
     return stuck.length;
