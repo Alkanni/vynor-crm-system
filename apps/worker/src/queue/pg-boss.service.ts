@@ -1,14 +1,15 @@
-import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import { QUEUE_CONFIGS, type QueueName } from '@vynor/contracts';
+import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { QUEUE_CONFIGS, type QueueName, type WorkerEnv } from '@vynor/contracts';
 import { createLogger, type Logger } from '@vynor/observability';
 import { PgBoss } from 'pg-boss';
+import { WORKER_ENV } from '../config/worker-env.js';
 
 @Injectable()
 export class PgBossService implements OnModuleInit, OnModuleDestroy {
   private boss: PgBoss | null = null;
   private readonly logger: Logger;
 
-  constructor() {
+  constructor(@Inject(WORKER_ENV) private readonly env: WorkerEnv) {
     this.logger = createLogger({
       service: 'vynor-worker',
       environment: process.env.NODE_ENV || 'development',
@@ -16,19 +17,10 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit(): Promise<void> {
-    const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
-    if (!connectionString) {
-      this.logger.warn(
-        { correlationId: 'queue_init' },
-        'DATABASE_URL not configured. pg-boss queue service skipped in current environment.',
-      );
-      return;
-    }
-
     try {
       this.boss = new PgBoss({
-        connectionString,
-        schema: 'pgboss',
+        connectionString: this.env.DATABASE_URL,
+        schema: this.env.PG_BOSS_SCHEMA,
         max: 10,
       });
 
