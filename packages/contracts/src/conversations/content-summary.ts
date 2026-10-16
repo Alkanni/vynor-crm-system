@@ -12,6 +12,11 @@ const MEDIA_LABELS: Record<string, string> = {
   sticker: 'Sticker',
 };
 
+/** Label for a media kind ("Photo", "Voice message", …); unknown kinds read "Attachment". */
+export function mediaLabel(kind: string): string {
+  return MEDIA_LABELS[kind] ?? 'Attachment';
+}
+
 /**
  * Plain-text rendering of a normalized message, used for inbox previews, search and channels
  * that only carry text. Never returns an empty string.
@@ -22,7 +27,7 @@ export function summarizeMessageContent(content: AnyMessageContent): string {
       return content.text.trim() || '(empty message)';
     case 'MEDIA': {
       if (content.caption?.trim()) return content.caption.trim();
-      const label = MEDIA_LABELS[content.mediaType] ?? 'Attachment';
+      const label = mediaLabel(content.mediaType);
       return content.filename ? `${label}: ${content.filename}` : label;
     }
     case 'LOCATION':

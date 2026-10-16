@@ -1,6 +1,7 @@
-import type {
-  ConversationSummary as ApiConversation,
-  Message as ApiMessage,
+import {
+  mediaLabel,
+  type ConversationSummary as ApiConversation,
+  type Message as ApiMessage,
 } from '@vynor/contracts';
 import type {
   ConversationSummary,
@@ -101,15 +102,6 @@ export function toCustomerView(conversation: ApiConversation): CustomerDetail {
   };
 }
 
-const MEDIA_LABELS: Record<string, string> = {
-  image: 'Photo',
-  video: 'Video',
-  audio: 'Audio',
-  voice: 'Voice message',
-  document: 'Document',
-  sticker: 'Sticker',
-};
-
 function emailAttachments(message: ApiMessage): MessageAttachment[] {
   const metadata = message.content.metadata;
   const list =
@@ -148,7 +140,7 @@ export function toMessageView(message: ApiMessage, contactName: string): Message
   const attachments: MessageAttachment[] = [];
   let content = message.text ?? '';
   if (message.media) {
-    const label = MEDIA_LABELS[message.media.kind] ?? 'Attachment';
+    const label = mediaLabel(message.media.kind);
     attachments.push({
       id: `${message.id}-media`,
       name: message.media.filename ?? label,
