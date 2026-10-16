@@ -51,6 +51,9 @@ export { generateId, generateUuidV7, isValidCuid2, isValidUuid } from './id.js';
 // Prisma error classification
 export { isUniqueConstraintViolation } from './errors.js';
 
+// Typed JSON column input
+export { asJsonInput } from './json.js';
+
 // Interactive transaction helpers with concurrency retry
 export {
   withTransaction,

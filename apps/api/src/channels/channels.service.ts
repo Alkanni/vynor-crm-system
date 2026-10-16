@@ -24,7 +24,7 @@ import {
   type GeneratedChannelSecrets,
   type VerifiedAccount,
 } from '@vynor/channel-adapters';
-import { generateId, notifyRealtime, prisma, Prisma } from '@vynor/database';
+import { asJsonInput, generateId, notifyRealtime, prisma, Prisma } from '@vynor/database';
 import { AuditService } from '../audit/audit.service.js';
 import { apiError, notFound } from '../common/errors/api-error.js';
 import { presentChannel, type ChannelRow } from './channel-presenter.js';
@@ -32,6 +32,8 @@ import { ChannelRuntimeService } from './channel-runtime.service.js';
 import { assertConnectionEndpointsAllowed } from './endpoint-policy.js';
 
 const CHANNEL_INCLUDE = { members: { select: { membershipId: true } } } as const;
+/** 24 random bytes encode to 32 URL-safe characters, well within webhook_key VARCHAR(64). */
+const SECRET_TOKEN_BYTES = 24;
 type ChannelRecord = Prisma.ProviderAccountGetPayload<{ include: typeof CHANNEL_INCLUDE }>;
 
 @Injectable()
@@ -133,17 +135,15 @@ export class ChannelsService {
       provider: connection.provider,
       displayIdentifier: verified.displayIdentifier,
       status: 'ACTIVE' as const,
-      credentials: envelope as unknown as Prisma.InputJsonValue,
-      config: config as unknown as Prisma.InputJsonValue,
-      capabilities: adapter.capabilities as unknown as Prisma.InputJsonValue,
-      webhookKey: generateSecretToken(24),
+      credentials: asJsonInput(envelope),
+      config: asJsonInput(config),
+      capabilities: asJsonInput(adapter.capabilities),
+      webhookKey: generateSecretToken(SECRET_TOKEN_BYTES),
       statusReason: null,
       lastErrorAt: null,
       lastHealthCheckAt: now,
       connectedAt: now,
-      syncState: verified.initialCursor
-        ? (verified.initialCursor as Prisma.InputJsonValue)
-        : Prisma.DbNull,
+      syncState: verified.initialCursor ? asJsonInput(verified.initialCursor) : Prisma.DbNull,
       deletedAt: null,
     };
 
@@ -153,7 +153,7 @@ export class ChannelsService {
             where: { id },
             data: {
               ...data,
-              settings: readInboxSettings(null) as unknown as Prisma.InputJsonValue,
+              settings: asJsonInput(readInboxSettings(null)),
             },
             include: CHANNEL_INCLUDE,
           })
@@ -164,7 +164,7 @@ export class ChannelsService {
               workspaceId: actor.workspace.id,
               channelType,
               accountIdentifier,
-              settings: readInboxSettings(null) as unknown as Prisma.InputJsonValue,
+              settings: asJsonInput(readInboxSettings(null)),
             },
             include: CHANNEL_INCLUDE,
           });
@@ -241,16 +241,18 @@ export class ChannelsService {
           lastErrorAt: null,
           lastHealthCheckAt: now,
           connectedAt: row.connectedAt ?? now,
-          credentials: sealChannelSecrets(cipher, {
-            provider: connection.provider,
-            providerAccountId: row.id,
-            secrets: { credentials: connection.credentials, generated },
-            rotatedAt: now,
-          }) as unknown as Prisma.InputJsonValue,
-          config: config as unknown as Prisma.InputJsonValue,
-          webhookKey: row.webhookKey ?? generateSecretToken(24),
+          credentials: asJsonInput(
+            sealChannelSecrets(cipher, {
+              provider: connection.provider,
+              providerAccountId: row.id,
+              secrets: { credentials: connection.credentials, generated },
+              rotatedAt: now,
+            }),
+          ),
+          config: asJsonInput(config),
+          webhookKey: row.webhookKey ?? generateSecretToken(SECRET_TOKEN_BYTES),
           ...(row.syncState === null && verified.initialCursor
-            ? { syncState: verified.initialCursor as Prisma.InputJsonValue }
+            ? { syncState: asJsonInput(verified.initialCursor) }
             : {}),
         },
         include: CHANNEL_INCLUDE,
@@ -330,9 +332,7 @@ export class ChannelsService {
         data: {
           ...(request.name !== undefined ? { name: request.name } : {}),
           ...(request.description !== undefined ? { description: request.description } : {}),
-          ...(settings
-            ? { settings: readInboxSettings(settings) as unknown as Prisma.InputJsonValue }
-            : {}),
+          ...(settings ? { settings: asJsonInput(readInboxSettings(settings)) } : {}),
         },
         include: CHANNEL_INCLUDE,
       });
@@ -519,7 +519,8 @@ export class ChannelsService {
 
   private generateSecrets(adapter: AnyChannelAdapter): GeneratedChannelSecrets {
     const secrets: GeneratedChannelSecrets = {};
-    for (const key of adapter.generatedSecrets) secrets[key] = generateSecretToken(24);
+    for (const key of adapter.generatedSecrets)
+      secrets[key] = generateSecretToken(SECRET_TOKEN_BYTES);
     return secrets;
   }
 
@@ -577,7 +578,7 @@ export class ChannelsService {
       const updated = await tx.providerAccount.update({
         where: { id: row.id },
         data: {
-          config: { ...config, webhookRegistered, setupNote } as unknown as Prisma.InputJsonValue,
+          config: asJsonInput({ ...config, webhookRegistered, setupNote }),
         },
         include: CHANNEL_INCLUDE,
       });
