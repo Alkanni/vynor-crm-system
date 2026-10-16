@@ -10,6 +10,7 @@ import {
 } from '@vynor/contracts';
 import {
   generateUuidV7,
+  isUniqueConstraintViolation,
   notifyRealtime,
   prisma,
   Prisma,
@@ -46,10 +47,6 @@ function metadataString(
 ): string | undefined {
   const value = metadata?.[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 }
 
 /**
@@ -96,7 +93,7 @@ export class ConversationIngestService {
       );
     } catch (error) {
       // A concurrent job stored the same provider message first.
-      if (isUniqueViolation(error)) {
+      if (isUniqueConstraintViolation(error)) {
         const stored = await prisma.message.findUnique({
           where: {
             providerAccountId_providerMessageId: {

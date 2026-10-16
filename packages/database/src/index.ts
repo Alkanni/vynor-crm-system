@@ -48,6 +48,9 @@ export {
 // ID generation and validation conventions (CUID2 / UUIDv7)
 export { generateId, generateUuidV7, isValidCuid2, isValidUuid } from './id.js';
 
+// Prisma error classification
+export { isUniqueConstraintViolation } from './errors.js';
+
 // Interactive transaction helpers with concurrency retry
 export {
   withTransaction,

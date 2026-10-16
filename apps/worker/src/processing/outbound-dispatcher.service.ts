@@ -15,7 +15,7 @@ import {
   toChannelProviderError,
   type ChannelProviderError,
 } from '@vynor/channel-adapters';
-import { notifyRealtime, prisma, Prisma } from '@vynor/database';
+import { isUniqueConstraintViolation, notifyRealtime, prisma, Prisma } from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
 import { ChannelHealthRecorder } from '../channels/channel-health.service.js';
 import { WorkerChannelRuntime } from '../channels/channel-runtime.service.js';
@@ -248,7 +248,7 @@ export class OutboundDispatcherService implements OnApplicationBootstrap, OnAppl
       await update(providerMessageId ?? null);
     } catch (error) {
       // A provider reusing an ID we already stored must not lose the "sent" state.
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (isUniqueConstraintViolation(error)) {
         await update(null);
         return;
       }
