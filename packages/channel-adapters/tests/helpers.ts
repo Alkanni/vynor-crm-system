@@ -22,7 +22,7 @@ export interface MockResponse {
 export function createMockFetch(responses: MockResponse[]) {
   const calls: RecordedCall[] = [];
   const queue = [...responses];
-  const fetchImpl = (async (input: URL | RequestInfo, init?: RequestInit) => {
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(
       typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
     );

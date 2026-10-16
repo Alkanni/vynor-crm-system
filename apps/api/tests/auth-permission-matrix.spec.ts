@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ExecutionContext, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { type ExecutionContext, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { ActorContext } from '@vynor/contracts';
+import type { ActorContext, PermissionAction } from '@vynor/contracts';
 import { PolicyService } from '../src/iam/policy.service.js';
 import { PermissionGuard } from '../src/iam/permission.guard.js';
 import { AuthGuard } from '../src/iam/auth.guard.js';
@@ -83,6 +83,8 @@ describe('Authentication Failure & Permission Matrix Paths (FND-TST-004)', () =>
   });
 
   describe('PolicyService (Permission Matrix)', () => {
+    // 'campaign:manage' and 'settings:manage' are not canonical actions: they check that an
+    // unlisted permission is denied without, and granted with, the '*' wildcard.
     it('grants access when actor has specific permission', () => {
       expect(policyService.can(mockAgentActor, 'conversation:read')).toBe(true);
       expect(policyService.can(mockAgentActor, 'message:send')).toBe(true);
@@ -90,14 +92,14 @@ describe('Authentication Failure & Permission Matrix Paths (FND-TST-004)', () =>
 
     it('denies access when actor lacks permission', () => {
       expect(policyService.can(mockAgentActor, 'audit:read')).toBe(false);
-      expect(policyService.can(mockAgentActor, 'campaign:manage')).toBe(false);
+      expect(policyService.can(mockAgentActor, 'campaign:manage' as PermissionAction)).toBe(false);
     });
 
     it('wildcard permission grants access to all actions', () => {
       expect(policyService.can(mockAdminActor, 'conversation:read')).toBe(true);
       expect(policyService.can(mockAdminActor, 'audit:read')).toBe(true);
-      expect(policyService.can(mockAdminActor, 'campaign:manage')).toBe(true);
-      expect(policyService.can(mockAdminActor, 'settings:manage')).toBe(true);
+      expect(policyService.can(mockAdminActor, 'campaign:manage' as PermissionAction)).toBe(true);
+      expect(policyService.can(mockAdminActor, 'settings:manage' as PermissionAction)).toBe(true);
     });
 
     it('enforce throws 403 Forbidden with correlationId when lacking permission', () => {
@@ -243,7 +245,7 @@ describe('Authentication Failure & Permission Matrix Paths (FND-TST-004)', () =>
       vi.mocked(mockJwtVerifier.verify).mockResolvedValueOnce({
         sub: 'sub_disabled_user',
         email: 'disabled@vynor.local',
-      } as unknown as Record<string, unknown>);
+      });
 
       vi.mocked(mockActorService.resolveActorContext).mockRejectedValueOnce(
         new IamException('USER_ACCOUNT_DISABLED', 'User account has been deactivated.'),
@@ -267,7 +269,7 @@ describe('Authentication Failure & Permission Matrix Paths (FND-TST-004)', () =>
       vi.mocked(mockJwtVerifier.verify).mockResolvedValueOnce({
         sub: 'sub_user_01',
         email: 'user@vynor.local',
-      } as unknown as Record<string, unknown>);
+      });
 
       vi.mocked(mockActorService.resolveActorContext).mockRejectedValueOnce(
         new IamException('MEMBERSHIP_INACTIVE', 'Workspace membership is suspended.'),

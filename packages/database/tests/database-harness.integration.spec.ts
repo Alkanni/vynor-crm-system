@@ -101,14 +101,14 @@ describe('Database Integration Test Harness & Outbox Rollback (FND-TST-003, FND-
 
     expect(result.slug).toBe(slug);
     expect(outboxEvents.length).toBe(1);
-    expect(outboxEvents[0].eventType).toBe('workspace.created');
-    expect(outboxEvents[0].status).toBe('PENDING');
+    expect(outboxEvents[0]!.eventType).toBe('workspace.created');
+    expect(outboxEvents[0]!.status).toBe('PENDING');
 
     // Verify both exist in the database
     const savedWs = await prisma.workspace.findUnique({ where: { id: result.id } });
     expect(savedWs).not.toBeNull();
 
-    const savedOutbox = await prisma.outboxEvent.findUnique({ where: { id: outboxEvents[0].id } });
+    const savedOutbox = await prisma.outboxEvent.findUnique({ where: { id: outboxEvents[0]!.id } });
     expect(savedOutbox).not.toBeNull();
     expect(savedOutbox?.workspaceId).toBe(result.id);
   });
