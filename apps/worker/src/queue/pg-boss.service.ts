@@ -2,7 +2,11 @@ import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@ne
 import { QUEUE_CONFIGS, type QueueName, type WorkerEnv } from '@vynor/contracts';
 import { createLogger, type Logger } from '@vynor/observability';
 import { PgBoss } from 'pg-boss';
+import { withTimeout } from '../common/with-timeout.js';
 import { WORKER_ENV } from '../config/worker-env.js';
+
+/** A start that has not finished by then counts as failed, so a hung start is retried too. */
+export const PG_BOSS_START_TIMEOUT_MS = 30_000;
 
 /** The first retry of a failed start waits this long; each further failure doubles it. */
 const START_RETRY_BASE_MS = 5_000;
@@ -57,7 +61,11 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
         );
       });
 
-      await boss.start();
+      await withTimeout(
+        boss.start(),
+        PG_BOSS_START_TIMEOUT_MS,
+        `pg-boss did not start within ${PG_BOSS_START_TIMEOUT_MS} ms`,
+      );
     } catch (err) {
       this.failedStarts += 1;
       const retryInMs = PgBossService.startRetryDelayMs(this.failedStarts);
@@ -70,8 +78,9 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
         },
         'Failed to start pg-boss engine; retrying',
       );
-      // A partial start can leave pg-boss subsystems running; only stop() releases them.
-      if (boss) await this.discard(boss);
+      // A partial start can leave pg-boss subsystems running; only stop() releases them. Not
+      // awaited: stop() first waits for an in-flight start(), which a timed-out one still is.
+      if (boss) void this.discard(boss);
       this.scheduleRetry(retryInMs);
       return;
     }

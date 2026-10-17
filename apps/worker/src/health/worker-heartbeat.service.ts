@@ -1,6 +1,7 @@
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { prisma } from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
+import { withTimeout } from '../common/with-timeout.js';
 import { PgBossService } from '../queue/pg-boss.service.js';
 import {
   clearHeartbeat,
@@ -54,7 +55,11 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
     try {
       // Without pg-boss (e.g. while a failed start is being retried) this worker can do no work.
       if (!this.queue.isRunning()) throw new Error('pg-boss is not running');
-      await withTimeout(prisma.$queryRaw`SELECT 1`, DB_PING_TIMEOUT_MS);
+      await withTimeout(
+        prisma.$queryRaw`SELECT 1`,
+        DB_PING_TIMEOUT_MS,
+        `Database did not answer within ${DB_PING_TIMEOUT_MS} ms`,
+      );
       await writeHeartbeat(file);
       this.report(true);
       return true;
@@ -79,12 +84,4 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
       );
     }
   }
-}
-
-function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`Database did not answer within ${ms} ms`)), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }

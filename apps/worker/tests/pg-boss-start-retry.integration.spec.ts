@@ -2,12 +2,13 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { QUEUE_NAMES, WorkerEnvSchema } from '@vynor/contracts';
 import { createTestPrismaClient } from '@vynor/database';
 import { PgBoss } from 'pg-boss';
-import { PgBossService } from '../src/queue/pg-boss.service.js';
+import { PG_BOSS_START_TIMEOUT_MS, PgBossService } from '../src/queue/pg-boss.service.js';
 
 /**
  * A failed pg-boss start must be retried in-process, and handlers registered while pg-boss was
  * down must subscribe once it starts. Runs the real pg-boss against the test database, in its
- * own schema, which is dropped afterwards. A failed start is simulated by rejecting `start()`.
+ * own schema, which is dropped afterwards. A failed start is simulated by rejecting `start()`,
+ * a hung one by a `start()` that never settles.
  */
 
 const SCHEMA = 'pgboss_start_retry_test';
@@ -73,6 +74,28 @@ describe('PgBossService start retry', () => {
       timeout: 10_000,
     });
   }, 30_000);
+
+  it('gives up on a start that does not finish in time, stops that instance and retries', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const start = vi
+      .spyOn(PgBoss.prototype, 'start')
+      .mockImplementationOnce(() => new Promise<never>(() => {}))
+      .mockRejectedValue(new Error('connection refused'));
+    const stop = vi.spyOn(PgBoss.prototype, 'stop');
+    const service = newService();
+
+    let booted = false;
+    const boot = service.onModuleInit().then(() => (booted = true));
+    await vi.advanceTimersByTimeAsync(PG_BOSS_START_TIMEOUT_MS - 1);
+    expect(booted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await boot;
+
+    expect(service.isRunning()).toBe(false);
+    expect(stop.mock.contexts[0]).toBe(start.mock.contexts[0]);
+    await vi.advanceTimersByTimeAsync(PgBossService.startRetryDelayMs(1));
+    expect(start).toHaveBeenCalledTimes(2);
+  });
 
   it('stops retrying once the module is destroyed', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
