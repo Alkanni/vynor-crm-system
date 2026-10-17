@@ -10,11 +10,17 @@ import {
   DB_PING_TIMEOUT_MS,
   WorkerHeartbeatService,
 } from '../src/health/worker-heartbeat.service.js';
+import type { PgBossService } from '../src/queue/pg-boss.service.js';
 
 /**
- * The container health check must fail when the worker's event loop stops or it loses the
- * database, instead of always passing. The service pings the test database (DATABASE_URL).
+ * The container health check must fail when the worker's event loop stops, it loses the
+ * database or pg-boss is not running, instead of always passing. The service pings the test
+ * database (DATABASE_URL); pg-boss is a stub.
  */
+
+function queueStub(running: boolean): PgBossService {
+  return { isRunning: () => running } as unknown as PgBossService;
+}
 
 const HEALTHCHECK_SCRIPT = fileURLToPath(new URL('../src/healthcheck.ts', import.meta.url));
 const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
@@ -55,7 +61,7 @@ describe('worker heartbeat file', () => {
 });
 
 describe('WorkerHeartbeatService.beat', () => {
-  const service = new WorkerHeartbeatService();
+  const service = new WorkerHeartbeatService(queueStub(true));
 
   it('writes a heartbeat while the database answers', async () => {
     await expect(service.beat(file)).resolves.toBe(true);
@@ -79,6 +85,13 @@ describe('WorkerHeartbeatService.beat', () => {
     await vi.advanceTimersByTimeAsync(DB_PING_TIMEOUT_MS);
 
     await expect(beat).resolves.toBe(false);
+    await expect(isHeartbeatFresh(file)).resolves.toBe(false);
+  });
+
+  it('writes no heartbeat while pg-boss is not running, even though the database answers', async () => {
+    const withoutQueue = new WorkerHeartbeatService(queueStub(false));
+
+    await expect(withoutQueue.beat(file)).resolves.toBe(false);
     await expect(isHeartbeatFresh(file)).resolves.toBe(false);
   });
 });

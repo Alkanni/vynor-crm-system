@@ -1,6 +1,7 @@
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { prisma } from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
+import { PgBossService } from '../queue/pg-boss.service.js';
 import {
   clearHeartbeat,
   HEARTBEAT_FILE,
@@ -12,9 +13,10 @@ import {
 export const DB_PING_TIMEOUT_MS = 5_000;
 
 /**
- * Writes the heartbeat that the container health check reads, but only while the database
- * answers. A blocked event loop stops the timer and a lost database stops the writes, so in
- * both cases the heartbeat goes stale and the container turns unhealthy.
+ * Writes the heartbeat that the container health check reads, but only while pg-boss is running
+ * and the database answers. A blocked event loop stops the timer, and a stopped pg-boss or a lost
+ * database stops the writes, so in each case the heartbeat goes stale and the container turns
+ * unhealthy.
  */
 @Injectable()
 export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
@@ -23,7 +25,7 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
   /** Last reported state, so only changes are logged instead of every beat. */
   private healthy: boolean | null = null;
 
-  constructor() {
+  constructor(private readonly queue: PgBossService) {
     this.logger = createLogger({ service: 'vynor-worker' });
   }
 
@@ -47,9 +49,11 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
     await clearHeartbeat();
   }
 
-  /** Pings the database and, if it answers in time, writes a heartbeat. */
+  /** Writes a heartbeat if pg-boss is running and the database answers a ping in time. */
   async beat(file = HEARTBEAT_FILE): Promise<boolean> {
     try {
+      // pg-boss is not restarted after a failed start, so without it this worker can do no work.
+      if (!this.queue.isRunning()) throw new Error('pg-boss is not running');
       await withTimeout(prisma.$queryRaw`SELECT 1`, DB_PING_TIMEOUT_MS);
       await writeHeartbeat(file);
       this.report(true);

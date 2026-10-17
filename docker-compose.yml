@@ -151,7 +151,7 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      # Fails once the worker stops writing heartbeats (blocked event loop or database lost).
+      # Fails once the worker stops writing heartbeats (blocked event loop, pg-boss down or database lost).
       test: ['CMD-SHELL', 'node apps/worker/dist/healthcheck.js || exit 1']
       interval: 10s
       timeout: 5s
