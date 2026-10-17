@@ -133,8 +133,9 @@ When `SIGTERM` or `SIGINT` is received:
 
 ### 6.3 Failed pg-boss Start & In-Process Retry
 
-Boot waits for the first `pg-boss` start attempt only. If it fails (e.g. the database is not accepting connections yet), the worker keeps booting and `PgBossService` retries in the background with a new `pg-boss` instance: 5 s after the first failure, doubling up to 60 s, until a start succeeds or the worker shuts down. Each failure logs an `error` (`correlationId: 'queue_init'`) with the `attempt` number and `retryInMs`.
+Boot waits for the first `pg-boss` start attempt only. An attempt fails when `start()` rejects (e.g. the database is not accepting connections yet) or has not finished within 30 s (`PG_BOSS_START_TIMEOUT_MS`, e.g. a connection that hangs). After a failure, the worker keeps booting and `PgBossService` retries in the background with a new `pg-boss` instance: 5 s after the first failure, doubling up to 60 s, until a start succeeds or the worker shuts down. Each failure logs an `error` (`correlationId: 'queue_init'`) with the `attempt` number and `retryInMs`.
 
 - **While pg-boss is down:** `isRunning()` is `false`, `sendJob` throws, the outbox dispatcher leaves events `PENDING`, and the worker heartbeat is skipped, so the container turns `unhealthy`.
 - **Handlers:** a `work()` call made while pg-boss is down is kept and registered once a start succeeds, after the named queues are created (`correlationId: 'queue_work_deferred'`, then `'queue_work_registered'`).
+- **Timed-out attempt:** pg-boss cannot cancel a `start()`, so the timed-out instance is abandoned and its `stop()` is requested without waiting. pg-boss runs that `stop()` once the `start()` settles, so an instance whose start finishes late does not keep running.
 - **Shutdown:** `onModuleDestroy` cancels the pending retry. An attempt still in flight stops its own instance once it finishes, so shutdown does not wait for it.
