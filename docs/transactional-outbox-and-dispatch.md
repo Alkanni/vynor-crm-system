@@ -146,5 +146,5 @@ To guarantee **exactly-once enqueue semantics**:
 
 A row only becomes `COMPLETED` once `pg-boss` holds its job:
 
-- **`pg-boss` not running** (e.g. it failed to start): the dispatcher claims nothing, so rows stay `PENDING` without using an attempt, and are dispatched once a worker with a running queue picks them up. `sendJob` throws in this state instead of returning `null`; `null` only means the singleton job already exists.
+- **`pg-boss` not running** (e.g. it failed to start): the dispatcher claims nothing, so rows stay `PENDING` without using an attempt, and are dispatched once a worker with a running queue picks them up (including this worker, once a retry of its pg-boss start succeeds). `sendJob` throws in this state instead of returning `null`; `null` only means the singleton job already exists.
 - **`sendJob` fails** (e.g. the connection drops): the row returns to `PENDING` with `retryCount + 1` and `lastError`, and moves to `DEAD_LETTER` after the fifth failed attempt.

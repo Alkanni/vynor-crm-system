@@ -130,3 +130,11 @@ When `SIGTERM` or `SIGINT` is received:
 
 - For long-running batch jobs (e.g. 50,000-contact campaign dispatch), handlers periodically ping the heartbeat to extend their lease.
 - If a worker crashes hard (OOM, container kill), the background recovery loop (`recoverExpiredOutboxLeases`) reclaims any lease where `claim_lease_expires_at < NOW()` and returns it to `PENDING`.
+
+### 6.3 Failed pg-boss Start & In-Process Retry
+
+Boot waits for the first `pg-boss` start attempt only. If it fails (e.g. the database is not accepting connections yet), the worker keeps booting and `PgBossService` retries in the background with a new `pg-boss` instance: 5 s after the first failure, doubling up to 60 s, until a start succeeds or the worker shuts down. Each failure logs an `error` (`correlationId: 'queue_init'`) with the `attempt` number and `retryInMs`.
+
+- **While pg-boss is down:** `isRunning()` is `false`, `sendJob` throws, the outbox dispatcher leaves events `PENDING`, and the worker heartbeat is skipped, so the container turns `unhealthy`.
+- **Handlers:** a `work()` call made while pg-boss is down is kept and registered once a start succeeds, after the named queues are created (`correlationId: 'queue_work_deferred'`, then `'queue_work_registered'`).
+- **Shutdown:** `onModuleDestroy` cancels the pending retry. An attempt still in flight stops its own instance once it finishes, so shutdown does not wait for it.
