@@ -1,0 +1,1655 @@
+{
+  "name": "VYNOR CRM - Migration Vertical Slice Kanban",
+  "as_of": "2026-10-17",
+  "source_baseline": {
+    "branch": "main (audit; currently behind origin/main one commit at time of audit)",
+    "commit": "565e8e4",
+    "tests": "176 PASS across 28 files",
+    "code_modified_by_this_plan": false
+  },
+  "target_repo": "/home/acgix/vynor-crm",
+  "source_documents": {
+    "AUDIT": "01-existing-system-audit.md",
+    "STACK": "02-current-stack-inventory.md",
+    "FEATURE": "03-feature-inventory.md",
+    "GAP": "04-architecture-gap-analysis.md",
+    "TARGET": "05-target-architecture.md",
+    "ROADMAP": "06-migration-roadmap.md",
+    "DB": "07-database-migration-plan.md"
+  },
+  "status": "PLANNED / OWNER DECISIONS PENDING / NO APPLICATION IMPLEMENTATION",
+  "owner_approval_required": true,
+  "decisions": [
+    {
+      "id": "DEC-01",
+      "title": "Repositori yang dimigrasikan",
+      "recommended": "Hanya /home/acgix/vynor-crm (monorepo TypeScript), bukan /home/acgix/VYNOR Rails/Chatwoot.",
+      "required_before": "WU-00",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-02",
+      "title": "Transport background job",
+      "recommended": "BullMQ + Redis, outbox PostgreSQL tetap sumber kebenaran.",
+      "required_before": "WU-05a",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-03",
+      "title": "Frontend router",
+      "recommended": "React + Vite + React Router; URL, UX dan perilaku dipertahankan.",
+      "required_before": "WU-06a",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-04",
+      "title": "Redis dan kegagalan koneksi",
+      "recommended": "Redis wajib staging/production, AOF everysec, noeviction; Idempotency-Key dan webchat rate limiter fail closed ketika tidak tersedia.",
+      "required_before": "WU-04",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-05",
+      "title": "Penyedia autentikasi",
+      "recommended": "Supabase Auth tetap; verifier OIDC generik dengan pemeriksaan iss/aud/JWKS bertahap.",
+      "required_before": "WU-08",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-06",
+      "title": "Teknologi yang ditunda",
+      "recommended": "Tunda Fastify, shadcn/Radix, Socket.IO Redis adapter, Prisma 7, Keycloak.",
+      "required_before": "WU-00",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-07",
+      "title": "Inbound media S3 dan antivirus",
+      "recommended": "WU-09 ditunda sampai model keamanan disetujui; bila dikerjakan utamakan pemindaian sungguhan (mis. ClamAV) daripada menandai unscanned media CLEAN.",
+      "required_before": "WU-09",
+      "approver": "Owner/Security",
+      "state": "RESOLVED",
+      "owner_decision": "DEFER_WU-09",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-08",
+      "title": "Lokasi compose/Dockerfile final",
+      "recommended": "Compose root repository, Dockerfile di infrastructure/docker, tanpa duplikat.",
+      "required_before": "WU-01",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "DEC-09",
+      "title": "Strategi PR dan merge",
+      "recommended": "Satu PR per WU ke main (WU-05a/b/c dan WU-06a/b/c/d masing-masing PR); owner merge. Tidak memakai branch integrasi.",
+      "required_before": "WU-00",
+      "approver": "Owner",
+      "state": "RESOLVED",
+      "owner_decision": "APPROVE_RECOMMENDATION",
+      "decided_at": "2026-10-17",
+      "evidence": "Owner chat message, Claude Code session 89bf14a1-529b-42f0-a8c8-4a68063b2b36: \"DEC-01..09 setuju rekomendasi, DEC-07 = DEFER\""
+    },
+    {
+      "id": "GATE-DB-DROP",
+      "title": "Persetujuan DROP SCHEMA pgboss",
+      "recommended": "Tidak diizinkan oleh persetujuan roadmap umum; memerlukan persetujuan khusus setelah backup dan dry-run restore.",
+      "required_before": "WU-05c",
+      "approver": "Owner/DBA",
+      "state": "PENDING"
+    },
+    {
+      "id": "GATE-DB-FK",
+      "title": "Persetujuan perubahan FK CASCADE ke RESTRICT",
+      "recommended": "Di luar roadmap default. Jangan dijalankan tanpa ticket dan persetujuan terpisah.",
+      "required_before": "UNPLANNED",
+      "approver": "Owner/DBA",
+      "state": "PENDING"
+    },
+    {
+      "id": "GATE-ENV",
+      "title": "Perubahan database selain database test",
+      "recommended": "Jangan sentuh vynor, vynor_crm, staging maupun production tanpa otorisasi per environment dan prosedur backup.",
+      "required_before": "ANY_NON_TEST_DB",
+      "approver": "Owner/DBA",
+      "state": "PENDING"
+    },
+    {
+      "id": "GATE-AUTH-LIVE",
+      "title": "Uji login Supabase asli sebelum hardening/cutover",
+      "recommended": "Validasi alur login/logout dan token asli dalam environment yang disetujui; jangan nyalakan enforce issuer di production tanpa bukti.",
+      "required_before": "WU-06d / WU-08 enforce",
+      "approver": "Owner/QA",
+      "state": "PENDING"
+    },
+    {
+      "id": "GATE-CUTOVER",
+      "title": "Persetujuan cutover dan drain pg-boss",
+      "recommended": "Bukti job aktif/created/retry telah nol per environment, rollback diuji, owner menyetujui cutover.",
+      "required_before": "WU-05b",
+      "approver": "Owner/Operator",
+      "state": "PENDING"
+    }
+  ],
+  "work_units": [
+    {
+      "id": "WU-00",
+      "title": "Persiapan, keputusan, baseline Git",
+      "depends_on": [],
+      "vertical_slice": "Audit -> keputusan -> branch aman -> dokumen & baseline dapat direview",
+      "done_when": "Dokumen 01-07 tercatat dalam PR, 08/09 diinisialisasi, kondisi Git aman dan baseline bisa direproduksi.",
+      "risk": "LOW",
+      "decision_gates": [
+        "DEC-01",
+        "DEC-02",
+        "DEC-03",
+        "DEC-04",
+        "DEC-05",
+        "DEC-06",
+        "DEC-07",
+        "DEC-08",
+        "DEC-09"
+      ],
+      "status": "IN_REVIEW",
+      "pr": "PR WU-00 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Tutup PR dokumen; tidak memodifikasi kode/DB.",
+      "sources": ["AUDIT", "ROADMAP"]
+    },
+    {
+      "id": "WU-01",
+      "title": "Docker/Caddy benar-benar sehat",
+      "depends_on": ["WU-00"],
+      "vertical_slice": "docker compose up -> health API 200 -> worker/web/caddy siap",
+      "done_when": "Semua container yang memiliki healthcheck sehat di compose dan infra:verify menangkap path rusak.",
+      "risk": "HIGH",
+      "decision_gates": ["DEC-08"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-01 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["AUDIT", "ROADMAP"]
+    },
+    {
+      "id": "WU-02",
+      "title": "Patch CVE web & Socket.IO CORS",
+      "depends_on": ["WU-00"],
+      "vertical_slice": "PDF knowledge diproses aman; websocket dari origin sah dapat terhubung",
+      "done_when": "Audit tanpa HIGH dan tes PDF/CORS lulus dengan pengalaman web tidak berubah.",
+      "risk": "HIGH",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-02 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["AUDIT", "ROADMAP"]
+    },
+    {
+      "id": "WU-03",
+      "title": "Characterization test dan golden path E2E",
+      "depends_on": ["WU-00", "WU-01"],
+      "vertical_slice": "Login -> signed webhook -> inbox -> reply -> mocked Graph API -> receipt/retry/assignment",
+      "done_when": "Golden path dan Channels E2E hijau di CI sebelum ganti queue atau frontend; screenshot baseline tersedia.",
+      "risk": "CRITICAL",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-03 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["FEATURE", "ROADMAP"]
+    },
+    {
+      "id": "WU-04",
+      "title": "Redis untuk state lintas instance",
+      "depends_on": ["WU-03"],
+      "vertical_slice": "Request dua API -> idempotency/rate limit konsisten -> fail closed saat Redis down",
+      "done_when": "Golden path tetap hijau, uji dua instance berhasil, Redis siap di test/CI dan non-test diwajibkan.",
+      "risk": "HIGH",
+      "decision_gates": ["DEC-04"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-04 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["GAP", "ROADMAP", "TARGET"]
+    },
+    {
+      "id": "WU-05a",
+      "title": "BullMQ expand + drain pg-boss",
+      "depends_on": ["WU-03", "WU-04"],
+      "vertical_slice": "Webhook -> Postgres outbox -> BullMQ -> worker -> inbox/reply; job lama pg-boss selesai",
+      "done_when": "Alur inbound/outbound BullMQ lulus fault injection dan provider stub; pg-boss tidak menerima job baru.",
+      "risk": "CRITICAL",
+      "decision_gates": ["DEC-02"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-05a -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Bila 5a gagal, hentikan producer baru, periksa antrian BullMQ dan outbox yang belum berdampak. Susun rencana replay berbasis identitas event dan status domain; jalankan UPDATE hanya setelah review, dan untuk DB non-test wajib izin owner/DBA (07 §4.1).",
+      "sources": ["GAP", "ROADMAP", "DB"]
+    },
+    {
+      "id": "WU-05b",
+      "title": "BullMQ contract / hapus dependensi pg-boss",
+      "depends_on": ["WU-05a"],
+      "vertical_slice": "Job lama nol -> transport lama ditutup -> worker baru tetap sehat",
+      "done_when": "Query pgboss.job nol pada setiap environment yang disetujui, dependency pg-boss dihapus, golden path hijau.",
+      "risk": "CRITICAL",
+      "decision_gates": ["GATE-CUTOVER"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-05b -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert kode hanya setelah status job di BullMQ dan pgboss direkonsiliasi; skema pgboss masih ada. Jangan lakukan replay serampangan yang dapat mengirim ulang pesan ke provider.",
+      "sources": ["ROADMAP", "DB"]
+    },
+    {
+      "id": "WU-05c",
+      "title": "DROP skema pgboss (opsional, destruktif)",
+      "depends_on": ["WU-05b"],
+      "vertical_slice": "Backup -> uji restore -> drop schema -> validasi -> rollback siap",
+      "done_when": "Hanya bila disetujui tertulis; skema benar-benar tidak dipakai, backup sudah teruji, post-check lulus.",
+      "risk": "CRITICAL",
+      "decision_gates": ["GATE-DB-DROP", "GATE-ENV"],
+      "status": "DEFERRED_APPROVAL",
+      "pr": "PR WU-05c -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Gunakan pg_restore dari dump skema pgboss yang sudah diuji di database sementara; tindakan destruktif, hanya setelah persetujuan tertulis dan rencana maintenance disetujui.",
+      "sources": ["ROADMAP", "DB"]
+    },
+    {
+      "id": "WU-06a",
+      "title": "Lapisan navigasi kompatibel (masih Next)",
+      "depends_on": ["WU-03"],
+      "vertical_slice": "User navigasi Inbox/Channels -> adaptor -> route lama tetap bekerja",
+      "done_when": "Semua penggunaan next/link/navigation melalui wrapper; URL/screenshot dan E2E belum berubah.",
+      "risk": "MEDIUM",
+      "decision_gates": ["DEC-03"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-06a -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["TARGET", "ROADMAP"]
+    },
+    {
+      "id": "WU-06b",
+      "title": "Bootstrap Vite, router, auth & config",
+      "depends_on": ["WU-06a"],
+      "vertical_slice": "Login -> protected routes -> 20 URL -> Inbox/Channels pada Vite",
+      "done_when": "20 URL kompatibel; golden path + screenshot baseline lulus di vite preview; public env dapat dikonfigurasi runtime.",
+      "risk": "HIGH",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-06b -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["TARGET", "ROADMAP"]
+    },
+    {
+      "id": "WU-06c",
+      "title": "Serving SPA statis di Docker/Caddy",
+      "depends_on": ["WU-06b"],
+      "vertical_slice": "Deep link /inbox -> Caddy -> SPA statis -> API + realtime tetap dapat diakses",
+      "done_when": "Container web Node tidak dibutuhkan, deep link refresh 200, API/socket/webhook dan asset cache benar.",
+      "risk": "HIGH",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-06c -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["TARGET", "ROADMAP"]
+    },
+    {
+      "id": "WU-06d",
+      "title": "Hapus Next/cookie dan validasi cutover",
+      "depends_on": ["WU-06c"],
+      "vertical_slice": "Login nyata -> semua route berfungsi tanpa middleware/cookie Next",
+      "done_when": "Tidak ada import/dependency Next, cookie token lama hilang, test regresi hijau; bukti auth Supabase asli sebelum cutover production.",
+      "risk": "HIGH",
+      "decision_gates": ["GATE-AUTH-LIVE"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-06d -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["AUDIT", "ROADMAP"]
+    },
+    {
+      "id": "WU-07",
+      "title": "OpenAPI dari Zod & contract tests",
+      "depends_on": ["WU-03"],
+      "vertical_slice": "HTTP route -> schema Zod -> OpenAPI 3.1 -> contract test di CI",
+      "done_when": "Semua route termasuk publik terdokumentasi dan CI mendeteksi drift.",
+      "risk": "MEDIUM",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-07 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["GAP", "ROADMAP"]
+    },
+    {
+      "id": "WU-08",
+      "title": "OIDC issuer/audience enforcement bertahap",
+      "depends_on": ["WU-03"],
+      "vertical_slice": "Login -> JWT iss/aud/JWKS diverifikasi -> akses RBAC tetap benar",
+      "done_when": "Token issuer asing ditolak saat enforce, dev-session lokal valid, mode enforce production ditahan sampai tes live.",
+      "risk": "HIGH",
+      "decision_gates": ["DEC-05"],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-08 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["AUDIT", "ROADMAP"]
+    },
+    {
+      "id": "WU-10",
+      "title": "OTel, metrics dan Grafana",
+      "depends_on": ["WU-05b"],
+      "vertical_slice": "Webhook -> job -> send -> trace dan metrik muncul di dashboard internal",
+      "done_when": "Trace end-to-end dan dashboard dapat ditelusuri; endpoint metrics tidak terekspos publik.",
+      "risk": "MEDIUM",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-10 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["TARGET", "ROADMAP"]
+    },
+    {
+      "id": "WU-09",
+      "title": "Persist media inbound ke object storage (opsional)",
+      "depends_on": ["WU-05b"],
+      "vertical_slice": "Media webhook -> worker fetch -> scan/storage -> attachment -> unduh meski URL provider 404",
+      "done_when": "Gambar tetap terunduh dari storage setelah provider menghapusnya, hanya file aman yang bisa didownload.",
+      "risk": "HIGH",
+      "decision_gates": ["DEC-07"],
+      "status": "DEFERRED_OPTIONAL",
+      "pr": "PR WU-09 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert kode aplikasi; biarkan kolom nullable additive tidak digunakan. Jangan hapus data/objek media atau schema tanpa persetujuan terpisah.",
+      "sources": ["FEATURE", "ROADMAP", "DB"]
+    },
+    {
+      "id": "WU-11",
+      "title": "Cleanup, ADR dan laporan akhir",
+      "depends_on": ["WU-05b", "WU-06d", "WU-07", "WU-08", "WU-10"],
+      "vertical_slice": "Build bersih -> docs sesuai runtime -> regresi final -> owner sign-off",
+      "done_when": "Tidak ada dependensi unused, ADR diperbarui, laporan 08-10 dan hasil final disetujui.",
+      "risk": "LOW",
+      "decision_gates": [],
+      "status": "BLOCKED_DEPENDENCY",
+      "pr": "PR WU-11 -> main",
+      "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
+      "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
+      "sources": ["ROADMAP", "AUDIT"]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "VYN-00-01",
+      "work_unit": "WU-00",
+      "title": "Kunci persetujuan, amankan tujuh dokumen, dan audit state Git",
+      "status": "DONE",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "Keputusan DEC-01 s.d. DEC-09 dari owner (pilihan defer berlaku untuk DEC-07)",
+        "docs/migration/01–07 yang belum di-commit",
+        "git status, git worktree list, origin/main dan audit commit 565e8e4"
+      ],
+      "actions": [
+        "Catat hasil keputusan eksplisit di docs/migration/08 atau decision record.",
+        "Simpan aman tujuh dokumen sebelum operasi branch; lakukan git fetch dan inspeksi perbedaan origin/main tanpa membuang file untracked.",
+        "Buat branch khusus dari basis origin/main terbaru dengan dokumen tetap utuh; jangan ganggu dua worktree sesi lain."
+      ],
+      "outputs": [
+        "Decision record dengan nilai dan approver",
+        "Branch WU-00 serta daftar file yang terjaga",
+        "Bukti git status, base commit, diff yang diharapkan"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada dokumen hilang/tertimpa; tidak ada file aplikasi berubah.",
+        "Tidak ada reset --hard, clean -fd, rebase/commit pada main atau perubahan worktree lain."
+      ],
+      "verification": ["git status --short", "git log -1 --oneline", "git worktree list"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-00-02",
+      "work_unit": "WU-00",
+      "title": "PR baseline audit dan inisialisasi log eksekusi/regresi",
+      "status": "DONE",
+      "depends_on_tasks": ["VYN-00-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "Branch aman dari VYN-00-01",
+        "7 dokumen audit",
+        "Baseline 176 test, 28 file, 11/11 build/typecheck pada 565e8e4"
+      ],
+      "actions": [
+        "Masukkan dokumen 01–07 dalam PR dokumen saja.",
+        "Buat 08-migration-execution-log.md dan 09-regression-test-results.md dengan template per WU: SHA, input, perintah, output, delta, risiko, rollback, approval.",
+        "Catat baseline audit dan jika base berubah, jalankan ulang pipeline dasar pada commit aktual."
+      ],
+      "outputs": [
+        "PR WU-00 dan link/bukti CI",
+        "08 log dan 09 hasil regresi",
+        "Baseline yang merujuk base SHA sebenarnya"
+      ],
+      "acceptance_criteria": [
+        "CI format/lint lulus; baseline terdokumentasi tanpa mengklaim test baru.",
+        "Owner mereview dan melakukan merge; AI tidak auto-merge."
+      ],
+      "verification": [
+        "pnpm format:check",
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm build",
+        "pnpm test"
+      ],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-01-01",
+      "work_unit": "WU-01",
+      "title": "Perbaiki health probe API dan route kesehatan di Caddy",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "audit F-01: /health/live=404, /api/v1/health/live=200",
+        "apps/api/Dockerfile",
+        "docker-compose.yml",
+        "infrastructure/caddy/Caddyfile"
+      ],
+      "actions": [
+        "Ubah path HEALTHCHECK API/container/compose menjadi /api/v1/health/live.",
+        "Pilih dan implementasikan route health Caddy yang eksplisit; jangan mengubah global API prefix.",
+        "Tambahkan test skrip infra untuk mencegah probe salah muncul kembali."
+      ],
+      "outputs": ["Probe Caddy/API konsisten", "Test regresi path probe"],
+      "acceptance_criteria": [
+        "Probe API dan Caddy terhadap path final 200.",
+        "infra:verify gagal bila probe kembali memakai path yang menghasilkan 404."
+      ],
+      "verification": ["pnpm infra:verify", "curl -f http://localhost:<port>/api/v1/health/live"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-01-02",
+      "work_unit": "WU-01",
+      "title": "Satu sumber compose/Dockerfile serta pin image",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-01-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "DEC-08 disetujui",
+        "docker-compose.yml dan infrastructure/docker/docker-compose.yml",
+        "`apps/*/Dockerfile` dan `infrastructure/docker/Dockerfile.*`",
+        "referensi path di CI dan docs"
+      ],
+      "actions": [
+        "Pertahankan hanya lokasi compose/Dockerfile yang disetujui, adaptasikan build context dan path referensi.",
+        "Pin image MinIO dan mc ke tag/digest terverifikasi, bukan latest.",
+        "Perbarui skrip dan dokumen deployment; jaga konfigurasi secret dan volume tetap setara."
+      ],
+      "outputs": [
+        "Satu sumber konfigurasi; image versi deterministik",
+        "Diff compose valid; docs diperbarui"
+      ],
+      "acceptance_criteria": [
+        "docker compose config berhasil; tidak ada copy duplikat tertinggal.",
+        "Volumes dan network tetap terdefinisi; tidak ada database atau bucket production tersentuh."
+      ],
+      "verification": ["docker compose config", "pnpm infra:verify"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-01-03",
+      "work_unit": "WU-01",
+      "title": "Smoke compose hidup penuh dari state test",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-01-02"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "Compose hasil VYN-01-02",
+        "Konfigurasi docker khusus test/local",
+        "API, worker, web, caddy"
+      ],
+      "actions": [
+        "Build dan jalankan compose di lingkungan aman; hindari bind ke database live.",
+        "Periksa semua healthcheck serta permintaan API via Caddy, web dan worker heartbeat.",
+        "Simpan log diagnostic; buat smoke CI opsional yang tidak mengeksekusi migrasi di DB live."
+      ],
+      "outputs": [
+        "Bukti container healthy dan smoke HTTP",
+        "PR WU-01 dengan test pencegah regresi"
+      ],
+      "acceptance_criteria": [
+        "Worker, web, caddy start dan servis yang mensyaratkan healthy benar-benar berjalan.",
+        "GET /api/v1/health/live melalui Caddy 200; infra:verify menangkap typo path."
+      ],
+      "verification": [
+        "docker compose config",
+        "docker compose up --build --wait",
+        "pnpm infra:verify"
+      ],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-02-01",
+      "work_unit": "WU-02",
+      "title": "Patch Next sementara dan mitigasi pdfjs-dist",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "apps/web/package.json dan pnpm-lock.yaml",
+        "9 advisory audit dengan 4 high",
+        "apps/web/src/lib/ai-agents/extract-file-text.ts"
+      ],
+      "actions": [
+        "Perbarui Next ke versi patched yang kompatibel sampai 06d, serta pdfjs ke versi aman yang lolos validasi; bila upgrade PDF gagal, pertimbangkan isEvalSupported:false yang diuji dan dicatat.",
+        "Verifikasi parsing PDF knowledge AI Agent dengan fixture aman; jangan redesign UI.",
+        "Uji audit dependensi dan rekam advisory yang tersisa."
+      ],
+      "outputs": [
+        "Lockfile/dependency aman dan bukti ekstraksi PDF",
+        "Laporan audit sebelum/sesudah"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada advisory HIGH di pnpm audit --prod.",
+        "Ekstraksi PDF berfungsi; golden path yang sudah ada tidak rusak."
+      ],
+      "verification": ["pnpm audit --prod", "pnpm --filter @vynor/web verify", "pnpm test"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-02-02",
+      "work_unit": "WU-02",
+      "title": "Batasi CORS Socket.IO sesuai origin terizin",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-02-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "apps/api/src/realtime/realtime.gateway.ts",
+        "CORS_ALLOWED_ORIGINS di konfigurasi",
+        "Test handshake JWT/realtime saat ini"
+      ],
+      "actions": [
+        "Ganti CORS origin wildcard dengan daftar yang divalidasi.",
+        "Tambahkan test origin diizinkan/ditolak, termasuk reconnect socket.",
+        "Pastikan handshake tetap wajib JWT dan scope workspace tetap bekerja."
+      ],
+      "outputs": ["Gateway dengan CORS sempit dan test", "PR WU-02 serta bukti security gate"],
+      "acceptance_criteria": [
+        "Origin disetujui berhasil connect; origin asing ditolak.",
+        "Handshake unauthenticated tetap gagal, tanpa regresi API REST."
+      ],
+      "verification": ["pnpm test", "pnpm typecheck", "pnpm lint", "pnpm audit --prod"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-03-01",
+      "work_unit": "WU-03",
+      "title": "Fixture isolasi DB E2E dan stub Graph API",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "vynor_e2e (bukan vynor_crm atau vynor)",
+        "apps/web/playwright.config.ts",
+        "META_GRAPH_API_BASE_URL dan adapter channel",
+        "fixture seed & tanda tangan webhook"
+      ],
+      "actions": [
+        "Siapkan lifecycle DB e2e yang repeatable dengan guard URL test; reset hanya database aman.",
+        "Jalankan API, worker, web serta stub Graph API lokal yang dapat mensimulasikan success/transient/permanent + receipt.",
+        "Buat fixture tenant kedua untuk uji isolasi dan helper webhook bertanda tangan."
+      ],
+      "outputs": [
+        "Harness e2e/seed idempotent",
+        "Stub provider dengan log panggilan/retry",
+        "Dokumentasi cara menjalankan secara lokal dan CI"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada request provider live; fixture repeatable pada dua run berturut-turut.",
+        "Guard menolak database selain vynor_e2e/vynor_test/shadow."
+      ],
+      "verification": ["pnpm test:e2e"],
+      "notes": "Uji hanya di DB isolasi. Jangan mengambil credential nyata."
+    },
+    {
+      "id": "VYN-03-02",
+      "work_unit": "WU-03",
+      "title": "Characterization API Conversations end-to-end HTTP",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-03-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "apps/api/src/conversations/*",
+        "kontrak /conversations/* dan /messages/:id/retry",
+        "fixture dua workspace dari VYN-03-01"
+      ],
+      "actions": [
+        "Tambahkan test HTTP list/filter/cursor/detail conversation.",
+        "Uji send, retry, private note, assign, resolve/reopen, read serta audit logs.",
+        "Assert tenant cross-access 404/403 sesuai perilaku saat ini; rekam perbedaan sebagai bug, jangan ubah test agar lulus."
+      ],
+      "outputs": ["HTTP integration specs baru", "Evidence kode sebelum migrasi terkarakterisasi"],
+      "acceptance_criteria": [
+        "Response dan efek DB/audit sesuai kontrak eksisting.",
+        "Kasus unauthorized/tenant isolation terverifikasi; test lulus terhadap pg-boss/Next sekarang."
+      ],
+      "verification": ["pnpm test"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-03-03",
+      "work_unit": "WU-03",
+      "title": "Characterization webchat, media, idempotency & polling",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-03-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "apps/api/src/webchat/*",
+        "/media/:messageId?exp&sig",
+        "IdempotencyInterceptor",
+        "apps/worker/src/polling/channel-polling.service.ts"
+      ],
+      "actions": [
+        "Test webchat sesi/pesan/429; signature media valid, tamper dan expired.",
+        "Test Idempotency-Key: replay respons, konflik payload, dua request in-flight.",
+        "Test polling IMAP/Telegram: lease, backoff dan release saat error."
+      ],
+      "outputs": [
+        "HTTP/service test untuk celah audit",
+        "Daftar bug temuan yang terpisah dari migration scope"
+      ],
+      "acceptance_criteria": [
+        "Kondisi edge menghasilkan response konsisten dengan baseline; bug riil dilaporkan, tidak disamarkan.",
+        "Tidak ada test yang dihapus atau dipermudah hanya demi hijau."
+      ],
+      "verification": ["pnpm test"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-03-04",
+      "work_unit": "WU-03",
+      "title": "Golden path Inbox, reply, dedup, retries dan Channels UI",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-03-02", "VYN-03-03"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-03-01/02/03",
+        "20 route frontend",
+        "Playwright dan seed dev-session",
+        "stub Graph API",
+        "Route dinamis `/ai-agent/[agentId]` (`ƒ` pada `next build`; `'use client'` + `useParams`, tanpa data server; 08 NF-05)"
+      ],
+      "actions": [
+        "Playwright: login dev-session -> Inbox, webhook signed -> journal/outbox/pg-boss/worker -> message tampak.",
+        "Replay webhook tidak menggandakan contact/conversation/message; reply agent mencapai stub, SENT/DELIVERED/READ monoton; transient sukses setelah retry, permanent -> FAILED + retry tombol.",
+        "E2E Channels connect ke stub, kanal terlihat; assign/resolve/reopen tercatat.",
+        "Ambil screenshot baseline stabil semua route relevan dengan fonts/viewport/mock time deterministik.",
+        "Karakterisasi `/ai-agent/[agentId]`: buka langsung (deep link) dan refresh untuk agentId yang ada dan yang tidak dikenal; catat perilaku apa adanya dan sertakan dalam screenshot baseline."
+      ],
+      "outputs": [
+        "Golden path Playwright dan Channels E2E",
+        "Screenshot baseline versioned serta jejak request provider stub"
+      ],
+      "acceptance_criteria": [
+        "E2E baseline lulus terhadap implementasi SEBELUM BullMQ dan Vite.",
+        "Inbox dan Channels terhubung API nyata/stub provider, bukan hanya mock UI.",
+        "Screenshot dapat direproduksi tanpa toleransi visual yang tidak terdokumentasi.",
+        "Perilaku `/ai-agent/[agentId]` (deep link, refresh, agentId tidak dikenal) terekam sebagai baseline E2E dan screenshot pada Next sebelum WU-06."
+      ],
+      "verification": ["pnpm test:e2e"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-03-05",
+      "work_unit": "WU-03",
+      "title": "Pasang CI E2E dan anti-flaky gate",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-03-04"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-03-04",
+        "github workflow ci.yml",
+        "PostgreSQL service dan browser Playwright"
+      ],
+      "actions": [
+        "Tambahkan job CI untuk seed DB terisolasi, API, worker, web, stub provider, Playwright.",
+        "Gunakan polling kondisi/response, bukan fixed sleep; lampirkan trace/screenshot ketika gagal.",
+        "Pastikan rerun dua kali stabil; dokumen 09 memuat perintah dan hasil."
+      ],
+      "outputs": [
+        "Workflow CI E2E dengan artefak kegagalan",
+        "PR WU-03, baseline characterization disetujui"
+      ],
+      "acceptance_criteria": [
+        "Dua run e2e berturut-turut hijau; regressions tetap wajib sebelum WU-05/06.",
+        "Tidak ada flaky test yang dihapus/sembunyikan."
+      ],
+      "verification": ["pnpm test", "pnpm test:e2e", "pnpm build", "pnpm typecheck", "pnpm lint"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-04-01",
+      "work_unit": "WU-04",
+      "title": "Operasionalkan Redis persisten dan dependency health",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": ["DEC-04", "compose/CI", "env schemas @vynor/contracts", "health API/worker"],
+      "actions": [
+        "Tambah Redis 7 dipin, AOF everysec, maxmemory-policy noeviction, volume, config+auth private network.",
+        "Sediakan redis client/module dan REDIS_URL wajib staging/production; in-memory fallback HANYA local/test secara eksplisit.",
+        "Readiness API memeriksa Redis; bootstrap dan CI fail jelas saat misconfig."
+      ],
+      "outputs": [
+        "Service Redis dan validasi env",
+        "Health indicator + CI service",
+        "Bukti CONFIG GET dan persistence"
+      ],
+      "acceptance_criteria": [
+        "Redis restart mempertahankan key persisten sesuai kebijakan; config AOF/noeviction tervalidasi.",
+        "Non-test tanpa REDIS_URL gagal startup/readiness sesuai kebijakan."
+      ],
+      "verification": ["docker compose config", "pnpm test", "pnpm infra:verify"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-04-02",
+      "work_unit": "WU-04",
+      "title": "Idempotency Redis atomik pada dua instance",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-04-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "IdempotencyInterceptor existing",
+        "Redis client dari VYN-04-01",
+        "HTTP tests VYN-03-03",
+        "ActorContext/workspace dari JWT"
+      ],
+      "actions": [
+        "Implementasikan claim/finalize atomic, TTL, fingerprint payload, replay response, perlakuan in-flight lintas dua instance.",
+        "Nama key mencakup workspace + scope endpoint/actor seperlunya; jangan bocorkan token/PII di Redis key/log.",
+        "Fail closed 503 saat Redis down, tanpa menjalankan mutasi berisiko."
+      ],
+      "outputs": [
+        "Store Redis lintas instance dengan tests race",
+        "Dokumentasi TTL, response replay, dan failure modes"
+      ],
+      "acceptance_criteria": [
+        "Replay dari instance B konsisten dengan hasil instance A; konflik payload ditolak.",
+        "Simultaneous requests tidak menimbulkan double side effect; Redis down menghasilkan 503."
+      ],
+      "verification": ["pnpm test"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-04-03",
+      "work_unit": "WU-04",
+      "title": "Rate limit webchat lintas instance dan recovery Redis",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-04-02"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "WebchatService limiter in-memory",
+        "Redis dari VYN-04-01",
+        "Webchat test VYN-03-03"
+      ],
+      "actions": [
+        "Pindahkan token/counter webchat ke Redis dengan operasi atomic + TTL dan identitas yang tidak bergantung pada memory proses.",
+        "Test 429 benar dengan dua API; saat Redis down fail closed sesuai DEC-04, readiness menjadi not ready.",
+        "Uji reconnect dan pastikan golden path tetap lulus."
+      ],
+      "outputs": [
+        "Rate limiter Redis dengan test dua instance",
+        "PR WU-04 dengan failure/recovery evidence"
+      ],
+      "acceptance_criteria": [
+        "Batas yang sama berlaku lintas instance; 429 tidak dapat dilewati dengan berpindah API.",
+        "Saat Redis unavailable tidak ada bypass tak sengaja; golden path tetap hijau."
+      ],
+      "verification": ["pnpm test", "pnpm test:e2e", "pnpm build", "pnpm typecheck", "pnpm lint"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-05A-01",
+      "work_unit": "WU-05a",
+      "title": "Adapter BullMQ dan kontrak job aman",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "DEC-02",
+        "PgBossService dan consumer existing",
+        "@vynor/contracts/jobs & DEFAULT_JOB_RETRY_POLICY",
+        "Redis persisten WU-04",
+        "`PgBossService` pada `1d6b578` (#59, #61, #63): start retry 5 s → ×2 → maks 60 s, `PG_BOSS_START_TIMEOUT_MS` 30 s, `work()` tertunda, `sendJob` melempar saat tidak berjalan (08 NF-02)",
+        "`pg-boss-start-retry.integration.spec.ts` (5 tes) dan `worker-heartbeat.integration.spec.ts` (08 NF-01)",
+        "Empat consumer yang meng-inject kelas konkret `PgBossService`: `OutboxDispatcherService`, `InboundProcessorService`, `OutboundDispatcherService`, `WorkerHeartbeatService` (08 NF-03)"
+      ],
+      "actions": [
+        "Buat QueueService BullMQ tanpa mengubah outbox_events di PostgreSQL.",
+        "Gunakan jobId deterministik tanpa karakter colon, contohnya outbox-<eventId>; jangan mengandalkan dedup setelah removeOnComplete.",
+        "Pertahankan jumlah attempt, klasifikasi retryable vs permanent, retensi dan graceful shutdown; atur Queue producer fail-fast dan Worker reconnect.",
+        "Startup retry: boot hanya menunggu percobaan inisialisasi pertama; bila Redis belum siap, worker tetap boot dengan `isRunning()` = `false` dan mencoba ulang di latar dengan backoff setara (5 s, ×2, maks 60 s) sampai berhasil atau shutdown; setiap kegagalan dicatat dengan nomor percobaan.",
+        "Timeout: inisialisasi yang menggantung (mis. `waitUntilReady`) dianggap gagal setelah batas setara `PG_BOSS_START_TIMEOUT_MS` (30 s); koneksi atau instance yang ditinggalkan ditutup tanpa menahan boot atau shutdown.",
+        "Producer fail-fast: koneksi `Queue` produser tanpa offline queue sehingga `send()` melempar saat Redis terputus; dispatcher tidak meng-claim outbox saat `isRunning()` = `false`, dan outbox `COMPLETED` hanya setelah BullMQ menerima job.",
+        "Deferred handler registration: `work()` yang dipanggil sebelum siap disimpan dan didaftarkan tepat sekali setelah siap (mengembalikan `false` saat ditunda), tanpa consumer ganda setelah reconnect.",
+        "Dependency injection: perkenalkan token/abstraksi transport untuk keempat consumer agar implementasi pg-boss dan BullMQ dapat ditukar tanpa mengubah perilaku consumer.",
+        "Graceful shutdown: `onModuleDestroy` membatalkan retry tertunda, menghentikan claim dispatcher lebih dulu, menunggu job aktif (`worker.close()`) dengan batas waktu, lalu menutup koneksi; percobaan inisialisasi yang masih berjalan menutup instance-nya sendiri."
+      ],
+      "outputs": [
+        "Queue adapter + test job ID, retry, retensi",
+        "Catatan compatibility dan desain replay",
+        "Matriks kesetaraan perilaku pg-boss (#59, #61, #63) ↔ BullMQ"
+      ],
+      "acceptance_criteria": [
+        "Test dengan Redis nyata membuktikan id aman, dedup saat job masih ada, retry dan error classification.",
+        "Tidak ada perubahan skema public atau model domain.",
+        "Test BullMQ dengan Redis nyata atau proxy terkontrol mencakup padanan kelima skenario `pg-boss-start-retry`: jadwal backoff, Redis tidak tersedia saat boot lalu pulih, inisialisasi menggantung → timeout dan retry, handler tertunda terdaftar tepat sekali, shutdown saat retry tertunda atau berjalan.",
+        "`send()` melempar saat Redis terputus tanpa job tertahan di offline queue; selama `isRunning()` = `false` outbox tetap `PENDING` tanpa menambah `retryCount`.",
+        "Keempat consumer memakai token transport; seluruh test pg-boss yang ada tetap hijau di 5a.",
+        "Graceful shutdown menunggu job aktif dan tidak meninggalkan koneksi Redis atau proses yang terbuka."
+      ],
+      "verification": ["pnpm test"],
+      "notes": "Kontrak yang telah dikoreksi: gunakan BullMQ jobId outbox-<eventId> (bukan colon), retensi BullMQ bukan dedup permanen; periksa https://docs.bullmq.io/guide/jobs/job-ids dan desain rekonsiliasi."
+    },
+    {
+      "id": "VYN-05A-02",
+      "work_unit": "WU-05a",
+      "title": "Expand side-by-side tanpa job baru di pg-boss",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-05A-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "QueueService VYN-05A-01",
+        "outbox dispatcher dan 2 consumer",
+        "mode drain pg-boss + test E2E WU-03",
+        "Keputusan owner tentang kriteria heartbeat selama dual-transport, dicatat di 08 sebelum implementasi (08 NF-03)"
+      ],
+      "actions": [
+        "Arahkan enqueue baru Postgres outbox -> BullMQ; tetap jalankan consumer pg-boss hanya untuk job lama.",
+        "Pasang mekanisme observasi backlog old/new, tidak memasang dua consumer untuk event sama tanpa guard domain.",
+        "Uji inbound/outbound/receipt/assignment lewat API+worker+stub; dapatkan bukti tidak ada kehilangan atau duplikasi entity domain.",
+        "Worker heartbeat dual-transport: tulis heartbeat hanya bila DB ping dan BullMQ siap; terapkan perlakuan kegagalan start pg-boss drain sesuai keputusan owner (unhealthy, atau degraded yang tercatat di log)."
+      ],
+      "outputs": [
+        "Worker dual-transport transisi dan progress drain",
+        "Golden path dan bukti outbox per status"
+      ],
+      "acceptance_criteria": [
+        "pg-boss tidak lagi menerima job baru setelah cutover 5a.",
+        "Inbound dan outbound BullMQ menghasilkan status/domain yang sama dengan baseline.",
+        "Heartbeat dan healthcheck container mengikuti kriteria yang diputuskan owner; diuji untuk BullMQ tidak siap dan pg-boss drain gagal start."
+      ],
+      "verification": ["pnpm test", "pnpm test:e2e"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-05A-03",
+      "work_unit": "WU-05a",
+      "title": "Fault injection, pemulihan job, dan beban 1.000 webhook",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-05A-02"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-05A-02",
+        "Postgres outbox validation SQL DB §5",
+        "Redis AOF/noeviction",
+        "Provider stub yang mencatat panggilan"
+      ],
+      "actions": [
+        "Simulasikan crash setelah BullMQ add tetapi sebelum outbox COMPLETED; crash worker saat active job; Redis outage/reconnect; shutdown graceful.",
+        "Uji 1.000 webhook menjadi 1.000 pesan tanpa duplikasi DB; cek status monoton, ordering domain per conversation dan retry.",
+        "Periksa failure window Redis persistence: bila outbox COMPLETED tetapi job hilang, desain & uji rekonsiliasi/alert + runbook tanpa otomatis menyentuh production.",
+        "Uji Redis mati saat boot dan koneksi menggantung pada worker yang sudah berjalan: heartbeat menjadi stale (container `unhealthy`) lalu pulih tanpa restart, dan dispatcher tidak meng-claim selama tidak siap."
+      ],
+      "outputs": [
+        "Fault-injection suites dan laporan queue reconciliation",
+        "Dokumen risiko at-least-once, ordering serta recovery"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada kehilangan domain event pada fault cases yang diuji.",
+        "Pengiriman ke provider eksternal tidak diklaim exactly-once bila provider tidak mendukung idempotency; risiko dijelaskan.",
+        "Golden path E2E dan worker heartbeats tetap lulus.",
+        "Selama Redis/BullMQ tidak siap tidak ada heartbeat baru dan tidak ada outbox `COMPLETED` tanpa job yang diterima; keduanya normal kembali setelah pulih."
+      ],
+      "verification": ["pnpm test", "pnpm test:e2e", "pnpm --filter @vynor/database db:verify"],
+      "notes": "Penguatan tambahan: AOF everysec bukan jaminan nol kehilangan; outbox COMPLETED tetapi Redis kehilangan job memerlukan prosedur deteksi/recovery."
+    },
+    {
+      "id": "VYN-05B-01",
+      "work_unit": "WU-05b",
+      "title": "Gate drain pg-boss per environment dan rencana cutover",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "PR WU-05a sudah merge",
+        "GATE-CUTOVER oleh owner",
+        "query pgboss.job WHERE state IN (created,retry,active)",
+        "backup/rollback plan DB §4.1"
+      ],
+      "actions": [
+        "Jalankan SELECT read-only backlog per queue/environment yang DIIZINKAN; simpan timestamp dan counts.",
+        "Pastikan 0 pending/running/ retry dan tak ada producer lama; tangani job buntu tanpa delete sembarang.",
+        "Minta owner menyetujui cutover berdasarkan bukti dan rencana rollback."
+      ],
+      "outputs": ["Berita acara drain, count tiap environment", "Approval cutover eksplisit"],
+      "acceptance_criteria": [
+        "Query mengembalikan 0 row untuk state aktif/retry di setiap environment target.",
+        "Tidak ada DELETE, DROP, UPDATE outbox atau production tanpa approval."
+      ],
+      "verification": [
+        "SELECT name,state,count(*) FROM pgboss.job WHERE state IN ('created','retry','active') GROUP BY name,state;"
+      ],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-05B-02",
+      "work_unit": "WU-05b",
+      "title": "Contract: lepas pg-boss sambil mempertahankan skema",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-05B-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-05B-01",
+        "worker queue/outbox, lockfile, env, ADR & docs",
+        "Redis & E2E WU-03"
+      ],
+      "actions": [
+        "Hapus package/import/PG_BOSS_* dan mode drain; jangan drop schema pgboss.",
+        "Perbarui heartbeat worker, runbook queue, recovery Redis dan ADR relevan.",
+        "Jalankan seluruh gate CI termasuk golden path setelah kontraksi.",
+        "Sebelum menghapus pg-boss, pastikan padanan BullMQ untuk `pg-boss-start-retry` dan test heartbeat pg-boss sudah lulus di 5a; ganti, jangan sekadar hapus test."
+      ],
+      "outputs": ["PR WU-05b, worker hanya BullMQ", "Docs dan rollback procedure"],
+      "acceptance_criteria": [
+        "Tidak ada referensi runtime pg-boss, kecuali dokumentasi historis/migrasi.",
+        "Schema pgboss masih ada; golden path, crash recovery & tests hijau.",
+        "Cakupan start retry, timeout, deferred handler, heartbeat dan graceful shutdown dibuktikan test BullMQ; setiap test pg-boss yang dihapus dipetakan ke penggantinya di 08/09."
+      ],
+      "verification": ["pnpm build", "pnpm typecheck", "pnpm lint", "pnpm test", "pnpm test:e2e"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-05C-01",
+      "work_unit": "WU-05c",
+      "title": "Backup-restore teruji lalu DROP SCHEMA pgboss (opsional)",
+      "status": "DEFERRED_APPROVAL",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "GATE-DB-DROP tertulis; GATE-ENV tiap database non-test",
+        "WU-05b terverifikasi",
+        "DB §3.1 dan §5 queries",
+        "akses DBA/owner"
+      ],
+      "actions": [
+        "Backup pgboss schema dengan pg_dump -Fc -n pgboss, uji pg_restore ke DB sementara dan validasi count.",
+        "Preflight daftar dependensi schema; inspeksi manual setiap objek CASCADE sebelum perintah destruktif.",
+        "Hanya operator berizin mengeksekusi DROP SCHEMA dan validasi pasca-operasi."
+      ],
+      "outputs": [
+        "Backup dan bukti restore+count",
+        "Catatan persetujuan per environment",
+        "Post-migration integrity report"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada aksi sebelum approval; restore di DB sementara lulus.",
+        "Schema dihapus tanpa memengaruhi schema public; rollback teruji."
+      ],
+      "verification": ["pg_dump -Fc -n pgboss <db> > <backup.dump>", "pg_restore -l <backup.dump>"],
+      "notes": "AI Agent hanya menyiapkan runbook/PR; owner/operator menjalankan operasi destruktif saat approval khusus."
+    },
+    {
+      "id": "VYN-06A-01",
+      "work_unit": "WU-06a",
+      "title": "Navigasi wrapper tanpa mengubah Next",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "DEC-03",
+        "18 file pengguna next/link/navigation (audit)",
+        "20 URL & screenshot baseline WU-03"
+      ],
+      "actions": [
+        "Buat lib/navigation.ts membungkus Link, useRouter, usePathname, useParams, useSearchParams, redirect sesuai kebutuhan aktual.",
+        "Ubah pemanggil untuk menggunakan wrapper; jangan pindahkan halaman atau bundler.",
+        "Uji browser history, back, query parameters, deep links, route auth di Next."
+      ],
+      "outputs": ["PR WU-06a; satu titik migrasi navigation", "Golden path + visual diff baseline"],
+      "acceptance_criteria": [
+        "Semua URL/UX sama, Next masih bisa build.",
+        "No unapproved layout/style change; tests/screenshot hijau."
+      ],
+      "verification": ["pnpm --filter @vynor/web verify", "pnpm test:e2e", "pnpm typecheck"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06B-01",
+      "work_unit": "WU-06b",
+      "title": "Vite bootstrap, React Router, dan seluruh route",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "WU-06a merged",
+        "apps/web/src/app/* dan layout",
+        "route inventory 20 halaman",
+        "tailwind 4, TanStack Query, Zustand",
+        "Baseline WU-03 untuk route dinamis `/ai-agent/[agentId]` (08 NF-05)"
+      ],
+      "actions": [
+        "Tambah vite.config.ts, index.html, main.tsx, router.tsx; pasang provider + errorElement/Suspense.",
+        "Pindahkan page wrappers ke routes/ sambil memakai komponen/hook asli dan mempertahankan URL persis.",
+        "Alihkan lib/navigation.ts ke React Router; no redesign.",
+        "Petakan `/ai-agent/[agentId]` ke route berparameter React Router `/ai-agent/:agentId` dengan `useParams` lewat `lib/navigation.ts`; tanpa SSR atau loader server."
+      ],
+      "outputs": ["Vite SPA build bisa dijalankan", "Route parity matrix 20 lama-vs-baru"],
+      "acceptance_criteria": [
+        "Seluruh 20 route dimuat dalam preview dengan URL yang sama.",
+        "TanStack Query/Zustand/realtime tetap berfungsi; build/typecheck lulus.",
+        "`/ai-agent/:agentId` dimuat lewat deep link dan refresh di `vite preview` dengan perilaku sama seperti baseline WU-03, termasuk agentId tidak dikenal."
+      ],
+      "verification": ["pnpm --filter @vynor/web verify", "pnpm build", "pnpm typecheck"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06B-02",
+      "work_unit": "WU-06b",
+      "title": "Session guard dan konfigurasi web saat runtime",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-06B-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "AuthContext Supabase/dev-session + preview mode",
+        "middleware.ts dan cookie non-HttpOnly",
+        "NEXT_PUBLIC_*",
+        "PublicWebEnvSchema"
+      ],
+      "actions": [
+        "Implementasikan RequireAuth dan returnUrl (backend tetap otoritatif); simpan token mengikuti supabase-js bukan cookie baru.",
+        "Implementasikan `window.__VYNOR_CONFIG__` dari `runtime-config.js`, fallback `import.meta.env.VITE_*` untuk dev; validasi env; jangan masukkan secret.",
+        "Pertahankan kemampuan preview yang ada dan buat test langsung bahwa mode connected tetap memakai API."
+      ],
+      "outputs": [
+        "Auth & runtime config porting dengan test",
+        "Dokumen konfigurasi deployment SPA"
+      ],
+      "acceptance_criteria": [
+        "Unauthenticated protected route diarahkan login dengan returnUrl benar.",
+        "Public config dapat diubah tanpa rebuild container; tidak ada token disalin ke cookie baru."
+      ],
+      "verification": ["pnpm test:e2e", "pnpm typecheck"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06B-03",
+      "work_unit": "WU-06b",
+      "title": "Pembuktian visual & alur connected di vite preview",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-06B-02"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": ["VYN-06B-01/02", "E2E + screenshot WU-03", "stub Graph API"],
+      "actions": [
+        "Jalankan suite pada vite preview (bukan Next).",
+        "Bandingkan screenshot route termasuk Inbox/Channels, dokumentasikan toleransi piksel yang disetujui.",
+        "Periksa login, navigation back/deep link, Inbox/Channels connected, reply dan socket reconnect.",
+        "Sertakan `/ai-agent/<agentId>` (agentId ada dan tidak dikenal) dalam perbandingan screenshot dan uji deep link."
+      ],
+      "outputs": ["Perbandingan screenshot baseline dan diff", "PR WU-06b yang dapat direview"],
+      "acceptance_criteria": [
+        "Golden path+Channels E2E lulus di vite preview.",
+        "Perubahan visual hanya toleransi terdokumentasi; tidak ada issue layout terbuka."
+      ],
+      "verification": ["pnpm test:e2e", "pnpm build", "pnpm typecheck", "pnpm lint"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06C-01",
+      "work_unit": "WU-06c",
+      "title": "Bangun artefak SPA ke Caddy, bukan web Node",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "Vite dist/ dari WU-06b",
+        "DEC-08 tentang compose/Dockerfile",
+        "Caddyfile + docker compose"
+      ],
+      "actions": [
+        "Buat build stage yang memproduksi aset Vite dan mengeksposnya ke Caddy (multi-stage image/copy artefak; tidak membutuhkan Node runtime web).",
+        "Atur try_files {path} /index.html hanya untuk route SPA; jangan fallback untuk /api, webhook atau socket.",
+        "Terapkan cache immutable untuk aset ber-hash, no-cache untuk index dan runtime config, security headers/CSP yang kompatibel."
+      ],
+      "outputs": ["Docker/Caddy konfigurasi serving SPA", "Dokumen caching & deployment assets"],
+      "acceptance_criteria": [
+        "Tidak ada container Node untuk web di runtime final.",
+        "Fallback tidak menyebabkan endpoint /api/404 palsu; dist dapat disajikan Caddy."
+      ],
+      "verification": ["docker compose config", "pnpm infra:verify"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06C-02",
+      "work_unit": "WU-06c",
+      "title": "Smoke jaringan: deep link, websocket, health & assets",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-06C-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-06C-01",
+        "Golden path WU-03",
+        "compose environment TEST",
+        "deep links protected routes"
+      ],
+      "actions": [
+        "Build dan jalankan compose clean dalam lingkungan test.",
+        "Test refresh /inbox, /channels, login redirect, path API /api/v1, /socket.io atau /realtime, status health dan webhook.",
+        "Periksa cache headers, MIME/JS, security policy dan runtime-config dalam 2 env berbeda.",
+        "Uji refresh deep link route berparameter `/ai-agent/<agentId>` lewat SPA fallback Caddy: 200 `index.html` dan halaman ter-render seperti baseline; `/api`, `/socket.io` dan webhook tidak jatuh ke `index.html`."
+      ],
+      "outputs": ["Compose smoke evidence + PR WU-06c", "Screenshot browser saat serving Caddy"],
+      "acceptance_criteria": [
+        "Semua route penting bekerja via Caddy; runtime config berubah tanpa rebuild.",
+        "Golden path tetap hijau dari image container, bukan hanya vite preview.",
+        "Deep link `/ai-agent/<agentId>` mengembalikan 200 lewat Caddy dan me-render halaman yang sama dengan baseline WU-03."
+      ],
+      "verification": ["docker compose up --build --wait", "pnpm test:e2e", "pnpm infra:verify"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06D-01",
+      "work_unit": "WU-06d",
+      "title": "Hapus Next, middleware, access-token cookie",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-06C-02",
+        "apps/web/package.json, lockfile",
+        "Next middleware.ts, next-env.d.ts, next.config.ts",
+        "auth-context.tsx"
+      ],
+      "actions": [
+        "Hapus imports/asset server khusus Next dan paketnya; sesuaikan ESLint/Turbo outputs.",
+        "Hilangkan mekanisme cookie vynor_session non-HttpOnly yang hanya dipakai Next; pastikan token tidak digandakan ke cookie JS.",
+        "Uji CSP, local preview, query/deep link, websocket setelah pembersihan."
+      ],
+      "outputs": [
+        "Aplikasi web Vite-only, dependency tree bersih",
+        "Security verification token/cookie"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada import Next/dependency next; bundle produksi jalan.",
+        "Cookie vynor_session tidak dibuat aplikasi; backend RBAC tetap wajib."
+      ],
+      "verification": ["pnpm audit --prod", "pnpm build", "pnpm typecheck", "pnpm lint"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-06D-02",
+      "work_unit": "WU-06d",
+      "title": "Gate login Supabase asli dan final regressions",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-06D-01"],
+      "decision_gates": ["GATE-AUTH-LIVE"],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "GATE-AUTH-LIVE hasil tes owner (tidak ada Supabase project saat audit)",
+        "Golden path test dengan dev-session",
+        "PR WU-06d"
+      ],
+      "actions": [
+        "Di environment aman yang disetujui, uji auth Supabase email/password, refresh token, logout, protected route, dan API/WS authorization.",
+        "Ulangi E2E via vite preview dan Docker; periksa screenshots 20 route dan 0 advisory Next.",
+        "Jika provider asli tak tersedia, tandai NOT VERIFIED dan jangan klaim cutover production siap; minta sign-off owner."
+      ],
+      "outputs": ["Bukti Supabase live atau blocker eksplisit", "Regression sign-off untuk WU-06d"],
+      "acceptance_criteria": [
+        "Token Supabase sah diterima sesuai perilaku sebelum migrasi; issuer salah/expired ditolak menurut tahap auth.",
+        "Tidak ada regresi Inbox/Channels; owner menyetujui release jika tes live lulus."
+      ],
+      "verification": ["pnpm test:e2e", "pnpm test", "pnpm audit --prod"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-07-01",
+      "work_unit": "WU-07",
+      "title": "Generator schema OpenAPI dari Zod",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "@vynor/contracts Zod 4",
+        "apps/api/src/openapi/*.ts",
+        "route definitions NestJS",
+        "existing RFC7807/envelope"
+      ],
+      "actions": [
+        "Generate komponen schema JSON Schema/OpenAPI 3.1 dari sumber Zod; pertahankan metadata path declarative.",
+        "Pertahankan format error, auth, pagination, dan envelope sesuai API berjalan; tidak mengubah business controllers.",
+        "Hapus definisi duplikat manual hanya setelah contract test membandingkan hasil."
+      ],
+      "outputs": ["Generator deterministik dan artefak openapi", "Test schema generasi"],
+      "acceptance_criteria": [
+        "OpenAPI 3.1 valid dan build deterministik.",
+        "Skema input/output bukan salinan tulisan tangan yang drift."
+      ],
+      "verification": ["pnpm test", "pnpm build"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-07-02",
+      "work_unit": "WU-07",
+      "title": "Coverage setiap route dan contract test CI",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-07-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-07-01",
+        "controller webhooks, webchat, media dan lainnya",
+        "API test VYN-03-02/03"
+      ],
+      "actions": [
+        "Dokumentasikan semua route publik/private, path params, HTTP methods dan mekanisme security.",
+        "Tulis contract tests: route Nest ↔ spec dua arah, sample response terhadap schema, validasi spec OpenAPI 3.1.",
+        "Perbarui AD-013 agar sesuai perilaku aktual dan cek 100% route coverage."
+      ],
+      "outputs": ["openapi.json lengkap dan tests drift CI", "PR WU-07 + perubahan ADR"],
+      "acceptance_criteria": [
+        "CI gagal bila controller punya route tanpa spec atau sebaliknya.",
+        "Endpoint webhook/webchat/media terwakili lengkap."
+      ],
+      "verification": ["pnpm test", "pnpm --filter @vynor/api verify"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-08-01",
+      "work_unit": "WU-08",
+      "title": "Verifier OIDC iss/aud/JWKS dengan mode log-only",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "DEC-05",
+        "JWTVerifier saat ini HS256/JWKS Supabase",
+        "auth env schemas + dev-session test",
+        "golden path WU-03"
+      ],
+      "actions": [
+        "Tambah AUTH_ISSUER, AUTH_AUDIENCE, AUTH_JWKS_URL, AUTH_ENFORCE_ISSUER dan safe defaults.",
+        "Mulai mode log-only untuk issuer tidak sesuai; enforcer menolak issuer asing.",
+        "Batasi vynor-dev-session ke local/test, jangan buka bypass di staging/production."
+      ],
+      "outputs": [
+        "Verifier dengan unit tests mixed issuer/algorithm/audience",
+        "Konfigurasi rollout dan log teredaksi"
+      ],
+      "acceptance_criteria": [
+        "Mode enforce menolak wrong-issuer, expired, invalid aud/JWKS; dev-session prod ditolak.",
+        "Golden path dev-session lokal tetap hijau."
+      ],
+      "verification": ["pnpm test", "pnpm typecheck"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-08-02",
+      "work_unit": "WU-08",
+      "title": "Rollout bertahap dan validasi issuer dengan Supabase asli",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-08-01"],
+      "decision_gates": ["GATE-AUTH-LIVE"],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-08-01",
+        "GATE-AUTH-LIVE",
+        "hasil log-only di staging yang disetujui",
+        "dokumen auth flows"
+      ],
+      "actions": [
+        "Verifikasi token asli Supabase di QA/staging, cek issuer/aud/JWKS dan refresh.",
+        "Aktifkan AUTH_ENFORCE_ISSUER hanya setelah log aman, approval owner, dan siapkan toggle rollback tanpa deploy.",
+        "Perbarui docs auth, keputusan OIDC, serta hasil regression."
+      ],
+      "outputs": ["Laporan evidence auth live", "PR WU-08 + rollout/rollback playbook"],
+      "acceptance_criteria": [
+        "User asli tetap login ketika issuer enforcement hidup; wrong-issuer ditolak.",
+        "Jika tidak ada project Supabase, enforcement deployment BLOCKED, bukan dianggap lulus."
+      ],
+      "verification": ["pnpm test", "pnpm test:e2e"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-10-01",
+      "work_unit": "WU-10",
+      "title": "Tracing/metrics internal untuk API dan worker",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "@vynor/observability (Pino existing)",
+        "apps/api/main.ts dan apps/worker/main.ts",
+        "Redis/pg & BullMQ",
+        "Caddy route policies"
+      ],
+      "actions": [
+        "Pasang OpenTelemetry HTTP/pg/ioredis, trace context ke Pino, manual span outbox/consumer/provider.",
+        "Tambahkan prom-client untuk HTTP, queue states, outbox, provider error categories, active socket.",
+        "Pilih transport scrape worker yang sesuai karena worker tidak memiliki HTTP server (private listener atau collector); metrics tidak boleh publik."
+      ],
+      "outputs": [
+        "SDK + metrics dengan redact PII",
+        "Endpoint/transport scrape privat untuk API & worker",
+        "Test metrik synthetic"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada secret/token/PII bocor dalam label log/trace metrics.",
+        "Endpoint /metrics tidak dapat diakses dari internet/Caddy publik."
+      ],
+      "verification": ["pnpm test", "pnpm typecheck"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-10-02",
+      "work_unit": "WU-10",
+      "title": "Golden trace webhook hingga status delivery di dashboard",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-10-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": ["VYN-10-01", "observability compose profile", "WU-03 golden path & worker BullMQ"],
+      "actions": [
+        "Tambah Prometheus/Grafana (profil opsional) dan konfigurasi scrape aman.",
+        "Jalankan satu golden path, periksa trace ID menghubungkan webhook, outbox, BullMQ, adapter dan status SENT.",
+        "Buat dashboard queue depth/retry/DLQ/error provider/HTTP latency dan basic alert/runbook."
+      ],
+      "outputs": ["Dashboard dasar + screenshot query/trace", "PR WU-10 dan runbook incident"],
+      "acceptance_criteria": [
+        "Trace golden path terlihat lintas proses; metrics berubah sesuai fixture.",
+        "observability bisa dimatikan tanpa mengganggu core runtime."
+      ],
+      "verification": ["docker compose --profile observability config", "pnpm test:e2e"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-09-01",
+      "work_unit": "WU-09",
+      "title": "Keputusan scan media dan migrasi DB additive",
+      "status": "DEFERRED_OPTIONAL",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "DEC-07 (ClamAV/tanpa-scan/tunda)",
+        "DB §3.2 attachments.message_id",
+        "storage authorizeSignedDownload hanya CLEAN",
+        "izin DB test"
+      ],
+      "actions": [
+        "Jangan lanjut tanpa keputusan scanner; dokumentasikan trust boundary, MIME, ukuran maksimal, redaksi/log, scanning timeout dan quarantine.",
+        "Jika disetujui, tambahkan nullable attachments.message_id, FK SET NULL, indeks dan query mismatch tenant.",
+        "Siapkan verifikasi backup/migrate terhadap DB test dan strategi rollback dengan kolom dibiarkan."
+      ],
+      "outputs": [
+        "Design decision keamanan & migration SQL reviewed",
+        "Additive Prisma migration + test referential integrity"
+      ],
+      "acceptance_criteria": [
+        "Tidak ada media tanpa scan yang salah dilabel CLEAN kecuali owner menyetujui risk acceptance eksplisit.",
+        "Migrasi menambah kolom tanpa drop data; workspace_id attachment == workspace message."
+      ],
+      "verification": ["pnpm --filter @vynor/database db:verify", "pnpm test"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-09-02",
+      "work_unit": "WU-09",
+      "title": "Unduh media provider, scan, simpan S3 lalu tampilkan",
+      "status": "DEFERRED_OPTIONAL",
+      "depends_on_tasks": ["VYN-09-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "VYN-09-01",
+        "existing packages/storage & MinIO",
+        "worker job media.ingest dari event",
+        "API /media/:messageId",
+        "provider stub image/404"
+      ],
+      "actions": [
+        "Saat inbound media diterima, jadwalkan media.ingest secara idempoten untuk unduh dengan batas ukuran/timeout/MIME & SSRF guard.",
+        "Scan/karantina sesuai keputusan owner, simpan object storage dan tautan attachments.message_id atomik secara logis.",
+        "Baca media dari storage jika CLEAN/authorized, fallback provider untuk media lama yang belum dimigrasi."
+      ],
+      "outputs": [
+        "Worker media ingest + storage API refactor",
+        "MinIO integration/E2E provider 404 regression"
+      ],
+      "acceptance_criteria": [
+        "Media dapat dibuka setelah stub provider dihapus/404.",
+        "Tidak ada download cross-tenant atau unscanned/quarantined; retries tak membuat attachment duplikat."
+      ],
+      "verification": ["pnpm test", "pnpm test:e2e", "pnpm --filter @vynor/database db:verify"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-11-01",
+      "work_unit": "WU-11",
+      "title": "Hapus artifact/dependency mati tanpa merusak runtime",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": [],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "paket @vynor/ai kosong",
+        "autoprefixer yang tidak dipakai",
+        "@nestjs/platform-express di worker kandidat",
+        "LegacyRouteConverter warning",
+        "kode final WU-05b,06d"
+      ],
+      "actions": [
+        "Konfirmasi dengan grep/import graph setiap kandidat benar-benar unused lalu bersihkan secara sempit.",
+        "Benahi forRoutes wildcard warning tanpa mengubah coverage guards; hapus hanya dependensi tak terpakai.",
+        "Tata ulang scripts/cache outputs bila perlu, tanpa refactor besar atau redesign."
+      ],
+      "outputs": ["PR cleanup kecil & bukti import graph", "Build tanpa warning teridentifikasi"],
+      "acceptance_criteria": [
+        "Build/lint/typecheck/test/golden path tetap lulus.",
+        "Tidak ada paket terhapus yang ternyata dipakai UI atau worker."
+      ],
+      "verification": ["pnpm build", "pnpm typecheck", "pnpm lint", "pnpm test", "pnpm test:e2e"],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    },
+    {
+      "id": "VYN-11-02",
+      "work_unit": "WU-11",
+      "title": "ADR, regression matrix, final handoff dan readiness report",
+      "status": "BLOCKED_DEPENDENCY",
+      "depends_on_tasks": ["VYN-11-01"],
+      "decision_gates": [],
+      "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
+      "inputs": [
+        "Semua WU wajib selesai",
+        "08 execution log, 09 regression results",
+        "AD-015 BullMQ/AD-016 Vite/AD-017 Redis",
+        "temuan audit dan deferred backlog"
+      ],
+      "actions": [
+        "Sinkronkan README, infra docs, auth docs, background job docs, target architecture sesuai implementasi aktual.",
+        "Buat 10-migration-final-report.md: daftar WU, SHA PR, hasil uji, risiko, rollback, known gaps, pending verification, approvals.",
+        "Pisahkan backlog fitur CRM & WU-09/05c/FK sebagai tickets baru tanpa mengklaim selesai."
+      ],
+      "outputs": ["10 final report serta ADR & README akurat", "Sign-off review owner"],
+      "acceptance_criteria": [
+        "Semua mandatory CI & E2E lulus; exceptions eksplisit (terutama live Supabase).",
+        "Tidak ada klaim implementasi Contacts/Tickets/Campaigns/AI backend baru."
+      ],
+      "verification": [
+        "pnpm format:check",
+        "pnpm build",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm test",
+        "pnpm test:e2e"
+      ],
+      "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
+    }
+  ],
+  "protocol": {
+    "definition_of_ready": [
+      "Seluruh DEC-01 s.d. DEC-09 ditetapkan owner sebelum WU-00 sesuai roadmap 06 §6; perubahan keputusan setelah itu melalui change request.",
+      "Work unit dependencies berstatus DONE dan keputusan yang terkait sudah di-approve tertulis.",
+      "Working tree/branch diverifikasi, dokumen untracked dilindungi, base SHA tercatat, tidak mengganggu worktree lain.",
+      "Lingkungan uji terisolasi tersedia; hanya database vynor_test/vynor_e2e/vynor_shadow boleh dipakai otomatis.",
+      "Golden path WU-03 tersedia untuk WU-04/05/06/07/08/10; tanpa bukti karakterisasi jangan memulai perubahan berisiko."
+    ],
+    "definition_of_done": [
+      "Satu PR scoped ke work unit / subunit dan CI wajib hijau: format, lint, typecheck, build, unit/integrasi, infra verify; E2E setelah WU-03.",
+      "Perjalanan pengguna vertical slice lulus melalui API + DB + worker + UI bila relevan, bukan unit test saja.",
+      "Bukti perintah, jumlah test, SHA, diff, risiko, rollout/rollback, hasil data check dicatat dalam 08 dan 09.",
+      "Tidak ada weakening/penghapusan test; exception diberi issue dan persetujuan owner.",
+      "Approval owner untuk merge/rollout, dan persetujuan khusus terpisah untuk tindakan destruktif atau DB non-test."
+    ],
+    "agent_rules": [
+      "Planning only sekarang: jangan mengedit aplikasi atau mengirim PR sebelum approval user.",
+      "Per ticket, baca sumber, periksa kode aktual (jangan asumsikan commit 565e8e4 masih HEAD), jelaskan rencana diff, kemudian implementasi setelah gate.",
+      "Jangan mengubah public schema untuk WU wajib; outbox Postgres/tenant scoping/RBAC/signed webhook tetap invariant.",
+      "Jangan memakai provider live saat uji otomatis: mock Graph API dan DB sandbox.",
+      "Stop dan laporkan jika butuh menghapus data, reset DB selain test, force-push, auto-merge, atau menyalakan enforce issuer tanpa bukti Supabase.",
+      "Jangan menganggap Redis persistence membuat job exactly-once/zero-loss; simpan reconciliation dan failure evidence.",
+      "Bila test menemukan bug awal, dokumentasikan repro/issue tanpa merusak test characterization.",
+      "Fitur CRM baru, UI redesign, Fastify, Prisma 7, Keycloak, Redis adapter Socket.IO tidak boleh dicampurkan dengan migrasi."
+    ]
+  },
+  "verification_matrix": {
+    "baseline": "pnpm format:check; pnpm lint; pnpm typecheck; pnpm build; pnpm test; pnpm infra:verify; pnpm --filter @vynor/database db:verify",
+    "after_WU03": "pnpm test:e2e must pass golden path, Channels and route screenshots",
+    "queue": "signed webhook -> journal -> outbox -> queue -> worker -> inbox; replay dedup; send -> Graph stub -> receipt; crash/retry/reconciliation",
+    "frontend": "20 URLs preserved, protected navigation, connected Inbox/Channels, Caddy deep links, browser screenshot parity",
+    "redis": "2 API instances consistent replay / rate limits, Redis outage -> 503/not ready",
+    "auth": "dev-session test + real Supabase sign-off for production; iss/aud/JWKS and RBAC",
+    "database": "tenant mismatch 0, domain duplicates 0, queue/orphan reconciliation; no operations outside approved test DB"
+  },
+  "primary_sources": [
+    "06-migration-roadmap.md §1-6",
+    "05-target-architecture.md §1-7",
+    "07-database-migration-plan.md §1-6"
+  ],
+  "external_validation": [
+    {
+      "finding": "BullMQ custom job IDs cannot contain colon; removed jobs no longer deduplicate by jobId",
+      "url": "https://docs.bullmq.io/guide/jobs/job-ids"
+    },
+    {
+      "finding": "BullMQ recommends Redis AOF and maxmemory-policy noeviction; connections and producer/worker policies differ",
+      "url": "https://docs.bullmq.io/guide/going-to-production"
+    },
+    {
+      "finding": "BullMQ FIFO start order does not necessarily imply finish order at concurrency >1",
+      "url": "https://docs.bullmq.io/guide/jobs/fifo"
+    }
+  ],
+  "added_risk_controls": [
+    "Validate jobId without colon in WU-05a (roadmap correction)",
+    "Plan detection/reconciliation for Redis job loss after outbox marked COMPLETED (additional reliability gate)",
+    "Choose private scrape transport for metrics in worker that does not currently expose HTTP (design gate)",
+    "No automatic Supabase live auth sign-off without real provider test",
+    "No marking unscanned media CLEAN without explicit owner risk acceptance"
+  ],
+  "workflow_kanban": {
+    "columns": ["BLOCKED", "READY", "IN_PROGRESS", "IN_REVIEW", "DONE", "DEFERRED"],
+    "movement_rule": "BLOCKED -> READY after approvals/dependencies; READY -> IN_PROGRESS branch started; IN_PROGRESS -> IN_REVIEW when all acceptance checks PASS; IN_REVIEW -> DONE only owner merge/sign-off.",
+    "wip_limit_recommended": "Only one HIGH/CRITICAL WU in implementation at once; non-conflicting docs/tests can run in parallel after WU-03.",
+    "initial_state": "No WU ready, in-progress, in-review or done; all blocked or deferred."
+  },
+  "package_revision": "1.1-aligned-docs",
+  "handoff_entrypoint": "docs/migration/agent/00-START-HERE.md",
+  "approval_register": "docs/migration/agent/01-DECISION-REGISTER.md",
+  "execution_runbook": "docs/migration/agent/03-EXECUTION-RUNBOOK.md",
+  "work_unit_task_counts": {
+    "WU-00": 2,
+    "WU-01": 3,
+    "WU-02": 2,
+    "WU-03": 5,
+    "WU-04": 3,
+    "WU-05a": 3,
+    "WU-05b": 2,
+    "WU-05c": 1,
+    "WU-06a": 1,
+    "WU-06b": 3,
+    "WU-06c": 2,
+    "WU-06d": 2,
+    "WU-07": 2,
+    "WU-08": 2,
+    "WU-10": 2,
+    "WU-09": 2,
+    "WU-11": 2
+  }
+}
