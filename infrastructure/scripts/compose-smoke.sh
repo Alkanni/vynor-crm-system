@@ -287,6 +287,7 @@ cmd_check() {
   expect_status 200 'Caddy HTTPS / (web)' "${tls[@]}" "$base/" || failed=1
 
   if compose exec -T worker node apps/worker/dist/healthcheck.js; then
+    # shellcheck disable=SC2016 # expanded inside the worker container
     heartbeat="$(compose exec -T worker sh -c 'cat "${TMPDIR:-/tmp}/vynor-worker.heartbeat"')"
     age=$(($(date +%s%3N) - heartbeat))
     printf '%-58s fresh (age %s ms)\n' 'worker heartbeat' "$age" | tee -a "$ARTIFACT_DIR/checks.txt" >&2
