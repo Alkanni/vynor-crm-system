@@ -1,5 +1,10 @@
 name: vynor-crm
 
+# NF-08: MinIO no longer publishes minio/minio or minio/mc. PGSTY Silo is a MinIO fork with the
+# same S3 API, /minio/health/live, MINIO_ROOT_* variables and `server` command; it ships mcli.
+# Pinned to the registry-verified multi-arch index digest (linux/amd64 and linux/arm64).
+x-storage-image: &storage_image 'docker.io/pgsty/silo:RELEASE.2026-10-15T00-00-00Z@sha256:aaac6bce13eb99316b3c88bd20143fc3c38ab607585256a411a095c44ee57f62'
+
 networks:
   vynor-network:
     driver: bridge
@@ -35,7 +40,7 @@ services:
 
   # 2. RustFS / S3-Compatible Object Store (FND-071..075, AD-010)
   rustfs:
-    image: minio/minio:latest
+    image: *storage_image
     container_name: vynor-rustfs
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -58,27 +63,30 @@ services:
 
   # 3. RustFS Bucket Provisioning Helper
   rustfs-init:
-    image: minio/mc:latest
+    image: *storage_image
     container_name: vynor-rustfs-init
     depends_on:
       rustfs:
         condition: service_healthy
     networks:
       - vynor-network
+    # Idempotent (--ignore-existing); fails when a bucket is still missing instead of exiting 0.
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set myminio http://rustfs:9000 vynor_storage_admin vynor_storage_secret;
-      /usr/bin/mc mb --ignore-existing myminio/vynor-crm-attachments;
-      /usr/bin/mc mb --ignore-existing myminio/vynor-crm-attachments-quarantine;
-      echo 'RustFS S3 buckets initialized successfully';
-      exit 0;
+      set -eu;
+      mcli alias set storage http://rustfs:9000 vynor_storage_admin vynor_storage_secret;
+      for bucket in vynor-crm-attachments vynor-crm-attachments-quarantine; do
+      mcli mb --ignore-existing storage/$$bucket;
+      mcli stat storage/$$bucket >/dev/null;
+      done;
+      echo 'Storage buckets ready';
       "
 
   # 4. Backend NestJS REST API & Realtime Gateway (FND-BE-001, FND-INF-001)
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: infrastructure/docker/Dockerfile.api
     container_name: vynor-api
     restart: unless-stopped
     environment:
@@ -112,10 +120,11 @@ services:
       rustfs:
         condition: service_healthy
     healthcheck:
+      # The API serves health under its global prefix only; /health/live returns 404.
       test:
         [
           'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:3001/health/live || exit 1',
+          'wget --no-verbose --tries=1 --spider http://localhost:3001/api/v1/health/live || exit 1',
         ]
       interval: 5s
       timeout: 5s
@@ -126,7 +135,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: apps/worker/Dockerfile
+      dockerfile: infrastructure/docker/Dockerfile.worker
     container_name: vynor-worker
     restart: unless-stopped
     environment:
@@ -162,7 +171,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: infrastructure/docker/Dockerfile.web
     container_name: vynor-web
     restart: unless-stopped
     environment:
@@ -211,10 +220,13 @@ services:
       web:
         condition: service_healthy
     healthcheck:
+      # Caddy only listens on HTTPS (:443; auto_https disable_redirects, so no :80 listener).
+      # The probe verifies the certificate against Caddy's internal root CA (TLS_MODE internal)
+      # instead of skipping verification. Switching TLS_MODE to ACME needs a different probe.
       test:
         [
           'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:80/health/live || exit 1',
+          'SSL_CERT_FILE=/data/caddy/pki/authorities/local/root.crt wget --no-verbose --tries=1 --spider https://localhost/api/v1/health/live || exit 1',
         ]
       interval: 5s
       timeout: 5s

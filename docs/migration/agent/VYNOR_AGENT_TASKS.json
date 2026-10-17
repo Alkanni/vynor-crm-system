@@ -17,7 +17,7 @@
     "ROADMAP": "06-migration-roadmap.md",
     "DB": "07-database-migration-plan.md"
   },
-  "status": "PLANNED / OWNER DECISIONS PENDING / NO APPLICATION IMPLEMENTATION",
+  "status": "WU-00 DONE (PR #64 merged 2026-10-17) / WU-01 IN_REVIEW (VYN-01-01..03 accepted by owner; PR to main, owner merges) / other WUs BLOCKED or DEFERRED",
   "owner_approval_required": true,
   "decisions": [
     {
@@ -179,7 +179,7 @@
         "DEC-08",
         "DEC-09"
       ],
-      "status": "IN_REVIEW",
+      "status": "DONE",
       "pr": "PR WU-00 -> main",
       "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
       "rollback": "Tutup PR dokumen; tidak memodifikasi kode/DB.",
@@ -193,11 +193,13 @@
       "done_when": "Semua container yang memiliki healthcheck sehat di compose dan infra:verify menangkap path rusak.",
       "risk": "HIGH",
       "decision_gates": ["DEC-08"],
-      "status": "BLOCKED_DEPENDENCY",
+      "status": "IN_REVIEW",
       "pr": "PR WU-01 -> main",
       "owner": "AI Agent (implementasi & bukti), Owner (review & merge)",
       "rollback": "Revert PR setelah memeriksa state dan efek samping; catat di execution log.",
-      "sources": ["AUDIT", "ROADMAP"]
+      "sources": ["AUDIT", "ROADMAP"],
+      "priority": "P0",
+      "risk_note": "P0 = priority of bug F-01 (the compose stack is never healthy); HIGH = implementation risk, because local Docker is shared with the live compose project vynor-crm (container vynor-postgres, volume vynor-crm_postgres_data)."
     },
     {
       "id": "WU-02",
@@ -481,34 +483,46 @@
       "id": "VYN-01-01",
       "work_unit": "WU-01",
       "title": "Perbaiki health probe API dan route kesehatan di Caddy",
-      "status": "BLOCKED_DEPENDENCY",
+      "status": "DONE",
       "depends_on_tasks": [],
       "decision_gates": [],
       "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
       "inputs": [
         "audit F-01: /health/live=404, /api/v1/health/live=200",
-        "apps/api/Dockerfile",
+        "audit F-02: healthcheck Caddy memanggil `http://localhost:80`, padahal Caddy hanya listen di `:443` (`auto_https disable_redirects`)",
+        "`infrastructure/docker/Dockerfile.api` (kanonis per DEC-08; duplikat `apps/api/Dockerfile` dihapus)",
         "docker-compose.yml",
-        "infrastructure/caddy/Caddyfile"
+        "infrastructure/caddy/Caddyfile",
+        "`apps/api/src/main.ts` (prefix global `api/v1`) dan `apps/api/src/health/health.controller.ts`"
       ],
       "actions": [
         "Ubah path HEALTHCHECK API/container/compose menjadi /api/v1/health/live.",
-        "Pilih dan implementasikan route health Caddy yang eksplisit; jangan mengubah global API prefix.",
-        "Tambahkan test skrip infra untuk mencegah probe salah muncul kembali."
+        "Pertahankan `/api/v1/health/live` sebagai endpoint kanonis; rewrite kompatibilitas `/health/*` ke `/api/v1/health/*` di Caddy tanpa mengubah global API prefix.",
+        "Probe Caddy lewat HTTPS dengan verifikasi sertifikat terhadap root CA internal Caddy (`TLS_MODE` internal); jangan mensyaratkan HTTP port 80 tanpa listener HTTP eksplisit dan jangan melemahkan verifikasi TLS.",
+        "Tambahkan test skrip infra untuk mencegah probe salah muncul kembali, termasuk uji negatif."
       ],
-      "outputs": ["Probe Caddy/API konsisten", "Test regresi path probe"],
+      "outputs": [
+        "Probe Caddy/API konsisten",
+        "Test regresi path probe",
+        "Rewrite kompatibilitas `/health/*` di Caddy"
+      ],
       "acceptance_criteria": [
         "Probe API dan Caddy terhadap path final 200.",
-        "infra:verify gagal bila probe kembali memakai path yang menghasilkan 404."
+        "infra:verify gagal bila probe kembali memakai path yang menghasilkan 404.",
+        "Probe Caddy memakai HTTPS dengan verifikasi sertifikat; tanpa `--no-check-certificate`, `-k` atau `--insecure`."
       ],
-      "verification": ["pnpm infra:verify", "curl -f http://localhost:<port>/api/v1/health/live"],
+      "verification": [
+        "pnpm infra:verify",
+        "curl -f http://127.0.0.1:<SMOKE_API_PORT>/api/v1/health/live",
+        "curl -f --cacert <root CA internal Caddy> --resolve localhost:<SMOKE_CADDY_HTTPS_PORT>:127.0.0.1 https://localhost:<SMOKE_CADDY_HTTPS_PORT>/api/v1/health/live"
+      ],
       "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
     },
     {
       "id": "VYN-01-02",
       "work_unit": "WU-01",
       "title": "Satu sumber compose/Dockerfile serta pin image",
-      "status": "BLOCKED_DEPENDENCY",
+      "status": "DONE",
       "depends_on_tasks": ["VYN-01-01"],
       "decision_gates": [],
       "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
@@ -516,12 +530,15 @@
         "DEC-08 disetujui",
         "docker-compose.yml dan infrastructure/docker/docker-compose.yml",
         "`apps/*/Dockerfile` dan `infrastructure/docker/Dockerfile.*`",
-        "referensi path di CI dan docs"
+        "referensi path di CI dan docs",
+        "Registry `docker.io/pgsty/silo:RELEASE.2026-10-15T00-00-00Z` (keputusan owner untuk NF-08): tag/manifest digest dan platform harus terverifikasi di registry, bukan image ID lokal",
+        "Label `com.docker.compose.config-hash` container live `vynor-postgres` (hanya `docker inspect`)"
       ],
       "actions": [
         "Pertahankan hanya lokasi compose/Dockerfile yang disetujui, adaptasikan build context dan path referensi.",
-        "Pin image MinIO dan mc ke tag/digest terverifikasi, bukan latest.",
-        "Perbarui skrip dan dokumen deployment; jaga konfigurasi secret dan volume tetap setara."
+        "Ganti image MinIO/mc yang tidak lagi dipublikasikan (NF-08) dengan `docker.io/pgsty/silo` sesuai keputusan owner; pin ke tag dan digest index terverifikasi di registry (platform cocok), bukan latest dan bukan image ID lokal; provisioning bucket memakai `mcli` secara idempoten.",
+        "Perbarui skrip dan dokumen deployment; jaga konfigurasi secret dan volume tetap setara.",
+        "Jangan ubah blok service `postgres` default dan pertahankan `container_name` default, agar container live tidak di-recreate."
       ],
       "outputs": [
         "Satu sumber konfigurasi; image versi deterministik",
@@ -529,40 +546,52 @@
       ],
       "acceptance_criteria": [
         "docker compose config berhasil; tidak ada copy duplikat tertinggal.",
-        "Volumes dan network tetap terdefinisi; tidak ada database atau bucket production tersentuh."
+        "Volumes dan network tetap terdefinisi; tidak ada database atau bucket production tersentuh.",
+        "Hash konfigurasi service `postgres` default identik sebelum dan sesudah perubahan."
       ],
-      "verification": ["docker compose config", "pnpm infra:verify"],
+      "verification": [
+        "docker compose --project-name vynor-wu01-smoke -f docker-compose.yml config",
+        "pnpm infra:verify"
+      ],
       "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."
     },
     {
       "id": "VYN-01-03",
       "work_unit": "WU-01",
       "title": "Smoke compose hidup penuh dari state test",
-      "status": "BLOCKED_DEPENDENCY",
+      "status": "DONE",
       "depends_on_tasks": ["VYN-01-02"],
       "decision_gates": [],
       "owner": "AI Agent (kecuali tindakan berizin yang dilakukan owner/operator)",
       "inputs": [
         "Compose hasil VYN-01-02",
         "Konfigurasi docker khusus test/local",
-        "API, worker, web, caddy"
+        "API, worker, web, caddy",
+        "`infrastructure/docker/compose.smoke.yml` dan `infrastructure/docker/smoke.env`",
+        "`infrastructure/scripts/compose-smoke.sh` dan `infrastructure/scripts/compose-smoke-guard.mts`"
       ],
       "actions": [
         "Build dan jalankan compose di lingkungan aman; hindari bind ke database live.",
+        "Jalankan semua perintah compose lewat runner ber-guard: project `vynor-wu01-smoke` eksplisit, env disanitasi dengan allowlist, lock anti-paralel, `container_name` di-reset, volume dan network baru, port host hanya `127.0.0.1`, DB `vynor_test` pada PostgreSQL smoke.",
+        "Sebelum migrate/seed, verifikasi host, port, database aktual dan identitas instance PostgreSQL smoke.",
         "Periksa semua healthcheck serta permintaan API via Caddy, web dan worker heartbeat.",
-        "Simpan log diagnostic; buat smoke CI opsional yang tidak mengeksekusi migrasi di DB live."
+        "Simpan log diagnostic; tambahkan job CI `compose-smoke` terisolasi (timeout, cleanup, tanpa secret) yang tidak mengeksekusi migrasi di DB live.",
+        "Teardown hanya resource yang terbukti milik project smoke (tanpa `--rmi`); postflight memastikan `vynor-postgres` tidak berubah."
       ],
       "outputs": [
         "Bukti container healthy dan smoke HTTP",
-        "PR WU-01 dengan test pencegah regresi"
+        "PR WU-01 dengan test pencegah regresi",
+        "Runner smoke ber-guard dan job CI `compose-smoke`"
       ],
       "acceptance_criteria": [
         "Worker, web, caddy start dan servis yang mensyaratkan healthy benar-benar berjalan.",
-        "GET /api/v1/health/live melalui Caddy 200; infra:verify menangkap typo path."
+        "GET /api/v1/health/live melalui Caddy 200; infra:verify menangkap typo path.",
+        "Postflight: metadata `vynor-postgres` identik dan tidak ada resource `vynor-wu01-smoke` tersisa.",
+        "Storage (Silo) sehat; `rustfs-init` membuat kedua bucket secara idempoten; client S3 aplikasi berhasil put dan signed download di kedua bucket."
       ],
       "verification": [
-        "docker compose config",
-        "docker compose up --build --wait",
+        "infrastructure/scripts/compose-smoke.sh preflight",
+        "infrastructure/scripts/compose-smoke.sh all",
         "pnpm infra:verify"
       ],
       "notes": "Jangan memperlebar scope; simpan bukti di 08/09 setelah WU aktif."

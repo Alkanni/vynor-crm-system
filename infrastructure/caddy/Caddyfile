@@ -83,6 +83,7 @@
     }
 
     # 4. REST API Endpoints & Health Probes (/api/v1/*, /health/*)
+    # The canonical probe is /api/v1/health/live (the API keeps its global api/v1 prefix).
     handle /api/* {
         request_body {
             max_size 10MB
@@ -95,7 +96,11 @@
         }
     }
 
+    # Compatibility for external probes that still call /health/*: the API serves health only
+    # under /api/v1/health/*, so a plain proxy would return 404. Rewrite the path (the query
+    # string is kept) instead of changing the API prefix.
     handle /health/* {
+        rewrite * /api/v1{path}
         reverse_proxy api:3001 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
