@@ -52,7 +52,7 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
   /** Writes a heartbeat if pg-boss is running and the database answers a ping in time. */
   async beat(file = HEARTBEAT_FILE): Promise<boolean> {
     try {
-      // pg-boss is not restarted after a failed start, so without it this worker can do no work.
+      // Without pg-boss (e.g. while a failed start is being retried) this worker can do no work.
       if (!this.queue.isRunning()) throw new Error('pg-boss is not running');
       await withTimeout(prisma.$queryRaw`SELECT 1`, DB_PING_TIMEOUT_MS);
       await writeHeartbeat(file);
