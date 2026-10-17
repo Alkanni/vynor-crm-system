@@ -1,0 +1,81 @@
+name: Compose Smoke (isolated)
+
+# Builds and starts the full compose stack as project vynor-wu01-smoke on a disposable
+# PostgreSQL with database vynor_test, then checks API health, Caddy over verified HTTPS,
+# the worker heartbeat and web startup. Uses no secrets and no external database.
+# All Docker steps go through infrastructure/scripts/compose-smoke.sh (see its header).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infrastructure/**'
+      - 'docker-compose.yml'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/compose-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infrastructure/**'
+      - 'docker-compose.yml'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/compose-smoke.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: compose-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  compose-smoke:
+    name: Compose Smoke (vynor-wu01-smoke, vynor_test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint Smoke Runner
+        run: shellcheck infrastructure/scripts/compose-smoke.sh
+
+      - name: Run Isolated Compose Smoke
+        timeout-minutes: 35
+        env:
+          SMOKE_ARTIFACT_DIR: ${{ runner.temp }}/compose-smoke
+        run: infrastructure/scripts/compose-smoke.sh all
+
+      - name: Tear Down Smoke Stack
+        if: always()
+        env:
+          SMOKE_ARTIFACT_DIR: ${{ runner.temp }}/compose-smoke
+        run: infrastructure/scripts/compose-smoke.sh down
+
+      - name: Upload Smoke Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-smoke-logs
+          path: ${{ runner.temp }}/compose-smoke
+          if-no-files-found: ignore
+          retention-days: 7

@@ -131,3 +131,95 @@ Fakta audit historis di `01..07` **tidak** diubah. Delta dicatat di sini.
 - **Status:** VYN-00-01 dan VYN-00-02 `DONE` (diterima owner); WU-00 `IN_REVIEW` (PR). WU-00 menjadi `DONE` hanya setelah owner merge.
 - **Validasi sebelum commit:** lihat `09-regression-test-results.md` bagian finalisasi.
 - **Commit dan PR:** commit dokumen pada `docs/migration-plan` (base `1d6b578`); SHA commit dan URL PR tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge oleh owner.
+
+### Pasca-merge WU-00 — 2026-10-17
+
+- PR #64 di-merge owner ke `main` sebagai `07e77482c9447ef9d6b0a15949e6dedc03a85cf0`. Verifikasi pasca-merge (sesi `89bf14a1`): 61 file `docs/migration/**` identik dengan head PR; CI pada commit merge 4/4 lolos.
+- Owner menetapkan WU-00 `DONE` dan WU-01 `READY`, lalu `IN_PROGRESS` saat implementasi dimulai (chat "WU-01 — RANCANGAN DISETUJUI DENGAN KOREKSI — IMPLEMENTASI TAHAP 1").
+
+## WU-01 — 2026-10-17
+
+### Tahap 1 — konfigurasi, skrip, CI, dan dokumen (VYN-01-01..03 `IN_PROGRESS`)
+
+- **Owner approval:** chat owner "WU-01 — RANCANGAN DISETUJUI DENGAN KOREKSI — IMPLEMENTASI TAHAP 1".
+  - Keputusan: F-01 prioritas **P0**, risiko implementasi WU-01 **HIGH**; `container_name` di compose default dipertahankan; smoke memakai overlay dengan project terisolasi `vynor-wu01-smoke`; salinan dokumen lama di checkout utama tidak dipindah atau dihapus.
+  - Koreksi wajib A–F: healthcheck Caddy, image MinIO, isolasi Compose, runner, CI, dokumentasi.
+  - Diizinkan: perubahan konfigurasi, Dockerfile, skrip verifikasi, overlay, runner, workflow CI, dan dokumen di worktree WU-01 baru; pemeriksaan read-only, `docker compose config`, format, lint, typecheck, build, dan pull image MinIO/mc yang terverifikasi.
+  - Belum diizinkan: `docker compose up`/`down`; membuat/menghapus container, network, atau volume; migrasi Prisma, seed, atau test yang memodifikasi DB; compose pada project default; commit/push/PR; perubahan checkout utama; penghapusan backup atau salinan lama.
+- **Branch, base/head SHA:** `fix/wu-01-compose-health` di worktree `.claude/worktrees/wu-01-compose-health`, dibuat dari `origin/main` `07e7748`. Upstream dilepas (`git branch --unset-upstream`) supaya push tidak pernah jatuh ke `main`. Head = base; belum ada commit. Checkout utama tidak diubah (`main` @ `565e8e4`, file untracked tetap).
+- **Perubahan file:**
+  - VYN-01-01: `docker-compose.yml` (probe api `/api/v1/health/live`; probe caddy HTTPS + root CA internal), `infrastructure/docker/Dockerfile.api` (`HEALTHCHECK`), `infrastructure/caddy/Caddyfile` (rewrite `/health/*` → `/api/v1/health/*`).
+  - VYN-01-02 (DEC-08): `build.dockerfile` → `infrastructure/docker/Dockerfile.*`; hapus `apps/{api,worker,web}/Dockerfile` dan `infrastructure/docker/docker-compose.yml` (identik byte-per-byte dengan versi kanonis); matrix `.github/workflows/container-security.yml`.
+  - VYN-01-03 (baru): `infrastructure/docker/compose.smoke.yml`, `infrastructure/docker/smoke.env`, `infrastructure/scripts/compose-smoke.sh`, `infrastructure/scripts/compose-smoke-guard.mts`, `.github/workflows/compose-smoke.yml`.
+  - `infrastructure/scripts/verify-infrastructure.ts`: 11 → 18 cek, termasuk uji negatif probe dan guard.
+  - Dokumen: `docs/infrastructure-and-deployment.md`, `docs/health-checks-and-probes.md`, 06 §3/§7, Kanban, JSON, VYN-01-01..03, `agent/00-START-HERE.md`, 08, 09.
+- **Temuan:**
+  - **F-02 terkonfirmasi (statis):** `caddy adapt --validate` (biner v2.8.4 dari image `caddy:2.8-alpine`, dijalankan offline dengan data dir di scratchpad) menunjukkan satu-satunya listener `:443` (`automatic_https.disable_redirects`). Healthcheck lama `http://localhost:80/health/live` tidak mungkin sehat, terlepas dari F-01.
+  - **Alat healthcheck Caddy:** image berisi busybox `wget` + `ssl_client` (Alpine 3.20.4, OpenSSL 3: `SSL_CTX_set_default_verify_paths`, `SSL_set1_host`), tanpa `curl`. `SSL_CERT_FILE=/data/caddy/pki/authorities/local/root.crt` membuat probe memverifikasi rantai sertifikat dan hostname terhadap CA internal Caddy. Pengecualian verifikasi tidak diperlukan. Path root CA dibuktikan dari `caddy adapt --validate` (`$XDG_DATA_HOME/caddy/pki/authorities/local/root.crt`, dan `XDG_DATA_HOME=/data` di image).
+  - **NF-08 (baru) — image MinIO tidak tersedia, pin BLOCKED:** `docker.io/minio/minio` dan `docker.io/minio/mc` tidak ada lagi di Docker Hub (Hub API 404; manifest registry 401 dengan token anonim; namespace `minio` tidak lagi memuat kedua repo). `quay.io/minio/{minio,mc}` menolak pull anonim (401). Tidak ada tag/digest yang dapat diverifikasi, sehingga sesuai koreksi B bagian pin dihentikan. Image lokal `minio/minio:latest` (label `RELEASE.2025-09-07T16-13-09Z`, `sha256:14cea493…`) **tidak** dipakai sebagai pengganti. `minio/mc` tidak ada di lokal. Dampak: `rustfs`/`rustfs-init` tidak dapat di-pull di mesin atau runner CI baru, sehingga smoke tahap 2 dan job CI `compose-smoke` akan gagal pada pull sampai owner memutuskan image storage.
+  - **Hash `postgres` default tidak berubah:** `docker compose --project-name vynor-wu01-smoke -f <file> config --hash postgres` (env `POSTGRES_PORT=5434` saja) = `b1738eb760aac67d20255a8fe9cfe5d5e7da295add5ec26fe4f6489740770e5c` untuk `origin/main`, untuk branch, dan sama dengan label `com.docker.compose.config-hash` container live `vynor-postgres`.
+- **Perintah nyata dijalankan + output:**
+  - `git fetch origin`; `gh pr view 64`: `MERGED`, merge commit `07e7748`.
+  - Registry (read-only): `docker buildx imagetools inspect`, Docker Hub API, dan registry v2 Docker Hub/Quay (hasil di atas). Tidak ada `docker pull`.
+  - `docker save caddy:2.8-alpine` dan `docker save minio/minio:latest` ke scratchpad (tanpa container), lalu inspeksi berkas: `minio` memuat `curl` dan `mc`, jadi healthcheck `rustfs` valid.
+  - `docker compose --project-name vynor-wu01-smoke … config --format json` (default dan default+overlay, env disanitasi): PASS.
+  - `pnpm format:check`, `pnpm lint` (17/17), `pnpm build` (11/11), `pnpm typecheck` (11/11), `pnpm infra:verify` (18/18, dua peringatan `[BLOCKED]` MinIO), ESLint dan `tsc --strict` untuk skrip infra: PASS (rincian di 09).
+  - `infrastructure/scripts/compose-smoke.sh preflight` dengan `TMPDIR` di scratchpad: PASS, termasuk uji negatif (lihat 09).
+  - Snapshot state Docker sebelum dan sesudah seluruh tahap 1 (39 container, 33 volume, 18 network, 47 image, metadata `vynor-postgres`): identik.
+- **NOT RUN (menunggu persetujuan tahap 2):** `compose up`/`down`, build image, migrate/seed `vynor_test` smoke, `pnpm test`, smoke HTTP, `shellcheck` (tidak tersedia lokal; dijalankan job CI), job CI `compose-smoke` (belum ada push).
+- **Keputusan yang dibutuhkan owner (NF-08):** pengganti image storage untuk service `rustfs`/`rustfs-init`. Opsi yang perlu diverifikasi sebelum dipilih: (a) image RustFS resmi (sesuai nama service dan AD-010; perubahan perilaku storage); (b) fork/mirror MinIO komunitas atau Chainguard (digest saja, provenance perlu ditinjau); (c) build image MinIO dari source di repo ini (beban pemeliharaan); (d) memisahkan storage dari smoke (deviasi dari "semua container sehat"). Tidak ada opsi yang dipilih atau di-pull.
+- **Rencana tahap 2 (PROPOSED, butuh persetujuan):** lihat `docs/infrastructure-and-deployment.md` §6 dan laporan agent.
+- **Status:** VYN-01-01..03 `IN_PROGRESS`. Tidak ada commit atau PR.
+
+### Tahap 2 — NF-08 (PGSTY Silo) dan smoke terisolasi (VYN-01-01..03 `IN_REVIEW`)
+
+- **Owner approval:** chat owner "WU-01 — TAHAP 1 DITERIMA, LANJUTKAN PENYELESAIAN NF-08 DAN SMOKE TERISOLASI".
+  - Tahap 1 diterima dengan status `PASS WITH NOTES`.
+  - NF-08: opsi (b) PGSTY Silo, hanya `docker.io/pgsty/silo:RELEASE.2026-10-15T00-00-00Z`, dipakai lewat digest registry yang terverifikasi.
+  - Izin runtime terbatas: satu rangkaian smoke lewat runner `vynor-wu01-smoke` setelah preflight dan cek ownership lulus; migrate/seed/test hanya di `127.0.0.1:55432/vynor_test` setelah identitas instance diverifikasi; teardown hanya resource smoke, tanpa menghapus image.
+  - Tetap dilarang: database/container/volume aktif, compose default, commit/push/PR/merge.
+- **Verifikasi image (read-only, sebelum pull):**
+  - `docker buildx imagetools inspect` dan registry v2 Docker Hub: index OCI `sha256:aaac6bce13eb99316b3c88bd20143fc3c38ab607585256a411a095c44ee57f62` (sha256 byte manifest = `Docker-Content-Digest`). Platform `linux/amd64` `sha256:1c210bc1…` (hash byte cocok) dan `linux/arm64` `sha256:87585bb7…`, plus attestation.
+  - Config amd64 `sha256:77c299e4…`: label `org.opencontainers.image.version=RELEASE.2026-10-15T00-00-00Z`, source `github.com/pgsty/silo` revision `7a3ca0f8…`, lisensi AGPL-3.0-or-later, basis UBI9-micro.
+  - Isi image: `silo`, `mcli` (+ symlink `mc`), `curl`, `/bin/sh`. Entrypoint menerjemahkan `server …`/`minio …` menjadi `silo …`. Biner memuat `/minio/health/live`, `--console-address`, `MINIO_ROOT_USER/PASSWORD`; `mcli` memuat `alias set` dan `mb --ignore-existing` (dicek lewat `strings`, tanpa menjalankan biner).
+  - `docker pull docker.io/pgsty/silo:RELEASE.2026-10-15T00-00-00Z@sha256:aaac6bce…`: satu-satunya pull.
+- **Perubahan:**
+  - Service `rustfs` dan `rustfs-init` memakai `x-storage-image` (tag + digest). `rustfs-init` memakai `mcli` dengan `set -eu`, `mb --ignore-existing` dan `stat` untuk kedua bucket. Skrip lama mengakhiri dengan `exit 0` sehingga kegagalan tersembunyi; skrip baru gagal bila bucket tidak ada.
+  - Kontrak S3 aplikasi, nama service, endpoint `http://rustfs:9000`, port, variabel `MINIO_ROOT_*`, volume, dan healthcheck `curl …/minio/health/live` tidak berubah.
+  - Runner: build `@vynor/storage`; `rustfs-init` dijalankan dua kali pada container yang sama (keduanya harus exit 0); `check` menambah health storage dan round trip S3 lewat client aplikasi (`infrastructure/scripts/compose-smoke-s3.mts`), lalu pembersihan prefix `wu01-smoke/` dengan `mcli`.
+  - Mula-mula image dan provisioning hanya ada di overlay smoke. Setelah smoke PASS keduanya dipindah ke `docker-compose.yml`, dan overlay kembali hanya berisi isolasi. Config smoke hasil render setelah pemindahan **identik** (`name`, `services`, `volumes`, `networks`) dengan `compose.rendered.json` yang diuji. Hash `postgres` default tetap `b1738eb7…` (= label container live). Compose default tidak dijalankan.
+  - `infra:verify` menjadi 19 cek: storage harus tepat referensi Silo ber-digest, `rustfs-init` harus idempoten dan tidak menyembunyikan kegagalan, dan runner harus menjalankan cek S3. Peringatan `[BLOCKED]` hilang.
+- **Percobaan smoke 1 (berhenti, bukan kegagalan WU-01):**
+  - Preflight, guard, identitas PostgreSQL smoke dan 7 migrasi berhasil.
+  - Seed gagal: `tsx` membuat socket IPC di bawah `TMPDIR`, dan `TMPDIR` yang diarahkan agent ke scratchpad sesi melebihi batas path unix socket (`listen EINVAL …/tsx-1000/<pid>.pipe`).
+  - Stack parsial (1 container, 1 volume, 1 network smoke) dihapus dengan `compose-smoke.sh down` (ownership dicek), lalu `postflight` PASS. Batas panjang `TMPDIR` dicatat di `docs/infrastructure-and-deployment.md` §6.1.
+- **Percobaan smoke 2 (`TMPDIR` default, artefak di scratchpad sesi):**
+  - Preflight PASS; PostgreSQL smoke terverifikasi: `/vynor-wu01-smoke-postgres-1`, hanya volume smoke, satu-satunya publisher `127.0.0.1:55432`, `current_database()=vynor_test`, `system_identifier` sama dari dalam container dan dari koneksi host, tanpa DB `vynor`/`vynor_crm`.
+  - `migrate deploy` (7 migrasi) dan seed PASS pada instance tersebut.
+  - `rustfs-init` run 1 dan run 2 exit 0; kedua bucket memiliki satu timestamp pembuatan.
+  - `up --build --wait`: 6 service `running healthy restarts=0`. Log healthcheck: API `200 OK`; Caddy `Connecting to localhost ([::1]:443) … remote file exists` (HTTPS terverifikasi CA internal); storage `curl` exit 0.
+  - `check` pertama: semua PASS kecuali round trip S3 → **NF-09** (di bawah). Cek S3 diselaraskan dengan kontrak yang dipakai aplikasi, lalu `check` diulang pada stack yang sama: **semua PASS** (lihat 09).
+  - Bukti tambahan: readiness API 200 (DB smoke `UP`); TLS Caddy `ssl_verify_result=0`, issuer `Caddy Local Authority - ECC Intermediate`; semua port hanya `127.0.0.1`; 0 log level error/fatal.
+  - `logs`, `down` (7 container, 4 volume, 1 network, semua `vynor-wu01-smoke`), dan `postflight` PASS: snapshot `vynor-postgres` identik, tidak ada resource smoke tersisa.
+- **State Docker sebelum vs sesudah tahap 2:** container, volume, network dan metadata `vynor-postgres` identik. Image bertambah sesuai izin dan sengaja dibiarkan: `pgsty/silo@sha256:aaac6bce…` (pull) serta `vynor-wu01-smoke-{api,worker,web}:latest` (build smoke).
+- **NF-09 (baru, di luar scope WU-01, terbuka):** `@vynor/storage` (`packages/storage/src/s3-adapter.ts`) menandatangani `stat`/`get`/`delete` dengan payload hash `UNSIGNED-PAYLOAD`, tetapi tidak mengirim header `x-amz-content-sha256`. Server keluarga MinIO lalu memakai hash payload kosong → `403 SignatureDoesNotMatch`. Bukti (`s3-sigv4-diagnosis.txt`):
+  - client aplikasi: `put` OK, signed download 200, `stat`/`get` 403;
+  - request mentah dengan header yang ditandatangani: HEAD 200, GET 200, DELETE 204, HEAD sesudah delete 404;
+  - tanpa header dengan hash payload kosong: 200.
+
+  Ini bug client, bukan inkompatibilitas Silo, dan akan sama terjadi pada MinIO asli. API dan worker saat ini hanya memanggil `createSignedDownload`, jadi bug ini laten. Perlu tiket terpisah.
+
+- **Status:** VYN-01-01..03 `IN_REVIEW` (acceptance lokal PASS). WU-01 `IN_PROGRESS` sampai PR dibuat. Tidak ada commit, push, atau PR.
+
+### Finalisasi WU-01 — commit, CI, dan PR
+
+- **Owner approval:** chat owner "WU-01 DITERIMA — LANJUTKAN COMMIT, CI, DAN PULL REQUEST" (status `PASS WITH NOTES`):
+  - VYN-01-01..03 diterima (`DONE`);
+  - NF-08 selesai (PGSTY Silo);
+  - NF-09 dicatat sebagai bug terbuka di backlog (Kanban §1B), tidak diperbaiki di WU-01;
+  - smoke lokal tidak diulang kecuali konfigurasi runtime berubah.
+
+  Diizinkan: commit Conventional Commits, push branch, PR ke `main`, memantau CI (`compose-smoke`, `shellcheck`), dan perbaikan yang hanya terkait WU-01. Dilarang: merge, compose default lokal, perubahan container/volume/database aktif, pembersihan backup atau salinan lama, perbaikan NF-09, dan memulai WU-02.
+
+- **Pemeriksaan sebelum commit:** `git fetch origin`: `origin/main` = merge-base = `07e7748` (memuat WU-00). Setelah itu `pnpm format:check`, `git diff --check`, `infra:verify`, konsistensi JSON ↔ tiket ↔ Kanban, dan pemeriksaan scope (hasilnya di laporan PR).
+- **Status:** WU-01 `IN_REVIEW` (PR). SHA commit, URL PR, dan hasil CI tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge hanya oleh owner.

@@ -41,13 +41,13 @@ jobs:
       matrix:
         include:
           - app: api
-            dockerfile: apps/api/Dockerfile
+            dockerfile: infrastructure/docker/Dockerfile.api
             image_name: vynor-api
           - app: worker
-            dockerfile: apps/worker/Dockerfile
+            dockerfile: infrastructure/docker/Dockerfile.worker
             image_name: vynor-worker
           - app: web
-            dockerfile: apps/web/Dockerfile
+            dockerfile: infrastructure/docker/Dockerfile.web
             image_name: vynor-web
 
     steps:

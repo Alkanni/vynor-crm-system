@@ -54,6 +54,12 @@ flowchart TD
 
 ---
 
+### 1.3 Container and Edge Probes (Docker, Caddy)
+
+- **Canonical path:** `GET /api/v1/health/live` (alias `/api/v1/health/liveness`). The API serves health only under its global `api/v1` prefix, so `GET /health/live` on the API returns `404` (F-01). The compose and `infrastructure/docker/Dockerfile.api` health checks use the canonical path, and `pnpm infra:verify` fails if a probe uses any path the API does not serve.
+- **Caddy compatibility:** Caddy rewrites `/health/*` to `/api/v1/health/*` (query kept) for external probes that still call the old path. The API prefix is not changed.
+- **Caddy container probe:** HTTPS against Caddy's internal CA (`SSL_CERT_FILE=/data/caddy/pki/authorities/local/root.crt wget --spider https://localhost/api/v1/health/live`), because Caddy has no HTTP listener. Certificate verification is never disabled. See `docs/infrastructure-and-deployment.md` §3 and §6.
+
 ## 2. Subsystem Health Indicators (FND-050)
 
 Administrators and monitoring services can query the comprehensive health report via:

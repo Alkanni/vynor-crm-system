@@ -1,6 +1,6 @@
 # VYNOR CRM — Kanban Migrasi Berbasis Vertical Slice
 
-> **Status per 17 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 diajukan sebagai PR dari branch `docs/migration-plan`; WU lain masih perencanaan; tidak ada perubahan kode aplikasi melalui paket ini.
+> **Status per 17 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `IN_REVIEW` (VYN-01-01..03 `DONE`, diterima owner 2026-10-17; PR dari branch `fix/wu-01-compose-health` menunggu review dan merge owner); WU lain masih perencanaan.
 > **Sumber:** `../01`–`../07` audit/migration yang sudah diperbarui; commit audit `565e8e4`, baseline historis 176 test. Jangan menganggap audit commit sama dengan `origin/main` terbaru.
 
 ## Sasaran dan batas
@@ -13,30 +13,31 @@ Migrasikan perubahan stack minimum secara aman tanpa mengganti arsitektur modula
 
 ### 1A. Swimlane x status (snapshot awal)
 
-| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS** | **IN REVIEW**                                    | **DONE**                         | **DEFERRED** |
-| ----------------------- | ------------------------------------- | --------- | --------------- | ------------------------------------------------ | -------------------------------- | ------------ |
-| Keputusan & fondasi     | WU-01; WU-02; WU-03                   | —         | —               | WU-00 (PR dokumen; VYN-00-01 dan VYN-00-02 DONE) | DEC-01..09 (RESOLVED 2026-10-17) | —            |
-| State & antrean         | WU-04; WU-05a; WU-05b                 | —         | —               | —                                                | —                                | WU-05c       |
-| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —               | —                                                | —                                | —            |
-| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —               | —                                                | —                                | —            |
-| Reliability & penutupan | WU-10; WU-11                          | —         | —               | —                                                | —                                | WU-09        |
+| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS** | **IN REVIEW**                                     | **DONE**                                                     | **DEFERRED** |
+| ----------------------- | ------------------------------------- | --------- | --------------- | ------------------------------------------------- | ------------------------------------------------------------ | ------------ |
+| Keputusan & fondasi     | WU-02; WU-03                          | —         | —               | WU-01 (P0, risiko HIGH; PR menunggu review owner) | WU-00 (PR #64, 2026-10-17); DEC-01..09 (RESOLVED 2026-10-17) | —            |
+| State & antrean         | WU-04; WU-05a; WU-05b                 | —         | —               | —                                                 | —                                                            | WU-05c       |
+| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —               | —                                                 | —                                                            | —            |
+| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —               | —                                                 | —                                                            | —            |
+| Reliability & penutupan | WU-10; WU-11                          | —         | —               | —                                                 | —                                                            | WU-09        |
 
 **Aturan pergerakan:** `BLOCKED → READY` setelah dependency + approval; `READY → IN PROGRESS` ketika branch PR dibuka; `IN PROGRESS → IN REVIEW` setelah DoD dan test; `IN REVIEW → DONE` hanya sesudah owner merge/sign-off. Jangan menandai `DONE` saat AI baru membuat commit. **WIP limit disarankan:** maksimum satu WU berisiko HIGH/CRITICAL dalam implementasi pada satu waktu; pekerjaan docs/test independen boleh paralel setelah WU-03.
 
 ### 1B. Backlog dan urutan prioritas
 
-| Kolom                          | Work unit / vertical slice                                            | Kondisi perpindahan                                                                     |
-| ------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**          | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR |
-| **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **IN REVIEW (PR) sejak 2026-10-17** | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                  |
-| **BACKLOG — PRIORITAS P0**     | WU-01 health Docker; WU-02 CVE & CORS; WU-03 characterization E2E     | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                 |
-| **BACKLOG — PRIORITAS P1**     | WU-04 Redis → WU-05a BullMQ expand → WU-05b contract                  | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                     |
-| **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next      | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                          |
-| **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                             | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                |
-| **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                            | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                             |
-| **OPTIONAL / DITAHAN**         | WU-09 media S3; WU-05c DROP pgboss; perubahan FK                      | DEC-07 / persetujuan destruktif dan environment secara terpisah                         |
+| Kolom                          | Work unit / vertical slice                                                                                               | Kondisi perpindahan                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**                                                             | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR |
+| **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **DONE 2026-10-17 (PR #64 di-merge owner)**                                            | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                  |
+| **BACKLOG — PRIORITAS P0**     | WU-01 health Docker — **IN REVIEW (PR)** (risiko implementasi HIGH); WU-02 CVE & CORS; WU-03 characterization E2E        | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                 |
+| **BACKLOG — PRIORITAS P1**     | WU-04 Redis → WU-05a BullMQ expand → WU-05b contract                                                                     | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                     |
+| **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next                                                         | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                          |
+| **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                                                                                | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                |
+| **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                                                                               | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                             |
+| **OPTIONAL / DITAHAN**         | WU-09 media S3; WU-05c DROP pgboss; perubahan FK                                                                         | DEC-07 / persetujuan destruktif dan environment secara terpisah                         |
+| **BACKLOG — BUG TERBUKA**      | NF-09: `@vynor/storage` `stat`/`get`/`delete` tanpa header `x-amz-content-sha256` (403 di storage keluarga MinIO; laten) | Di luar WU-01 (keputusan owner 2026-10-17); butuh tiket terpisah dan persetujuan owner  |
 
-**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-17 WU-00 `IN_REVIEW` (PR menunggu review dan merge owner); belum ada WU `DONE`.
+**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-17 WU-00 `DONE` (PR #64 di-merge owner) dan WU-01 `IN_REVIEW` (PR menunggu merge owner).
 
 ## 2. Peta dependensi dan potensi paralel
 
@@ -99,7 +100,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-00 — Persiapan, keputusan, baseline Git
 
-**Status:** `IN_REVIEW` (PR sejak 2026-10-17; status awal `WAITING_APPROVAL`) · **Risiko:** LOW · **Depends:** gerbang persetujuan (terpenuhi) · **Gates:** DEC-01, DEC-02, DEC-03, DEC-04, DEC-05, DEC-06, DEC-07, DEC-08, DEC-09
+**Status:** `DONE` (PR #64 di-merge owner sebagai `07e7748`, 2026-10-17; status awal `WAITING_APPROVAL`) · **Risiko:** LOW · **Depends:** gerbang persetujuan (terpenuhi) · **Gates:** DEC-01, DEC-02, DEC-03, DEC-04, DEC-05, DEC-06, DEC-07, DEC-08, DEC-09
 
 **Vertical slice:** Audit -> keputusan -> branch aman -> dokumen & baseline dapat direview
 
@@ -177,7 +178,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-01 — Docker/Caddy benar-benar sehat
 
-**Status:** `BLOCKED_DEPENDENCY` · **Risiko:** HIGH · **Depends:** WU-00 · **Gates:** DEC-08
+**Status:** `IN_REVIEW` (PR ke `main`; VYN-01-01..03 `DONE`, diterima owner 2026-10-17) · **Prioritas:** P0 (bug F-01) · **Risiko implementasi:** HIGH · **Depends:** WU-00 (`DONE`) · **Gates:** DEC-08 (RESOLVED)
 
 **Vertical slice:** docker compose up -> health API 200 -> worker/web/caddy siap
 
@@ -192,30 +193,36 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 **INPUT**
 
 - audit F-01: /health/live=404, /api/v1/health/live=200
-- apps/api/Dockerfile
+- audit F-02: healthcheck Caddy memanggil `http://localhost:80`, padahal Caddy hanya listen di `:443` (`auto_https disable_redirects`)
+- `infrastructure/docker/Dockerfile.api` (kanonis per DEC-08; duplikat `apps/api/Dockerfile` dihapus)
 - docker-compose.yml
 - infrastructure/caddy/Caddyfile
+- `apps/api/src/main.ts` (prefix global `api/v1`) dan `apps/api/src/health/health.controller.ts`
 
 **TUGAS / AKSI**
 
-- [ ] Ubah path HEALTHCHECK API/container/compose menjadi /api/v1/health/live.
-- [ ] Pilih dan implementasikan route health Caddy yang eksplisit; jangan mengubah global API prefix.
-- [ ] Tambahkan test skrip infra untuk mencegah probe salah muncul kembali.
+- [x] Ubah path HEALTHCHECK API/container/compose menjadi /api/v1/health/live.
+- [x] Pertahankan `/api/v1/health/live` sebagai endpoint kanonis; rewrite kompatibilitas `/health/*` ke `/api/v1/health/*` di Caddy tanpa mengubah global API prefix.
+- [x] Probe Caddy lewat HTTPS dengan verifikasi sertifikat terhadap root CA internal Caddy (`TLS_MODE` internal); jangan mensyaratkan HTTP port 80 tanpa listener HTTP eksplisit dan jangan melemahkan verifikasi TLS.
+- [x] Tambahkan test skrip infra untuk mencegah probe salah muncul kembali, termasuk uji negatif.
 
 **OUTPUT / DELIVERABLE**
 
 - Probe Caddy/API konsisten
 - Test regresi path probe
+- Rewrite kompatibilitas `/health/*` di Caddy
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Probe API dan Caddy terhadap path final 200.
-- [ ] infra:verify gagal bila probe kembali memakai path yang menghasilkan 404.
+- [x] Probe API dan Caddy terhadap path final 200.
+- [x] infra:verify gagal bila probe kembali memakai path yang menghasilkan 404.
+- [x] Probe Caddy memakai HTTPS dengan verifikasi sertifikat; tanpa `--no-check-certificate`, `-k` atau `--insecure`.
 
 **BUKTI VERIFIKASI**
 
 - `pnpm infra:verify`
-- `curl -f http://localhost:<port>/api/v1/health/live`
+- `curl -f http://127.0.0.1:<SMOKE_API_PORT>/api/v1/health/live`
+- `curl -f --cacert <root CA internal Caddy> --resolve localhost:<SMOKE_CADDY_HTTPS_PORT>:127.0.0.1 https://localhost:<SMOKE_CADDY_HTTPS_PORT>/api/v1/health/live`
 
 #### VYN-01-02 — Satu sumber compose/Dockerfile serta pin image
 
@@ -227,12 +234,15 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 - docker-compose.yml dan infrastructure/docker/docker-compose.yml
 - `apps/*/Dockerfile` dan `infrastructure/docker/Dockerfile.*`
 - referensi path di CI dan docs
+- Registry `docker.io/pgsty/silo:RELEASE.2026-10-15T00-00-00Z` (keputusan owner untuk NF-08): tag/manifest digest dan platform harus terverifikasi di registry, bukan image ID lokal
+- Label `com.docker.compose.config-hash` container live `vynor-postgres` (hanya `docker inspect`)
 
 **TUGAS / AKSI**
 
-- [ ] Pertahankan hanya lokasi compose/Dockerfile yang disetujui, adaptasikan build context dan path referensi.
-- [ ] Pin image MinIO dan mc ke tag/digest terverifikasi, bukan latest.
-- [ ] Perbarui skrip dan dokumen deployment; jaga konfigurasi secret dan volume tetap setara.
+- [x] Pertahankan hanya lokasi compose/Dockerfile yang disetujui, adaptasikan build context dan path referensi.
+- [x] Ganti image MinIO/mc yang tidak lagi dipublikasikan (NF-08) dengan `docker.io/pgsty/silo` sesuai keputusan owner; pin ke tag dan digest index terverifikasi di registry (platform cocok), bukan latest dan bukan image ID lokal; provisioning bucket memakai `mcli` secara idempoten.
+- [x] Perbarui skrip dan dokumen deployment; jaga konfigurasi secret dan volume tetap setara.
+- [x] Jangan ubah blok service `postgres` default dan pertahankan `container_name` default, agar container live tidak di-recreate.
 
 **OUTPUT / DELIVERABLE**
 
@@ -241,12 +251,13 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] docker compose config berhasil; tidak ada copy duplikat tertinggal.
-- [ ] Volumes dan network tetap terdefinisi; tidak ada database atau bucket production tersentuh.
+- [x] docker compose config berhasil; tidak ada copy duplikat tertinggal.
+- [x] Volumes dan network tetap terdefinisi; tidak ada database atau bucket production tersentuh.
+- [x] Hash konfigurasi service `postgres` default identik sebelum dan sesudah perubahan.
 
 **BUKTI VERIFIKASI**
 
-- `docker compose config`
+- `docker compose --project-name vynor-wu01-smoke -f docker-compose.yml config`
 - `pnpm infra:verify`
 
 #### VYN-01-03 — Smoke compose hidup penuh dari state test
@@ -258,27 +269,35 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 - Compose hasil VYN-01-02
 - Konfigurasi docker khusus test/local
 - API, worker, web, caddy
+- `infrastructure/docker/compose.smoke.yml` dan `infrastructure/docker/smoke.env`
+- `infrastructure/scripts/compose-smoke.sh` dan `infrastructure/scripts/compose-smoke-guard.mts`
 
 **TUGAS / AKSI**
 
-- [ ] Build dan jalankan compose di lingkungan aman; hindari bind ke database live.
-- [ ] Periksa semua healthcheck serta permintaan API via Caddy, web dan worker heartbeat.
-- [ ] Simpan log diagnostic; buat smoke CI opsional yang tidak mengeksekusi migrasi di DB live.
+- [x] Build dan jalankan compose di lingkungan aman; hindari bind ke database live.
+- [x] Jalankan semua perintah compose lewat runner ber-guard: project `vynor-wu01-smoke` eksplisit, env disanitasi dengan allowlist, lock anti-paralel, `container_name` di-reset, volume dan network baru, port host hanya `127.0.0.1`, DB `vynor_test` pada PostgreSQL smoke.
+- [x] Sebelum migrate/seed, verifikasi host, port, database aktual dan identitas instance PostgreSQL smoke.
+- [x] Periksa semua healthcheck serta permintaan API via Caddy, web dan worker heartbeat.
+- [x] Simpan log diagnostic; tambahkan job CI `compose-smoke` terisolasi (timeout, cleanup, tanpa secret) yang tidak mengeksekusi migrasi di DB live.
+- [x] Teardown hanya resource yang terbukti milik project smoke (tanpa `--rmi`); postflight memastikan `vynor-postgres` tidak berubah.
 
 **OUTPUT / DELIVERABLE**
 
 - Bukti container healthy dan smoke HTTP
 - PR WU-01 dengan test pencegah regresi
+- Runner smoke ber-guard dan job CI `compose-smoke`
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Worker, web, caddy start dan servis yang mensyaratkan healthy benar-benar berjalan.
-- [ ] GET /api/v1/health/live melalui Caddy 200; infra:verify menangkap typo path.
+- [x] Worker, web, caddy start dan servis yang mensyaratkan healthy benar-benar berjalan.
+- [x] GET /api/v1/health/live melalui Caddy 200; infra:verify menangkap typo path.
+- [x] Postflight: metadata `vynor-postgres` identik dan tidak ada resource `vynor-wu01-smoke` tersisa.
+- [x] Storage (Silo) sehat; `rustfs-init` membuat kedua bucket secara idempoten; client S3 aplikasi berhasil put dan signed download di kedua bucket.
 
 **BUKTI VERIFIKASI**
 
-- `docker compose config`
-- `docker compose up --build --wait`
+- `infrastructure/scripts/compose-smoke.sh preflight`
+- `infrastructure/scripts/compose-smoke.sh all`
 - `pnpm infra:verify`
 
 ### WU-02 — Patch CVE web & Socket.IO CORS
@@ -1619,7 +1638,7 @@ Rollback / rollout procedure: <steps>
 Ready for owner review: YES/NO + blocker
 ```
 
-**Kegiatan berikutnya:** DEC-01 s.d. DEC-09 sudah diputuskan (2026-10-17; DEC-07 = DEFER) VYN-00-01 dan VYN-00-02 `DONE` (diterima owner; baseline `1d6b578`: 182 tes PASS, lihat `../09-regression-test-results.md`). Berikutnya: owner mereview dan me-merge PR WU-00; WU-01 baru dimulai atas instruksi owner setelah merge. Keputusan teknis diuji ulang di gerbang WU masing-masing. Tanpa approval, status board tetap perencanaan.
+**Kegiatan berikutnya:** DEC-01 s.d. DEC-09 sudah diputuskan (2026-10-17; DEC-07 = DEFER) VYN-00-01 dan VYN-00-02 `DONE` (diterima owner; baseline `1d6b578`: 182 tes PASS, lihat `../09-regression-test-results.md`). PR WU-00 (#64) di-merge owner pada 2026-10-17 (`07e7748`). WU-01 `IN_PROGRESS` atas instruksi owner: tahap 1 dan smoke terisolasi tahap 2 PASS di branch `fix/wu-01-compose-health` (NF-08 diselesaikan dengan PGSTY Silo; NF-09 terbuka di luar scope). Owner menerima VYN-01-01..03 (2026-10-17); PR WU-01 dibuat dan menunggu review serta merge owner. WU-02 baru dimulai setelah WU-01 selesai. Keputusan teknis diuji ulang di gerbang WU masing-masing. Tanpa approval, status board tetap perencanaan.
 
 ## 10. Sumber
 
