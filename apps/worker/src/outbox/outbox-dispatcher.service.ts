@@ -47,6 +47,8 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
   private recoverTimer: NodeJS.Timeout | null = null;
   private isProcessing = false;
   private isShuttingDown = false;
+  /** Logs the queue outage once per outage instead of on every 1 s poll. */
+  private queueDownReported = false;
 
   constructor(private readonly queueService: PgBossService) {
     this.logger = createLogger({ service: 'vynor-worker' });
@@ -104,6 +106,19 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       return 0;
     }
 
+    // Without pg-boss the events stay PENDING; claiming them would only burn their attempts.
+    if (!this.queueService.isRunning()) {
+      if (!this.queueDownReported) {
+        this.logger.warn(
+          { correlationId: 'outbox_queue_unavailable', workerId: this.workerId },
+          'pg-boss is not running; outbox events stay PENDING until it is',
+        );
+        this.queueDownReported = true;
+      }
+      return 0;
+    }
+    this.queueDownReported = false;
+
     this.isProcessing = true;
     let dispatchedCount = 0;
 
@@ -150,7 +165,8 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
             payload: event.payload as Record<string, unknown>,
           });
 
-          // Idempotent dispatch via singleton key (FND-059)
+          // Idempotent dispatch via singleton key (FND-059). Throws unless pg-boss took the job
+          // or already holds it, so the row is only completed once the job really exists.
           await this.queueService.sendJob(
             queueName,
             envelope as unknown as Record<string, unknown>,
