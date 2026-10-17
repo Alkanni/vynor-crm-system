@@ -70,20 +70,47 @@ export class ProviderHttpClient {
     }
     const declared = Number(response.headers.get('content-length') ?? '0');
     if (declared > MAX_MEDIA_DOWNLOAD_BYTES) {
-      throw new ChannelProviderError({
-        provider: this.provider,
-        category: 'INVALID_REQUEST',
-        code: 'MEDIA_TOO_LARGE',
-        message: 'The file is larger than the 100 MB download limit.',
-      });
+      await response.body?.cancel();
+      throw this.mediaTooLarge();
     }
-    const data = Buffer.from(await response.arrayBuffer());
+    const data = await this.readCapped(response, MAX_MEDIA_DOWNLOAD_BYTES);
     return {
       status: response.status,
       headers: response.headers,
       data,
       contentType: response.headers.get('content-type') ?? 'application/octet-stream',
     };
+  }
+
+  /**
+   * Reads the body but cancels the transfer once it passes `limit` bytes. Content-Length alone
+   * is not enough: a chunked response has none, and a declared length may be wrong.
+   */
+  private async readCapped(response: Response, limit: number): Promise<Buffer> {
+    if (!response.body) return Buffer.alloc(0);
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel();
+        throw this.mediaTooLarge();
+      }
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks, total);
+  }
+
+  private mediaTooLarge(): ChannelProviderError {
+    return new ChannelProviderError({
+      provider: this.provider,
+      category: 'INVALID_REQUEST',
+      code: 'MEDIA_TOO_LARGE',
+      message: 'The file is larger than the 100 MB download limit.',
+    });
   }
 
   private async send(request: HttpRequest): Promise<Response> {
