@@ -14,14 +14,15 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit(): Promise<void> {
+    let boss: PgBoss | null = null;
     try {
-      this.boss = new PgBoss({
+      boss = new PgBoss({
         connectionString: this.env.DATABASE_URL,
         schema: this.env.PG_BOSS_SCHEMA,
         max: 10,
       });
 
-      this.boss.on('error', (err: Error) => {
+      boss.on('error', (err: Error) => {
         this.logger.error(
           {
             correlationId: 'pg_boss_error',
@@ -31,7 +32,9 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
         );
       });
 
-      await this.boss.start();
+      await boss.start();
+      // Only a started instance counts as running, so a failed start leaves `this.boss` null.
+      this.boss = boss;
       this.logger.info(
         { correlationId: 'queue_init' },
         'pg-boss background queue engine initialized and started',
@@ -40,7 +43,7 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
       // Register named queues with their canonical configs (FND-051)
       for (const config of Object.values(QUEUE_CONFIGS)) {
         try {
-          await this.boss.createQueue(config.name, {
+          await boss.createQueue(config.name, {
             retryLimit: config.retryLimit,
             retryDelay: config.retryDelaySeconds,
           });
@@ -64,7 +67,25 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
         },
         'Failed to start pg-boss engine',
       );
+      // A partial start can leave pg-boss subsystems running; only stop() releases them.
+      if (boss && !this.boss) await this.stopAfterFailedStart(boss);
     }
+  }
+
+  private async stopAfterFailedStart(boss: PgBoss): Promise<void> {
+    try {
+      await boss.stop({ graceful: false });
+    } catch (err) {
+      this.logger.warn(
+        { correlationId: 'queue_init', err: { message: (err as Error).message } },
+        'Failed to stop pg-boss after a failed start',
+      );
+    }
+  }
+
+  /** False when pg-boss never started (or has stopped), so jobs cannot be enqueued. */
+  isRunning(): boolean {
+    return this.boss !== null;
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -126,6 +147,8 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Enqueue a job with a deterministic singleton key for idempotent dispatch (FND-059).
+   * Resolves to null when a job with the same singleton key already exists. Throws when
+   * pg-boss is not running, so a caller can never mistake a dropped job for an enqueued one.
    */
   async sendJob(
     queue: QueueName,
@@ -138,11 +161,7 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
     },
   ): Promise<string | null> {
     if (!this.boss) {
-      this.logger.warn(
-        { correlationId: 'job_send_skipped', queue },
-        'pg-boss client not available; job enqueuing skipped.',
-      );
-      return null;
+      throw new Error(`pg-boss is not running; job for ${queue} was not enqueued`);
     }
 
     const result = await this.boss.send(queue, payload, {
