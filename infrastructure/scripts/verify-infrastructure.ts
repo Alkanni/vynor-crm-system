@@ -94,6 +94,26 @@ check(
   },
 );
 
+check('worker health checks read the worker heartbeat instead of always passing', () => {
+  const targets = [
+    'apps/worker/Dockerfile',
+    'infrastructure/docker/Dockerfile.worker',
+    'docker-compose.yml',
+    'infrastructure/docker/docker-compose.yml',
+  ];
+  for (const target of targets) {
+    const content = fs.readFileSync(path.join(rootDir, target), 'utf-8');
+    assert.ok(
+      content.includes('node apps/worker/dist/healthcheck.js'),
+      `${target} must check the worker with apps/worker/dist/healthcheck.js`,
+    );
+    assert.ok(
+      !content.includes('process.exit(0)'),
+      `${target} must not use a health check that always passes`,
+    );
+  }
+});
+
 check('docker compose config command validates successfully', () => {
   const output = execSync('docker compose config --quiet', { cwd: rootDir, encoding: 'utf-8' });
   assert.equal(output.trim(), '', 'docker compose config should produce no validation errors');

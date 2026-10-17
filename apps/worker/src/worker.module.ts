@@ -3,6 +3,7 @@ import { ChannelHealthRecorder } from './channels/channel-health.service.js';
 import { WorkerChannelRuntime } from './channels/channel-runtime.service.js';
 import { ConfigModule } from './config/config.module.js';
 import { ConversationIngestService } from './conversations/conversation-ingest.service.js';
+import { WorkerHeartbeatService } from './health/worker-heartbeat.service.js';
 import { OutboxModule } from './outbox/outbox.module.js';
 import { ChannelPollingService } from './polling/channel-polling.service.js';
 import { InboundProcessorService } from './processing/inbound-processor.service.js';
@@ -18,6 +19,7 @@ import { QueueModule } from './queue/queue.module.js';
     InboundProcessorService,
     OutboundDispatcherService,
     ChannelPollingService,
+    WorkerHeartbeatService,
   ],
 })
 export class WorkerModule {}
