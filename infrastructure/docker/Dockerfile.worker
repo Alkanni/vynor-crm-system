@@ -56,7 +56,8 @@ COPY --from=builder --chown=vynor:nodejs /app/apps/worker ./apps/worker
 # Switch to non-root user
 USER vynor
 
+# Healthy only while the worker writes fresh heartbeats (event loop running, database reachable).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "process.exit(0)" || exit 1
+  CMD node apps/worker/dist/healthcheck.js || exit 1
 
 CMD ["node", "apps/worker/dist/main.js"]

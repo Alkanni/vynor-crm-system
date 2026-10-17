@@ -116,6 +116,6 @@ Administrators and monitoring services can query the comprehensive health report
 
 Because the background worker daemon does not expose external ingress ports, worker health is determined via:
 
-1. **Heartbeat Logging:** Worker emits periodic structured Pino logs at `info` level (`{ context: 'WorkerHeartbeat', status: 'healthy', uptimeSeconds }`).
+1. **Heartbeat File (container health check):** Every 10 s, `WorkerHeartbeatService` runs `SELECT 1` (5 s timeout). If the database answers, it writes the current time to `$TMPDIR/vynor-worker.heartbeat` (`/tmp` in the image). The Docker `HEALTHCHECK` and the Compose `healthcheck` run `node apps/worker/dist/healthcheck.js`, which exits `1` when the heartbeat is missing or older than 30 s (three missed beats). A blocked event loop stops the timer, and a lost database stops the writes, so either one turns the container `unhealthy`. The service logs only state changes (`correlationId: 'worker_heartbeat'`): a `warn` when a beat is skipped and an `info` when beats resume. Unlike the API liveness probe, this check does include the database, because a worker without its database cannot do any work. Docker only marks the container unhealthy; it does not restart it.
 2. **Process Signals:** Orchestrators monitor process PID liveness and Docker non-root exit codes.
 3. **Database Outbox Drain Rate:** External monitors observe the `outbox_events` table; if pending event lag increases without consumption, an alert is triggered.

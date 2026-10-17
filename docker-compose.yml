@@ -151,7 +151,8 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', "node -e 'process.exit(0)' || exit 1"]
+      # Fails once the worker stops writing heartbeats (blocked event loop or database lost).
+      test: ['CMD-SHELL', 'node apps/worker/dist/healthcheck.js || exit 1']
       interval: 10s
       timeout: 5s
       retries: 3
