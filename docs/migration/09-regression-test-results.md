@@ -169,3 +169,52 @@ Audit "sebelum" dijalankan ulang pada 2026-10-19 terhadap lockfile dan manifest 
 | DB integrity (`pg_stat_database`, sebelum vs sesudah)                           | **PASS**: `vynor` dan `vynor_crm` tanpa insert/update/delete; tulisan hanya di `vynor_test`                                                                                                                                                                                                                                                          |
 | Upload knowledge PDF di browser                                                 | **NOT RUN** (opsional menurut owner): ekstraksi diuji di Node dengan build pdfjs-dist yang sama; bundling dibuktikan lewat `pnpm build`                                                                                                                                                                                                              |
 | Golden path E2E                                                                 | **NOT RUN**: belum ada sampai WU-03                                                                                                                                                                                                                                                                                                                  |
+
+## WU-03 — characterization test dan golden path E2E — 2026-10-19, base `f21f012`
+
+Dijalankan di worktree `test/wu-03-characterization-e2e` sebelum commit. `pnpm test` hanya pada `localhost:5434/vynor_test` (env file ber-guard; `prisma migrate status` up to date, seed sebelum test); `pnpm test:e2e` hanya pada `localhost:5434/vynor_e2e` (guard harness).
+
+### Validasi
+
+| Pemeriksaan                                             | Hasil                                                                                                                                                                                                                   |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`                                     | **PASS**                                                                                                                                                                                                                |
+| `pnpm lint --force`                                     | **PASS**: 17/17 task                                                                                                                                                                                                    |
+| `pnpm typecheck --force`                                | **PASS**: 11/11 task                                                                                                                                                                                                    |
+| `pnpm build`                                            | **PASS**: 11/11 task                                                                                                                                                                                                    |
+| `pnpm test` (`vynor_test`), dua kali                    | **PASS** dua kali: 37 file, 257 test (base `f21f012`: 31 file, 197 test; +60 test dari 6 file baru)                                                                                                                     |
+| `pnpm test:e2e` (`vynor_e2e`), empat run berturut-turut | **PASS** 4/4: masing-masing 34 test (golden path 6, Channels 1, tenant 2, screenshot 21, auth smoke 4), sekitar 1,1 menit termasuk `next build`. Run 04:50–04:52 UTC dan, setelah fixture `local-only`, 04:55–04:58 UTC |
+| `pnpm infra:verify`                                     | **PASS**: 19 cek                                                                                                                                                                                                        |
+| `pnpm --filter @vynor/api verify` / `@vynor/web verify` | **PASS**                                                                                                                                                                                                                |
+| Guard harness (negatif)                                 | **PASS**: `E2E_DATABASE_URL` ke `vynor_crm`, `vynor` atau kosong ditolak `UnsafeDatabaseError` saat config dimuat, sebelum koneksi apa pun                                                                              |
+| Request ke host non-lokal dari browser                  | **PASS**: 0 di semua run (fixture `local-only` menggagalkan test bila ada)                                                                                                                                              |
+| DB integrity (`pg_stat_database`)                       | **PASS**: `vynor` dan `vynor_crm` tanpa insert/update/delete; tulisan hanya di `vynor_test` dan `vynor_e2e`                                                                                                             |
+| Konsistensi JSON ↔ `tickets/*.md` ↔ Kanban              | **PASS**: 39 tiket, 0 perbedaan (input, aksi, output, acceptance, verifikasi; centang tiket = Kanban; status tiket = JSON). Base `f21f012` juga 0; uji negatif (centang dimutasi) terdeteksi                            |
+| Job CI `e2e-golden-path`                                | **NOT RUN** sebelum PR; hasil run CI tercatat di PR                                                                                                                                                                     |
+
+### Test baru
+
+| Spec                                                    | Test | Isi                                                                                                                     |
+| ------------------------------------------------------- | ---: | ----------------------------------------------------------------------------------------------------------------------- |
+| `apps/api/tests/conversations-http.integration.spec.ts` |   21 | Auth/workspace, list/filter/cursor/detail, pesan, kirim/catatan, retry, assign/resolve/reopen/read, akses lintas tenant |
+| `apps/api/tests/webchat-http.integration.spec.ts`       |    7 | Config/script widget, sesi visitor, jurnal pesan, token, polling balasan, rate limit 429                                |
+| `apps/api/tests/media-http.integration.spec.ts`         |    6 | Link bertanda tangan: valid, rusak, kedaluwarsa, bukan media, kegagalan provider                                        |
+| `apps/api/tests/idempotency-http.integration.spec.ts`   |    6 | Replay, payload berbeda, dua request in-flight, kegagalan, key tidak valid, scope                                       |
+| `apps/worker/tests/channel-polling.integration.spec.ts` |    6 | Lease, jurnal + cursor, duplikat, lease worker lain, backoff dan batasnya, pelaporan error, discovery                   |
+| `apps/web/tests/unit/e2e-database-guard.spec.ts`        |   14 | Guard database E2E                                                                                                      |
+| `apps/web/tests/e2e/golden-path.spec.ts`                |    6 | Golden path lengkap (lihat bagian berikut)                                                                              |
+| `apps/web/tests/e2e/channels.spec.ts`                   |    1 | Koneksi WhatsApp Business lewat UI ke stub, kredensial tersegel, Test connection                                        |
+| `apps/web/tests/e2e/tenant-isolation.spec.ts`           |    2 | Inbox tenant B hanya data sendiri; 404 untuk record tenant A; 403 untuk workspace tenant A                              |
+| `apps/web/tests/e2e/screenshots.spec.ts`                |   21 | 20 route + `/ai-agent/[agentId]` (ID dikenal dan tidak dikenal, deep link dan reload)                                   |
+
+### Golden path (WU-03, `vynor_e2e`, base `f21f012`)
+
+- Dev login / Inbox: **PASS** (tombol dev-session → `/inbox`, mode connected)
+- Signed webhook → journal → outbox → pg-boss → worker → Inbox: **PASS** (journal `PROCESSED`, outbox `COMPLETED`, job `completed`, percakapan tampil lewat realtime)
+- Dedup replay webhook: **PASS** (`accepted: 0, duplicates: 1`; jumlah identity/percakapan/pesan/journal tetap)
+- Reply → stub → SENT → DELIVERED → READ, tanpa mundur: **PASS**
+- Retry transient (pg-boss) dan permanent → FAILED + Retry: **PASS**
+- Claim/resolve/reopen + audit: **PASS** (3 audit `conversation.updated`)
+- Channels E2E: **PASS**
+- Cross-workspace: **PASS** (UI dan API)
+- Screenshot baseline: **PASS**, 21 PNG; reproduksi dibuktikan dengan dua run banding setelah pembuatan dan empat run penuh. Toleransi dan mask terdokumentasi di `apps/web/tests/e2e/README.md`.

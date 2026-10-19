@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_ORIGIN } from './support/e2e-env';
 
 test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TST-008)', () => {
   test('unauthenticated visitor accessing protected route is redirected to /login with returnUrl', async ({
@@ -76,6 +77,11 @@ test.describe('Authentication & Application Shell Smoke Test (FND-FE-003, FND-TS
         created_at: '2026-09-24T00:00:00.000Z',
       },
     };
+
+    // This mock session is not a token the API accepts: the shell must fall back to preview
+    // mode, which happens when the API cannot be reached. Since WU-03 the E2E stack runs a real
+    // API, so that precondition is made explicit (before, no API was running at all).
+    await page.route(`${API_ORIGIN}/**`, (route) => route.abort('connectionrefused'));
 
     // Seed session in localStorage before client code executes
     await page.addInitScript((session) => {
