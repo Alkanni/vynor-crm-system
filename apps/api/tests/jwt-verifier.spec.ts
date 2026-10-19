@@ -23,6 +23,8 @@ const env = ApiEnvSchema.parse({
   SUPABASE_JWT_SECRET: JWT_SECRET,
   STORAGE_ACCESS_KEY_ID: 'key',
   STORAGE_SECRET_ACCESS_KEY: 'secret',
+  // This spec does not use the shared state store.
+  SHARED_STATE_STORE: 'memory',
 });
 
 function hs256Token(

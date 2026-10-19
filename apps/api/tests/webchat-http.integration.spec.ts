@@ -14,9 +14,10 @@ import { http, startHttpApp, testApiEnv, type HttpApp } from './support/http-app
 /**
  * WU-03 / VYN-03-03: the public Web Live Chat endpoints over real HTTP: widget config and
  * script, visitor sessions, message journaling, reply polling with delivery marking, and the
- * in-memory fixed-window rate limits (20 sessions / 30 messages per minute, IP + widget).
- * Each rate-limit case uses its own client IP (X-Forwarded-For from loopback is trusted, as
- * main.ts configures) so the buckets do not interfere.
+ * fixed-window rate limits (20 sessions / 30 messages per minute, IP + widget), kept in Redis
+ * (TEST_REDIS_URL) since WU-04. Each rate-limit case uses its own client IP (X-Forwarded-For
+ * from loopback is trusted, as main.ts configures) and the widget key is new on every run, so
+ * the buckets do not interfere. Two instances: redis-shared-state.integration.spec.ts.
  */
 
 interface Envelope<T> {

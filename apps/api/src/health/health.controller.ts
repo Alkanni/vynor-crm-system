@@ -16,9 +16,12 @@ import {
 } from '@vynor/observability';
 import type { Response } from 'express';
 import { Public } from '../iam/decorators.js';
+import { RedisHealthIndicator } from '../redis/redis.module.js';
 
 @Controller('health')
 export class HealthController {
+  constructor(private readonly redisHealth: RedisHealthIndicator) {}
+
   /**
    * Liveness Probe (FND-049, FND-BE-007)
    * Fast event loop check for container orchestration without external dependencies.
@@ -32,14 +35,17 @@ export class HealthController {
 
   /**
    * Readiness Probe (FND-049, FND-BE-007)
-   * Validates database connectivity before routing customer traffic.
+   * Validates database and Redis connectivity (WU-04) before routing customer traffic.
    * Responds to both /health/ready and /health/readiness.
    */
   @Public()
   @Get(['readiness', 'ready'])
   async getReadiness(@Res({ passthrough: true }) res: Response): Promise<ReadinessReport> {
-    const dbHealth = await checkDatabaseHealth(prisma);
-    const report = buildReadinessReport('vynor-api', dbHealth);
+    const [dbHealth, redisHealth] = await Promise.all([
+      checkDatabaseHealth(prisma),
+      this.redisHealth.check(),
+    ]);
+    const report = buildReadinessReport('vynor-api', dbHealth, redisHealth);
 
     if (report.status === 'DOWN') {
       res.status(HttpStatus.SERVICE_UNAVAILABLE);
@@ -59,7 +65,7 @@ export class HealthController {
 
   /**
    * Detailed Subsystem Indicators (FND-050)
-   * Inspects database, outbox lag, queue state, and provider health.
+   * Inspects database, Redis, outbox lag, queue state, and provider health.
    */
   @Public()
   @Get('indicators')
@@ -69,14 +75,16 @@ export class HealthController {
   }
 
   private async buildSystemHealth(): Promise<SystemHealthReport> {
-    const [dbHealth, outboxHealth] = await Promise.all([
+    const [dbHealth, redisHealth, outboxHealth] = await Promise.all([
       checkDatabaseHealth(prisma),
+      this.redisHealth.check(),
       checkOutboxHealth(prisma),
     ]);
 
     return buildSystemHealthReport({
       service: 'vynor-api',
       database: dbHealth,
+      ...(redisHealth ? { redis: redisHealth } : {}),
       outbox: outboxHealth,
       // Webhook ingress has no probe of its own; it is up whenever the API answers.
       webhooks: {

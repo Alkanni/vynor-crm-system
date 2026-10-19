@@ -51,9 +51,10 @@ All VYNOR CRM HTTP APIs are hosted under a strict global versioned prefix:
 - `403 Forbidden`: Authenticated user lacks required permissions or membership in workspace.
 - `404 Not Found`: Targeted resource does not exist or user lacks permission to know it exists.
 - `409 Conflict`: Concurrency conflict or duplicate request (`IDEMPOTENCY_CONFLICT`).
-- `422 Unprocessable Entity`: Request body failed schema validation (`VALIDATION_FAILED`).
+- `422 Unprocessable Entity`: Request body failed schema validation (`VALIDATION_FAILED`), or an `Idempotency-Key` was reused with a different payload (`IDEMPOTENCY_KEY_REUSED`).
 - `429 Too Many Requests`: Rate limit threshold exceeded.
 - `500 Internal Server Error`: Unexpected unhandled server exception.
+- `503 Service Unavailable`: A required dependency is down (`SERVICE_UNAVAILABLE`); requests with an `Idempotency-Key` and the public web chat endpoints fail closed while Redis is unreachable.
 
 ---
 

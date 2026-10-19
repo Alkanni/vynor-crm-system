@@ -1,6 +1,6 @@
 # VYNOR CRM — Kanban Migrasi Berbasis Vertical Slice
 
-> **Status per 19 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; VYN-01-01..03 `DONE`); WU-02 `DONE` (PR #66 di-merge owner sebagai `f21f012`, 2026-10-19; VYN-02-01..02 `DONE`); WU-03 `IN_PROGRESS` (VYN-03-01..05 `IN_REVIEW`; PR dari branch `test/wu-03-characterization-e2e` menunggu review dan merge owner); WU lain masih perencanaan.
+> **Status per 19 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; VYN-01-01..03 `DONE`); WU-02 `DONE` (PR #66 di-merge owner sebagai `f21f012`, 2026-10-19; VYN-02-01..02 `DONE`); WU-03 `DONE` (PR #67 di-merge owner sebagai `69fd238`, 2026-10-19; VYN-03-01..05 `DONE`); WU-04 `IN_PROGRESS` (VYN-04-01..03 `IN_REVIEW`; PR dari branch `feat/wu-04-redis-shared-state` menunggu review dan merge owner); WU lain masih perencanaan.
 > **Sumber:** `../01`–`../07` audit/migration yang sudah diperbarui; commit audit `565e8e4`, baseline historis 176 test. Jangan menganggap audit commit sama dengan `origin/main` terbaru.
 
 ## Sasaran dan batas
@@ -13,31 +13,32 @@ Migrasikan perubahan stack minimum secara aman tanpa mengganti arsitektur modula
 
 ### 1A. Swimlane x status (snapshot awal)
 
-| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS**                                   | **IN REVIEW** | **DONE**                                                                                                             | **DEFERRED** |
-| ----------------------- | ------------------------------------- | --------- | ------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Keputusan & fondasi     | —                                     | —         | WU-03 (risiko CRITICAL; PR menunggu review owner) | —             | WU-00 (PR #64, 2026-10-17); WU-01 (PR #65, 2026-10-17); WU-02 (PR #66, 2026-10-19); DEC-01..09 (RESOLVED 2026-10-17) | —            |
-| State & antrean         | WU-04; WU-05a; WU-05b                 | —         | —                                                 | —             | —                                                                                                                    | WU-05c       |
-| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —                                                 | —             | —                                                                                                                    | —            |
-| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —                                                 | —             | —                                                                                                                    | —            |
-| Reliability & penutupan | WU-10; WU-11                          | —         | —                                                 | —             | —                                                                                                                    | WU-09        |
+| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS**                               | **IN REVIEW** | **DONE**                                                                                                                                         | **DEFERRED** |
+| ----------------------- | ------------------------------------- | --------- | --------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| Keputusan & fondasi     | —                                     | —         | —                                             | —             | WU-00 (PR #64, 2026-10-17); WU-01 (PR #65, 2026-10-17); WU-02 (PR #66, 2026-10-19); WU-03 (PR #67, 2026-10-19); DEC-01..09 (RESOLVED 2026-10-17) | —            |
+| State & antrean         | WU-05a; WU-05b                        | —         | WU-04 (risiko HIGH; PR menunggu review owner) | —             | —                                                                                                                                                | WU-05c       |
+| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —                                             | —             | —                                                                                                                                                | —            |
+| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —                                             | —             | —                                                                                                                                                | —            |
+| Reliability & penutupan | WU-10; WU-11                          | —         | —                                             | —             | —                                                                                                                                                | WU-09        |
 
 **Aturan pergerakan:** `BLOCKED → READY` setelah dependency + approval; `READY → IN PROGRESS` ketika branch PR dibuka; `IN PROGRESS → IN REVIEW` setelah DoD dan test; `IN REVIEW → DONE` hanya sesudah owner merge/sign-off. Jangan menandai `DONE` saat AI baru membuat commit. **WIP limit disarankan:** maksimum satu WU berisiko HIGH/CRITICAL dalam implementasi pada satu waktu; pekerjaan docs/test independen boleh paralel setelah WU-03.
 
 ### 1B. Backlog dan urutan prioritas
 
-| Kolom                          | Work unit / vertical slice                                                                                                                                                           | Kondisi perpindahan                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**                                                                                                                         | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR |
-| **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **DONE 2026-10-17 (PR #64 di-merge owner)**                                                                                                        | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                  |
-| **BACKLOG — PRIORITAS P0**     | WU-01 health Docker — **DONE 2026-10-17 (PR #65 di-merge owner)**; WU-02 CVE & CORS — **DONE 2026-10-19 (PR #66 di-merge owner)**; WU-03 characterization E2E — **IN PROGRESS (PR)** | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                 |
-| **BACKLOG — PRIORITAS P1**     | WU-04 Redis → WU-05a BullMQ expand → WU-05b contract                                                                                                                                 | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                     |
-| **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next                                                                                                                     | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                          |
-| **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                                                                                                                                            | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                |
-| **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                                                                                                                                           | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                             |
-| **OPTIONAL / DITAHAN**         | WU-09 media S3; WU-05c DROP pgboss; perubahan FK                                                                                                                                     | DEC-07 / persetujuan destruktif dan environment secara terpisah                         |
-| **BACKLOG — BUG TERBUKA**      | NF-09: `@vynor/storage` `stat`/`get`/`delete` tanpa header `x-amz-content-sha256` (403 di storage keluarga MinIO; laten)                                                             | Di luar WU-01 (keputusan owner 2026-10-17); butuh tiket terpisah dan persetujuan owner  |
+| Kolom                          | Work unit / vertical slice                                                                                                                                                                                                                                                                                                            | Kondisi perpindahan                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**                                                                                                                                                                                                                                                                          | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR                    |
+| **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **DONE 2026-10-17 (PR #64 di-merge owner)**                                                                                                                                                                                                                                                         | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                                     |
+| **BACKLOG — PRIORITAS P0**     | WU-01 health Docker — **DONE 2026-10-17 (PR #65 di-merge owner)**; WU-02 CVE & CORS — **DONE 2026-10-19 (PR #66 di-merge owner)**; WU-03 characterization E2E — **DONE 2026-10-19 (PR #67 di-merge owner)**                                                                                                                           | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                                    |
+| **BACKLOG — PRIORITAS P1**     | WU-04 Redis — **IN PROGRESS (PR)** → WU-05a BullMQ expand → WU-05b contract                                                                                                                                                                                                                                                           | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                                        |
+| **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next                                                                                                                                                                                                                                                                      | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                                             |
+| **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                                                                                                                                                                                                                                                                                             | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                                   |
+| **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                                                                                                                                                                                                                                                                                            | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                                                |
+| **OPTIONAL / DITAHAN**         | WU-09 media S3; WU-05c DROP pgboss; perubahan FK                                                                                                                                                                                                                                                                                      | DEC-07 / persetujuan destruktif dan environment secara terpisah                                            |
+| **BACKLOG — BUG TERBUKA**      | NF-09: `@vynor/storage` `stat`/`get`/`delete` tanpa header `x-amz-content-sha256` (403 di storage keluarga MinIO; laten)                                                                                                                                                                                                              | Di luar WU-01 (keputusan owner 2026-10-17); butuh tiket terpisah dan persetujuan owner                     |
+| **BACKLOG — BUG TERBUKA**      | Dari WU-03: NF-10 (audit unassign mencatat assignee lama), NF-12 (scope Idempotency-Key per workspace, bukan user), NF-13 (body error media bukan envelope standar). Dari WU-04: NF-14 (kode error idempotency/readiness di katalog dan OpenAPI tidak sama dengan respons). NF-11 ditutup oleh VYN-04-02 (keputusan owner 2026-10-19) | Di luar scope migrasi (instruksi owner 2026-10-19: tetap backlog); tiket terpisah dengan persetujuan owner |
 
-**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-19 WU-00, WU-01 dan WU-02 `DONE` (PR #64, #65 dan #66 di-merge owner); WU-03 `IN_PROGRESS` (PR menunggu review dan merge owner).
+**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-19 WU-00, WU-01, WU-02 dan WU-03 `DONE` (PR #64, #65, #66 dan #67 di-merge owner); WU-04 `IN_PROGRESS` (PR menunggu review dan merge owner).
 
 ## 2. Peta dependensi dan potensi paralel
 
@@ -377,7 +378,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-03 — Characterization test dan golden path E2E
 
-**Status:** `IN_PROGRESS` (PR ke `main` menunggu review owner; VYN-03-01..05 `IN_REVIEW`) · **Risiko:** CRITICAL · **Depends:** WU-00 (`DONE`), WU-01 (`DONE`) · **Gates:** —
+**Status:** `DONE` (PR #67 di-merge owner sebagai `69fd238`, 2026-10-19; VYN-03-01..05 `DONE`) · **Risiko:** CRITICAL · **Depends:** WU-00 (`DONE`), WU-01 (`DONE`) · **Gates:** —
 
 **Vertical slice:** Login -> signed webhook -> inbox -> reply -> mocked Graph API -> receipt/retry/assignment
 
@@ -552,7 +553,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-04 — Redis untuk state lintas instance
 
-**Status:** `BLOCKED_DEPENDENCY` · **Risiko:** HIGH · **Depends:** WU-03 · **Gates:** DEC-04
+**Status:** `IN_PROGRESS` (PR ke `main` menunggu review owner; VYN-04-01..03 `IN_REVIEW`) · **Risiko:** HIGH · **Depends:** WU-03 (`DONE`) · **Gates:** DEC-04 (RESOLVED)
 
 **Vertical slice:** Request dua API -> idempotency/rate limit konsisten -> fail closed saat Redis down
 
@@ -573,9 +574,9 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Tambah Redis 7 dipin, AOF everysec, maxmemory-policy noeviction, volume, config+auth private network.
-- [ ] Sediakan redis client/module dan REDIS_URL wajib staging/production; in-memory fallback HANYA local/test secara eksplisit.
-- [ ] Readiness API memeriksa Redis; bootstrap dan CI fail jelas saat misconfig.
+- [x] Tambah Redis 7 dipin, AOF everysec, maxmemory-policy noeviction, volume, config+auth private network.
+- [x] Sediakan redis client/module dan REDIS_URL wajib staging/production; in-memory fallback HANYA local/test secara eksplisit.
+- [x] Readiness API memeriksa Redis; bootstrap dan CI fail jelas saat misconfig.
 
 **OUTPUT / DELIVERABLE**
 
@@ -585,8 +586,8 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Redis restart mempertahankan key persisten sesuai kebijakan; config AOF/noeviction tervalidasi.
-- [ ] Non-test tanpa REDIS_URL gagal startup/readiness sesuai kebijakan.
+- [x] Redis restart mempertahankan key persisten sesuai kebijakan; config AOF/noeviction tervalidasi.
+- [x] Non-test tanpa REDIS_URL gagal startup/readiness sesuai kebijakan.
 
 **BUKTI VERIFIKASI**
 
@@ -607,9 +608,9 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Implementasikan claim/finalize atomic, TTL, fingerprint payload, replay response, perlakuan in-flight lintas dua instance.
-- [ ] Nama key mencakup workspace + scope endpoint/actor seperlunya; jangan bocorkan token/PII di Redis key/log.
-- [ ] Fail closed 503 saat Redis down, tanpa menjalankan mutasi berisiko.
+- [x] Implementasikan claim/finalize atomic, TTL, fingerprint payload, replay response, perlakuan in-flight lintas dua instance.
+- [x] Nama key mencakup workspace + scope endpoint/actor seperlunya; jangan bocorkan token/PII di Redis key/log.
+- [x] Fail closed 503 saat Redis down, tanpa menjalankan mutasi berisiko.
 
 **OUTPUT / DELIVERABLE**
 
@@ -618,8 +619,8 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Replay dari instance B konsisten dengan hasil instance A; konflik payload ditolak.
-- [ ] Simultaneous requests tidak menimbulkan double side effect; Redis down menghasilkan 503.
+- [x] Replay dari instance B konsisten dengan hasil instance A; konflik payload ditolak.
+- [x] Simultaneous requests tidak menimbulkan double side effect; Redis down menghasilkan 503.
 
 **BUKTI VERIFIKASI**
 
@@ -637,9 +638,9 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Pindahkan token/counter webchat ke Redis dengan operasi atomic + TTL dan identitas yang tidak bergantung pada memory proses.
-- [ ] Test 429 benar dengan dua API; saat Redis down fail closed sesuai DEC-04, readiness menjadi not ready.
-- [ ] Uji reconnect dan pastikan golden path tetap lulus.
+- [x] Pindahkan token/counter webchat ke Redis dengan operasi atomic + TTL dan identitas yang tidak bergantung pada memory proses.
+- [x] Test 429 benar dengan dua API; saat Redis down fail closed sesuai DEC-04, readiness menjadi not ready.
+- [x] Uji reconnect dan pastikan golden path tetap lulus.
 
 **OUTPUT / DELIVERABLE**
 
@@ -648,8 +649,8 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Batas yang sama berlaku lintas instance; 429 tidak dapat dilewati dengan berpindah API.
-- [ ] Saat Redis unavailable tidak ada bypass tak sengaja; golden path tetap hijau.
+- [x] Batas yang sama berlaku lintas instance; 429 tidak dapat dilewati dengan berpindah API.
+- [x] Saat Redis unavailable tidak ada bypass tak sengaja; golden path tetap hijau.
 
 **BUKTI VERIFIKASI**
 

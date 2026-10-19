@@ -8,7 +8,9 @@
 #   up          preflight, start the smoke PostgreSQL, prove its identity, migrate and seed
 #               vynor_test on it, then build and start the whole stack and wait for health.
 #   check       Health of every service, API directly, Caddy over verified HTTPS, worker
-#               heartbeat, web startup, storage health and the app's S3 client round trip.
+#               heartbeat, web startup, storage health and the app's S3 client round trip,
+#               then Redis (WU-04): its config and auth, API readiness on it, and a key that
+#               survives a SIGKILL of Redis through the AOF while the API reports not ready.
 #   logs        Save compose logs, health logs and the rendered config to the artifact dir.
 #   down        Tear down, after proving every resource belongs to the smoke project.
 #   postflight  Read-only. The live vynor-postgres must be unchanged and no smoke resource left.
@@ -27,7 +29,7 @@ readonly LIVE_PROJECT='vynor-crm'
 readonly LIVE_DB_CONTAINER='vynor-postgres'
 readonly LIVE_DB_VOLUME='vynor-crm_postgres_data'
 readonly SMOKE_DATABASE='vynor_test'
-readonly LONG_RUNNING_SERVICES=(postgres rustfs api worker web caddy)
+readonly LONG_RUNNING_SERVICES=(postgres redis rustfs api worker web caddy)
 readonly ENV_ALLOWLIST=(PATH HOME USER LANG TMPDIR CI GITHUB_ACTIONS SMOKE_ARTIFACT_DIR SMOKE_KEEP_ON_FAILURE)
 
 SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/$(basename "${BASH_SOURCE[0]}")"
@@ -245,6 +247,103 @@ expect_status() {
   [[ "$got" == "$want" ]]
 }
 
+# redis-cli inside the Redis container, authenticated with the container's own password.
+redis_cli() {
+  # shellcheck disable=SC2016 # expanded inside the container
+  compose exec -T redis sh -c 'redis-cli --no-auth-warning -a "$REDIS_PASSWORD" "$@"' redis-cli "$@"
+}
+
+# Polls a command once a second until it succeeds or the timeout (seconds) runs out.
+wait_until() {
+  local deadline=$((SECONDS + $1))
+  shift
+  until "$@"; do
+    ((SECONDS < deadline)) || return 1
+    sleep 1
+  done
+}
+
+api_ready_status() {
+  http_status "http://127.0.0.1:$SMOKE_API_PORT/api/v1/health/ready"
+}
+
+api_ready_is() {
+  [[ "$(api_ready_status || true)" == "$1" ]]
+}
+
+container_healthy() {
+  [[ "$(docker container inspect --format '{{.State.Health.Status}}' "$1" 2>/dev/null)" == healthy ]]
+}
+
+redis_aof_has() {
+  # shellcheck disable=SC2016 # expanded inside the container
+  compose exec -T redis sh -c 'grep -q "$1" /data/appendonlydir/*.incr.aof' sh "$1" 2>/dev/null
+}
+
+record() {
+  printf '%-58s %s\n' "$1" "$2" | tee -a "$ARTIFACT_DIR/checks.txt" >&2
+}
+
+# VYN-04-01: Redis runs with the configured persistence and memory policy, needs its password,
+# the API is ready only while Redis answers, and a key written before Redis is killed (no
+# shutdown save) is back after the restart, which only the AOF can provide.
+check_redis() {
+  local failed=0 setting want got ready token id
+  for setting in appendonly:yes appendfsync:everysec maxmemory-policy:noeviction maxmemory:268435456; do
+    want="${setting#*:}"
+    got="$(redis_cli CONFIG GET "${setting%%:*}" | sed -n 2p | tr -d '\r')"
+    record "redis CONFIG GET ${setting%%:*}" "$got (want $want)"
+    [[ "$got" == "$want" ]] || failed=1
+  done
+  got="$(compose exec -T redis redis-cli ping 2>&1 | tr -d '\r' || true)"
+  record 'redis without password' "$got"
+  [[ "$got" == NOAUTH* ]] || failed=1
+  # compose prints ":0" for a port that is not published.
+  got="$(compose port redis 6379 2>/dev/null || true)"
+  [[ "$got" == ':0' ]] && got=''
+  record 'redis published port' "${got:-none}"
+  [[ -z "$got" ]] || failed=1
+
+  ready="$(curl --silent --max-time 10 "http://127.0.0.1:$SMOKE_API_PORT/api/v1/health/ready" || true)"
+  record 'API /api/v1/health/ready reports redis UP' "$(grep -o '"redis":{"status":"[A-Z]*"' <<<"$ready" || echo missing)"
+  grep -q '"redis":{"status":"UP"' <<<"$ready" || failed=1
+
+  token="wu04-smoke-$(date +%s%N)"
+  redis_cli SET vynor:smoke:persistence "$token" >/dev/null
+  if wait_until 10 redis_aof_has "$token"; then
+    record 'redis key written to the AOF' 'yes'
+  else
+    record 'redis key written to the AOF' 'NO'
+    failed=1
+  fi
+  id="$(container_of redis)"
+  docker kill --signal KILL "$id" >/dev/null
+  # docker kill returns once the signal is sent; wait until the container has really stopped.
+  record 'redis killed (SIGKILL): exit code' "$(docker wait "$id")"
+  if wait_until 30 api_ready_is 503; then
+    record 'redis killed (SIGKILL): API /health/ready' '503 (not ready)'
+  else
+    record 'redis killed (SIGKILL): API /health/ready' "$(api_ready_status || true) (want 503)"
+    failed=1
+  fi
+  compose start redis
+  if ! wait_until 60 container_healthy "$id"; then
+    record 'redis restarted: health' 'NOT healthy within 60 s'
+    return 1
+  fi
+  got="$(redis_cli GET vynor:smoke:persistence | tr -d '\r')"
+  record 'redis restarted: key written before the kill' "$([[ "$got" == "$token" ]] && echo present || echo "MISSING ($got)")"
+  [[ "$got" == "$token" ]] || failed=1
+  redis_cli DEL vynor:smoke:persistence >/dev/null
+  if wait_until 30 api_ready_is 200; then
+    record 'redis back: API /health/ready (reconnected)' '200'
+  else
+    record 'redis back: API /health/ready (reconnected)' "$(api_ready_status || true) (want 200)"
+    failed=1
+  fi
+  ((failed == 0))
+}
+
 cmd_check() {
   local failed=0 service id state ca heartbeat age
   : >"$ARTIFACT_DIR/checks.txt"
@@ -295,6 +394,9 @@ cmd_check() {
     printf '%-58s STALE or missing\n' 'worker heartbeat' | tee -a "$ARTIFACT_DIR/checks.txt" >&2
     failed=1
   fi
+
+  # Last: it stops and restarts Redis.
+  check_redis || failed=1
 
   ((failed == 0)) || die "smoke checks failed (see $ARTIFACT_DIR/checks.txt)"
   log "all smoke checks passed"
