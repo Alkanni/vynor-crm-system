@@ -1,0 +1,12 @@
+/*
+ * Applied only while the API-backed pages are captured (screenshots.spec.ts). Times of day of
+ * real messages are masked; giving them a fixed footprint keeps the mask the same size on every
+ * run, whatever the clock reads.
+ */
+[data-message-id] time,
+[title^='Last activity'] {
+  display: inline-block;
+  width: 64px;
+  overflow: hidden;
+  white-space: nowrap;
+}

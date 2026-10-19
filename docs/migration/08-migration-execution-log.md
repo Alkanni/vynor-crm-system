@@ -269,3 +269,44 @@ Fakta audit historis di `01..07` **tidak** diubah. Delta dicatat di sini.
   - Golden path E2E (WU-03).
   - Compose smoke lokal (compose dan konfigurasi WU-01 tidak berubah; job CI `compose-smoke` tetap berjalan pada PR).
 - **Status:** WU-02 `IN_PROGRESS`; VYN-02-01..02 `IN_REVIEW` (acceptance otomatis PASS). SHA commit, URL PR, dan hasil CI tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge hanya oleh owner.
+
+### Pasca-merge WU-02 — 2026-10-19
+
+- **Merge:** PR #66 di-merge owner ke `main` pada 2026-10-19 04:00 UTC (atas instruksi owner "merge #66", squash) sebagai `f21f01211073252cb5e2871bbadd1845af025eb8`; tree identik dengan head PR `2085578`. `git fetch origin`: `origin/main` = `f21f012`.
+- **CI pada commit merge (semua `success`):** CI Quality Gate & Verification, Container Security, Vulnerability Scan & SBOM, Compose Smoke (isolated).
+- **Status:** WU-02 `DONE`; VYN-02-01..02 `DONE` (dicatat dalam PR WU-03, seperti WU-01 dicatat dalam PR WU-02).
+
+## WU-03 — 2026-10-19
+
+### Implementasi dan validasi (VYN-03-01..05)
+
+- **Owner approval:** chat owner "WU-02 selesai — lanjutkan WU-03" (2026-10-19).
+  - Verifikasi PR #66 sudah merged dan tersedia di `origin/main`, lalu tandai WU-02 `DONE`.
+  - Kerjakan WU-03 di worktree dan branch baru dari `origin/main`, mengikuti tiket dan acceptance criteria tanpa memperluas scope atau mengulang audit WU sebelumnya.
+  - Hanya database pengujian terverifikasi.
+  - PR terpisah setelah test lulus; tanpa merge oleh agent.
+- **Branch, base SHA:** `test/wu-03-characterization-e2e` di worktree `.claude/worktrees/wu-03-characterization-e2e`, dibuat dari `origin/main` `f21f012`. Checkout utama tidak diubah.
+- **Database:** `vynor_test` untuk `pnpm test` (env file ber-guard yang menolak URL selain `localhost:5434/vynor_test`) dan `vynor_e2e` untuk `pnpm test:e2e` (guard harness: hanya `vynor_e2e`/`vynor_test`/`vynor_shadow`). `pg_stat_database` untuk `vynor` dan `vynor_crm` tetap 0 insert/update/delete.
+- **VYN-03-01 (harness):** stack E2E di `apps/web/playwright.config.ts`: guard DB → prepare (migrate, truncate `public` + `pgboss.job`, seed, fixture tenant kedua dan workspace screenshot) → stub provider → API dan worker dari `dist` → `next build` + `next start` → browser container Playwright 1.63.0 ber-digest. Stub meniru WhatsApp Cloud (success/transient/permanent, webhook dan receipt bertanda tangan, replay, log panggilan). Dokumentasi: `apps/web/tests/e2e/README.md`. Devdependency `@vynor/database` (workspace) ditambahkan ke `apps/web`.
+- **VYN-03-02 / VYN-03-03 (karakterisasi HTTP/service):** 5 spec baru (`conversations`, `webchat`, `media`, `idempotency` di `apps/api/tests`, `channel-polling` di `apps/worker/tests`), 46 test, dengan server HTTP yang disusun seperti `main.ts`. Tidak ada kode produksi yang berubah.
+- **VYN-03-04 (E2E):** `golden-path` (6), `channels` (1), `tenant-isolation` (2), `screenshots` (21, 21 PNG baseline). `auth-smoke` (4, sudah ada): test shell preview kini membuat request API gagal secara eksplisit, karena stack E2E sekarang menjalankan API sungguhan; assertion tidak berubah.
+- **VYN-03-05 (CI):** job `e2e-golden-path` di `ci.yml` menjalankan `pnpm test:e2e` dua kali berturut-turut, mengunggah laporan HTML selalu dan trace/screenshot/diff bila gagal; `retries: 0`.
+- **Catatan proses:**
+  - Run-server Playwright di container mengabaikan SIGTERM yang diteruskan docker, sehingga container tertinggal setelah run (ditemukan saat run berurutan). Diperbaiki dengan `support/browser-server.sh`, yang menghapus container saat dihentikan dan menghapus sisa run yang terputus sebelum start.
+  - Satu assertion waktu di test polling baru (toleransi 50 ms) gagal di run penuh. Diganti batas eksak, bukan dilonggarkan, dan satu `setTimeout` di test yang sama diganti pemeriksaan deterministik.
+- **Validasi:** semua PASS (tabel di 09).
+
+### Temuan baru (NEW FINDING) dari WU-03
+
+Bug riil yang direkam test karakterisasi apa adanya. Semuanya **di luar scope migrasi** dan **tidak diperbaiki** di WU-03; perbaikan menunggu keputusan owner sebagai tiket terpisah.
+
+| ID    | Temuan                                                                                                                                                                                                                                                                                                                                            | Bukti (test)                                                                                      |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| NF-10 | Unassign (`PATCH /conversations/:id` dengan `assigneeMembershipId: null`) menulis assignee **lama** ke `afterState` audit `conversation.updated`, karena `afterState` memakai `data.assigneeMembershipId ?? conversation.assigneeMembershipId`. Percakapannya sendiri benar ter-unassign; hanya jejak audit yang salah. Dampak: integritas audit. | `conversations-http.integration.spec.ts` › assigns, self-assigns and unassigns                    |
+| NF-11 | `IdempotencyInterceptor` tidak memeriksa payload: key yang dipakai ulang dengan body berbeda mendapat respons pertama (`201`, `x-idempotent-replay: true`) dan payload baru dibuang diam-diam. Praktik umum (draft IETF Idempotency-Key) menolaknya dengan 422.                                                                                   | `idempotency-http.integration.spec.ts` › replays the first response even when the payload differs |
+| NF-12 | Scope key idempotency adalah workspace + method + path + key, bukan user: user lain di workspace yang sama dengan key yang sama menerima respons tersimpan milik user pertama. Kemungkinannya kecil karena key dibuat acak oleh klien.                                                                                                            | `idempotency-http.integration.spec.ts` › scopes keys to the workspace                             |
+| NF-13 | `GET /media/:messageId` menjawab error dengan body `{ code, message }`, bukan envelope error standar API (`statusCode`, `correlationId`, `timestamp`) seperti endpoint lain.                                                                                                                                                                      | `media-http.integration.spec.ts` › answers 403 MEDIA_LINK_INVALID                                 |
+
+Perilaku yang terekam tetapi **bukan bug** (baseline untuk WU-04..06): store idempotency dan rate limiter webchat in-memory per proses (dijadwalkan pindah ke Redis di WU-04, DEC-04); Inbox membuka percakapan baru secara otomatis sementara tab default "Mine" kosong; `/analytics` merender halaman Reports; pengiriman pesan tidak diaudit; status `PENDING` tidak membutuhkan `conversation:close`; `POST /conversations/:id/read` cukup dengan `conversation:read`; `next start` memperingatkan konfigurasi `output: standalone`.
+
+- **Status:** WU-03 `IN_PROGRESS`; VYN-03-01..05 `IN_REVIEW` (acceptance PASS lokal). SHA commit, URL PR, dan hasil CI tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge hanya oleh owner.

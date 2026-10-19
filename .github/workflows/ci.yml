@@ -195,3 +195,75 @@ jobs:
           STORAGE_ACCESS_KEY_ID: rustfsadmin
           STORAGE_SECRET_ACCESS_KEY: rustfsadminpassword
         run: pnpm test
+
+  e2e-golden-path:
+    name: E2E Golden Path, Channels & Screenshot Baseline (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The harness (apps/web/tests/e2e/README.md) migrates, empties and seeds this database,
+    # starts the provider stub, the built API and worker, the web build and the pinned
+    # Playwright browser container, so no provider is ever called live.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: vynor_e2e
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vynor_e2e?schema=public
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull the Pinned Playwright Browser Image
+        run: docker pull mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+
+      # The web app is built by the E2E run itself, with the stack's NEXT_PUBLIC_* values.
+      - name: Build API, Worker and Packages
+        run: pnpm exec turbo run build --filter='!@vynor/web'
+
+      - name: E2E Run 1
+        run: pnpm test:e2e
+
+      # Repeatability gate: the second run resets the database and must pass unchanged.
+      - name: E2E Run 2 (repeatability)
+        run: pnpm test:e2e
+
+      - name: Upload Playwright Report (with provider stub traces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 14
+
+      - name: Upload Failure Traces, Screenshots and Diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: apps/web/test-results/
+          retention-days: 14

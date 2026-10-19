@@ -175,6 +175,9 @@ importers:
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
+      '@vynor/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       autoprefixer:
         specifier: ^10.6.1
         version: 10.6.1(postcss@8.5.28)

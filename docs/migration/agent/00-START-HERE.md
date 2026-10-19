@@ -1,6 +1,6 @@
 # 00 — START HERE: Handoff Migrasi VYNOR CRM
 
-> **Status 2026-10-19:** DEC-01..09 sudah diputuskan owner (lihat `01-DECISION-REGISTER.md`); semua `GATE-*` masih PENDING. WU-00 `DONE` (PR #64 di-merge owner, `07e7748`). WU-01 `DONE` (PR #65 di-merge owner, `aa74590`). WU-02 `IN_PROGRESS` (VYN-02-01..02 `IN_REVIEW`; PR menunggu review dan merge owner). Baca file ini sebelum membuka satu pun tiket.
+> **Status 2026-10-19:** DEC-01..09 sudah diputuskan owner (lihat `01-DECISION-REGISTER.md`); semua `GATE-*` masih PENDING. WU-00 `DONE` (PR #64 di-merge owner, `07e7748`). WU-01 `DONE` (PR #65 di-merge owner, `aa74590`). WU-02 `DONE` (PR #66 di-merge owner, `f21f012`). WU-03 `IN_PROGRESS` (VYN-03-01..05 `IN_REVIEW`; PR dari branch `test/wu-03-characterization-e2e` menunggu review dan merge owner). Baca file ini sebelum membuka satu pun tiket.
 
 ## Apa yang dikirim
 
