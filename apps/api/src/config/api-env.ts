@@ -10,3 +10,11 @@ export function getApiEnv(): ApiEnv {
   cached ??= validateEnv(ApiEnvSchema, process.env);
   return cached;
 }
+
+/** CORS_ALLOWED_ORIGINS as a list; the REST API and the realtime gateway share it. */
+export function parseCorsAllowedOrigins(value: string): string[] {
+  return value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}

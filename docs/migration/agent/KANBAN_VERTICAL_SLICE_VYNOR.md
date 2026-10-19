@@ -1,6 +1,6 @@
 # VYNOR CRM — Kanban Migrasi Berbasis Vertical Slice
 
-> **Status per 17 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `IN_REVIEW` (VYN-01-01..03 `DONE`, diterima owner 2026-10-17; PR dari branch `fix/wu-01-compose-health` menunggu review dan merge owner); WU lain masih perencanaan.
+> **Status per 19 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; VYN-01-01..03 `DONE`); WU-02 `IN_PROGRESS` (VYN-02-01..02 `IN_REVIEW`; PR dari branch `fix/wu-02-security-patches` menunggu review dan merge owner); WU lain masih perencanaan.
 > **Sumber:** `../01`–`../07` audit/migration yang sudah diperbarui; commit audit `565e8e4`, baseline historis 176 test. Jangan menganggap audit commit sama dengan `origin/main` terbaru.
 
 ## Sasaran dan batas
@@ -13,31 +13,31 @@ Migrasikan perubahan stack minimum secara aman tanpa mengganti arsitektur modula
 
 ### 1A. Swimlane x status (snapshot awal)
 
-| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS** | **IN REVIEW**                                     | **DONE**                                                     | **DEFERRED** |
-| ----------------------- | ------------------------------------- | --------- | --------------- | ------------------------------------------------- | ------------------------------------------------------------ | ------------ |
-| Keputusan & fondasi     | WU-02; WU-03                          | —         | —               | WU-01 (P0, risiko HIGH; PR menunggu review owner) | WU-00 (PR #64, 2026-10-17); DEC-01..09 (RESOLVED 2026-10-17) | —            |
-| State & antrean         | WU-04; WU-05a; WU-05b                 | —         | —               | —                                                 | —                                                            | WU-05c       |
-| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —               | —                                                 | —                                                            | —            |
-| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —               | —                                                 | —                                                            | —            |
-| Reliability & penutupan | WU-10; WU-11                          | —         | —               | —                                                 | —                                                            | WU-09        |
+| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS**                               | **IN REVIEW** | **DONE**                                                                                 | **DEFERRED** |
+| ----------------------- | ------------------------------------- | --------- | --------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- | ------------ |
+| Keputusan & fondasi     | WU-03                                 | —         | WU-02 (risiko HIGH; PR menunggu review owner) | —             | WU-00 (PR #64, 2026-10-17); WU-01 (PR #65, 2026-10-17); DEC-01..09 (RESOLVED 2026-10-17) | —            |
+| State & antrean         | WU-04; WU-05a; WU-05b                 | —         | —                                             | —             | —                                                                                        | WU-05c       |
+| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —                                             | —             | —                                                                                        | —            |
+| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —                                             | —             | —                                                                                        | —            |
+| Reliability & penutupan | WU-10; WU-11                          | —         | —                                             | —             | —                                                                                        | WU-09        |
 
 **Aturan pergerakan:** `BLOCKED → READY` setelah dependency + approval; `READY → IN PROGRESS` ketika branch PR dibuka; `IN PROGRESS → IN REVIEW` setelah DoD dan test; `IN REVIEW → DONE` hanya sesudah owner merge/sign-off. Jangan menandai `DONE` saat AI baru membuat commit. **WIP limit disarankan:** maksimum satu WU berisiko HIGH/CRITICAL dalam implementasi pada satu waktu; pekerjaan docs/test independen boleh paralel setelah WU-03.
 
 ### 1B. Backlog dan urutan prioritas
 
-| Kolom                          | Work unit / vertical slice                                                                                               | Kondisi perpindahan                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**                                                             | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR |
-| **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **DONE 2026-10-17 (PR #64 di-merge owner)**                                            | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                  |
-| **BACKLOG — PRIORITAS P0**     | WU-01 health Docker — **IN REVIEW (PR)** (risiko implementasi HIGH); WU-02 CVE & CORS; WU-03 characterization E2E        | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                 |
-| **BACKLOG — PRIORITAS P1**     | WU-04 Redis → WU-05a BullMQ expand → WU-05b contract                                                                     | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                     |
-| **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next                                                         | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                          |
-| **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                                                                                | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                |
-| **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                                                                               | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                             |
-| **OPTIONAL / DITAHAN**         | WU-09 media S3; WU-05c DROP pgboss; perubahan FK                                                                         | DEC-07 / persetujuan destruktif dan environment secara terpisah                         |
-| **BACKLOG — BUG TERBUKA**      | NF-09: `@vynor/storage` `stat`/`get`/`delete` tanpa header `x-amz-content-sha256` (403 di storage keluarga MinIO; laten) | Di luar WU-01 (keputusan owner 2026-10-17); butuh tiket terpisah dan persetujuan owner  |
+| Kolom                          | Work unit / vertical slice                                                                                                             | Kondisi perpindahan                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**                                                                           | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR |
+| **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **DONE 2026-10-17 (PR #64 di-merge owner)**                                                          | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                  |
+| **BACKLOG — PRIORITAS P0**     | WU-01 health Docker — **DONE 2026-10-17 (PR #65 di-merge owner)**; WU-02 CVE & CORS — **IN PROGRESS (PR)**; WU-03 characterization E2E | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                 |
+| **BACKLOG — PRIORITAS P1**     | WU-04 Redis → WU-05a BullMQ expand → WU-05b contract                                                                                   | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                     |
+| **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next                                                                       | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                          |
+| **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                                                                                              | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                |
+| **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                                                                                             | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                             |
+| **OPTIONAL / DITAHAN**         | WU-09 media S3; WU-05c DROP pgboss; perubahan FK                                                                                       | DEC-07 / persetujuan destruktif dan environment secara terpisah                         |
+| **BACKLOG — BUG TERBUKA**      | NF-09: `@vynor/storage` `stat`/`get`/`delete` tanpa header `x-amz-content-sha256` (403 di storage keluarga MinIO; laten)               | Di luar WU-01 (keputusan owner 2026-10-17); butuh tiket terpisah dan persetujuan owner  |
 
-**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-17 WU-00 `DONE` (PR #64 di-merge owner) dan WU-01 `IN_REVIEW` (PR menunggu merge owner).
+**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-19 WU-00 dan WU-01 `DONE` (PR #64 dan #65 di-merge owner); WU-02 `IN_PROGRESS` (PR menunggu review dan merge owner).
 
 ## 2. Peta dependensi dan potensi paralel
 
@@ -178,7 +178,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-01 — Docker/Caddy benar-benar sehat
 
-**Status:** `IN_REVIEW` (PR ke `main`; VYN-01-01..03 `DONE`, diterima owner 2026-10-17) · **Prioritas:** P0 (bug F-01) · **Risiko implementasi:** HIGH · **Depends:** WU-00 (`DONE`) · **Gates:** DEC-08 (RESOLVED)
+**Status:** `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; VYN-01-01..03 `DONE`) · **Prioritas:** P0 (bug F-01) · **Risiko implementasi:** HIGH · **Depends:** WU-00 (`DONE`) · **Gates:** DEC-08 (RESOLVED)
 
 **Vertical slice:** docker compose up -> health API 200 -> worker/web/caddy siap
 
@@ -302,7 +302,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-02 — Patch CVE web & Socket.IO CORS
 
-**Status:** `BLOCKED_DEPENDENCY` · **Risiko:** HIGH · **Depends:** WU-00 · **Gates:** —
+**Status:** `IN_PROGRESS` (PR ke `main` menunggu review owner; VYN-02-01..02 `IN_REVIEW`) · **Risiko:** HIGH · **Depends:** WU-00 (`DONE`) · **Gates:** —
 
 **Vertical slice:** PDF knowledge diproses aman; websocket dari origin sah dapat terhubung
 
@@ -322,9 +322,9 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Perbarui Next ke versi patched yang kompatibel sampai 06d, serta pdfjs ke versi aman yang lolos validasi; bila upgrade PDF gagal, pertimbangkan isEvalSupported:false yang diuji dan dicatat.
-- [ ] Verifikasi parsing PDF knowledge AI Agent dengan fixture aman; jangan redesign UI.
-- [ ] Uji audit dependensi dan rekam advisory yang tersisa.
+- [x] Perbarui Next ke versi patched yang kompatibel sampai 06d, serta pdfjs ke versi aman yang lolos validasi; bila upgrade PDF gagal, pertimbangkan isEvalSupported:false yang diuji dan dicatat.
+- [x] Verifikasi parsing PDF knowledge AI Agent dengan fixture aman; jangan redesign UI.
+- [x] Uji audit dependensi dan rekam advisory yang tersisa.
 
 **OUTPUT / DELIVERABLE**
 
@@ -333,8 +333,8 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Tidak ada advisory HIGH di pnpm audit --prod.
-- [ ] Ekstraksi PDF berfungsi; golden path yang sudah ada tidak rusak.
+- [x] Tidak ada advisory HIGH di pnpm audit --prod.
+- [x] Ekstraksi PDF berfungsi; golden path yang sudah ada tidak rusak.
 
 **BUKTI VERIFIKASI**
 
@@ -354,9 +354,9 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Ganti CORS origin wildcard dengan daftar yang divalidasi.
-- [ ] Tambahkan test origin diizinkan/ditolak, termasuk reconnect socket.
-- [ ] Pastikan handshake tetap wajib JWT dan scope workspace tetap bekerja.
+- [x] Ganti CORS origin wildcard dengan daftar yang divalidasi.
+- [x] Tambahkan test origin diizinkan/ditolak, termasuk reconnect socket.
+- [x] Pastikan handshake tetap wajib JWT dan scope workspace tetap bekerja.
 
 **OUTPUT / DELIVERABLE**
 
@@ -365,8 +365,8 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Origin disetujui berhasil connect; origin asing ditolak.
-- [ ] Handshake unauthenticated tetap gagal, tanpa regresi API REST.
+- [x] Origin disetujui berhasil connect; origin asing ditolak.
+- [x] Handshake unauthenticated tetap gagal, tanpa regresi API REST.
 
 **BUKTI VERIFIKASI**
 
@@ -1638,7 +1638,7 @@ Rollback / rollout procedure: <steps>
 Ready for owner review: YES/NO + blocker
 ```
 
-**Kegiatan berikutnya:** DEC-01 s.d. DEC-09 sudah diputuskan (2026-10-17; DEC-07 = DEFER) VYN-00-01 dan VYN-00-02 `DONE` (diterima owner; baseline `1d6b578`: 182 tes PASS, lihat `../09-regression-test-results.md`). PR WU-00 (#64) di-merge owner pada 2026-10-17 (`07e7748`). WU-01 `IN_PROGRESS` atas instruksi owner: tahap 1 dan smoke terisolasi tahap 2 PASS di branch `fix/wu-01-compose-health` (NF-08 diselesaikan dengan PGSTY Silo; NF-09 terbuka di luar scope). Owner menerima VYN-01-01..03 (2026-10-17); PR WU-01 dibuat dan menunggu review serta merge owner. WU-02 baru dimulai setelah WU-01 selesai. Keputusan teknis diuji ulang di gerbang WU masing-masing. Tanpa approval, status board tetap perencanaan.
+**Kegiatan berikutnya:** DEC-01 s.d. DEC-09 sudah diputuskan (2026-10-17; DEC-07 = DEFER) VYN-00-01 dan VYN-00-02 `DONE` (diterima owner; baseline `1d6b578`: 182 tes PASS, lihat `../09-regression-test-results.md`). PR WU-00 (#64) di-merge owner pada 2026-10-17 (`07e7748`). WU-01 `IN_PROGRESS` atas instruksi owner: tahap 1 dan smoke terisolasi tahap 2 PASS di branch `fix/wu-01-compose-health` (NF-08 diselesaikan dengan PGSTY Silo; NF-09 terbuka di luar scope). Owner menerima VYN-01-01..03 (2026-10-17); PR WU-01 (#65) di-merge owner pada 2026-10-17 (`aa74590`), sehingga WU-01 `DONE`. WU-02 `IN_PROGRESS` atas instruksi owner: VYN-02-01..02 `IN_REVIEW` di branch `fix/wu-02-security-patches`, PR menunggu review dan merge owner. NF-09 tetap terbuka di luar scope; WU-03 belum dimulai. Keputusan teknis diuji ulang di gerbang WU masing-masing. Tanpa approval, status board tetap perencanaan.
 
 ## 10. Sumber
 

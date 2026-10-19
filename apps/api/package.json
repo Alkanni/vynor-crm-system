@@ -36,6 +36,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "26.6.2",
     "@types/pg": "^8.23.1",
+    "socket.io-client": "^4.8.3",
     "tsc-watch": "7.2.1",
     "tsx": "4.23.15",
     "typescript": "catalog:"
