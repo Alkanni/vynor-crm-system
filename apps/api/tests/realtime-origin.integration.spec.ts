@@ -121,6 +121,8 @@ beforeAll(async () => {
     SUPABASE_JWT_SECRET: 'jwt-secret-for-integration-tests-0123456789',
     STORAGE_ACCESS_KEY_ID: 'key',
     STORAGE_SECRET_ACCESS_KEY: 'secret',
+    // This spec does not use the shared state store.
+    SHARED_STATE_STORE: 'memory',
   })) {
     if (process.env[key] === undefined) vi.stubEnv(key, value);
   }

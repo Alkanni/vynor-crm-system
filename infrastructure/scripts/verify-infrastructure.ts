@@ -35,6 +35,9 @@ const REMOVED_DUPLICATES = [
 const STORAGE_IMAGE =
   'docker.io/pgsty/silo:RELEASE.2026-10-15T00-00-00Z@sha256:aaac6bce13eb99316b3c88bd20143fc3c38ab607585256a411a095c44ee57f62';
 const STORAGE_BUCKETS = ['vynor-crm-attachments', 'vynor-crm-attachments-quarantine'];
+// WU-04 / DEC-04: Redis 7 tag and multi-arch index digest verified against Docker Hub.
+const REDIS_IMAGE =
+  'docker.io/library/redis:7.4.11-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499';
 const CADDY_INTERNAL_ROOT = '/data/caddy/pki/authorities/local/root.crt';
 
 function read(relativePath: string): string {
@@ -154,6 +157,7 @@ check('docker-compose.yml exists and defines all required services', () => {
 
   const requiredServices = [
     'postgres:',
+    'redis:',
     'rustfs:',
     'rustfs-init:',
     'api:',
@@ -210,7 +214,7 @@ check('docker compose config renders and builds from infrastructure/docker (DEC-
   }
 });
 
-check('compose images are pinned to a version tag; storage also to its verified digest', () => {
+check('compose images are pinned to a version tag; storage and Redis also to a digest', () => {
   for (const [name, service] of Object.entries(defaultServices())) {
     if (!service.image) continue;
     const [reference] = service.image.split('@');
@@ -224,6 +228,45 @@ check('compose images are pinned to a version tag; storage also to its verified 
       `${name} must use ${STORAGE_IMAGE}`,
     );
   }
+  assert.equal(defaultServices().redis?.image, REDIS_IMAGE, `redis must use ${REDIS_IMAGE}`);
+});
+
+check('Redis persists (AOF everysec), never evicts, needs a password and stays private', () => {
+  const services = defaultServices();
+  const redis = services.redis;
+  const command = redis?.command ?? [];
+  const flag = (name: string) => command[command.indexOf(name) + 1];
+  assert.equal(command[0], 'redis-server', 'redis must run redis-server');
+  assert.equal(flag('--appendonly'), 'yes', 'redis must enable the AOF');
+  assert.equal(flag('--appendfsync'), 'everysec', 'redis must fsync the AOF every second');
+  assert.equal(flag('--maxmemory-policy'), 'noeviction', 'redis must never evict keys');
+  assert.match(flag('--maxmemory') ?? '', /^\d+[kmg]b$/i, 'redis must set maxmemory');
+  assert.ok(command.includes('--requirepass') && flag('--requirepass'), 'redis needs a password');
+  assert.ok(!redis?.ports?.length, 'redis must not publish ports (vynor-network only)');
+  assert.ok(
+    redis?.volumes?.some(
+      (m) => m.type === 'volume' && m.source === 'redis_data' && m.target === '/data',
+    ),
+    'redis must keep /data on the redis_data volume',
+  );
+  const probe = redis?.healthcheck?.test?.join(' ') ?? '';
+  assert.match(probe, /redis-cli .*-a "\$\$REDIS_PASSWORD" ping/, 'redis probe must authenticate');
+
+  const api = services.api as (typeof services)['api'] & {
+    depends_on?: Record<string, { condition?: string }>;
+  };
+  const url = new URL(api?.environment?.REDIS_URL ?? 'invalid:');
+  assert.equal(
+    `${url.protocol}//${url.host}`,
+    'redis://redis:6379',
+    'api must use the redis service',
+  );
+  assert.equal(
+    decodeURIComponent(url.password),
+    flag('--requirepass'),
+    'api must use its password',
+  );
+  assert.equal(api?.depends_on?.redis?.condition, 'service_healthy', 'api must wait for redis');
 });
 
 check('rustfs-init provisions both buckets idempotently with mcli and fails on errors', () => {
@@ -350,6 +393,13 @@ check('compose smoke guard rejects configs and URLs that reach live resources', 
     'production URL': (c) =>
       (c.services.api.environment.PUBLIC_WEBHOOK_BASE_URL = 'https://crm.vynor.io'),
     'real secret': (c) => (c.services.api.environment.ENCRYPTION_MASTER_KEY = 'c2VjcmV0'),
+    'published Redis port': (c) =>
+      (c.services.redis.ports = [{ host_ip: '127.0.0.1', published: '56379' }]),
+    'real Redis password': (c) =>
+      (c.services.api.environment.REDIS_URL = 'redis://:r3al-secret@redis:6379/0'),
+    'Redis outside the stack': (c) =>
+      (c.services.api.environment.REDIS_URL =
+        'redis://:vynor_redis_dev_secret@cache.example.com:6379/0'),
   };
   for (const [label, mutate] of Object.entries(mutations)) {
     const config = structuredClone(base) as unknown as Mutable;
@@ -377,6 +427,8 @@ check('compose smoke runner and CI job keep the project, guards and cleanup', ()
   assert.ok(runner.includes('flock -n'), 'runner must refuse parallel runs');
   assert.ok(!/compose down[^\n]*--rmi/.test(runner), 'teardown must not remove images');
   assert.ok(runner.includes('compose-smoke-s3.mts'), 'runner must check the S3 contract');
+  assert.ok(runner.includes('check_redis'), 'runner must check Redis config and persistence');
+  assert.ok(runner.includes('CONFIG GET'), 'runner must read the live Redis config');
   const workflow = read('.github/workflows/compose-smoke.yml');
   assert.ok(workflow.includes('timeout-minutes:'), 'compose-smoke job must have a timeout');
   assert.ok(workflow.includes('compose-smoke.sh all'), 'compose-smoke job must use the runner');
@@ -419,6 +471,27 @@ check('.github/workflows/ci.yml exists with code quality, drift, and verificatio
   assert.ok(content.includes('pnpm build'), 'ci.yml must run monorepo build');
   assert.ok(content.includes('db:migrate:diff'), 'ci.yml must verify migration drift');
   assert.ok(content.includes('db:verify'), 'ci.yml must run schema verification');
+});
+
+check('CI runs the Vitest and E2E jobs against a pinned Redis service (WU-04)', () => {
+  const content = read('.github/workflows/ci.yml');
+  const job = (name: string) => {
+    const start = content.indexOf(`\n  ${name}:\n`);
+    assert.ok(start >= 0, `ci.yml must define job ${name}`);
+    const end = content.slice(start + 1).search(/\n {2}[a-z0-9-]+:\n/);
+    return end < 0 ? content.slice(start) : content.slice(start, start + 1 + end);
+  };
+  for (const [name, variable] of [
+    ['automated-tests', 'TEST_REDIS_URL'],
+    ['e2e-golden-path', 'E2E_REDIS_URL'],
+  ]) {
+    const body = job(name);
+    assert.ok(body.includes(`image: ${REDIS_IMAGE}`), `${name} must run the pinned Redis service`);
+    assert.ok(
+      body.includes(`${variable}: redis://localhost:6379/`),
+      `${name} must set ${variable}`,
+    );
+  }
 });
 
 // 6. Container Security, Vulnerability Scan, SBOM & Provenance (FND-INF-007)

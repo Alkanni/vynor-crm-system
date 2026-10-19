@@ -20,9 +20,26 @@ export const SMOKE_DATABASE = 'vynor_test';
 
 const LIVE_DATABASES = ['vynor', 'vynor_crm'];
 const LIVE_VOLUME = 'vynor-crm_postgres_data';
-const EXPECTED_SERVICES = ['api', 'caddy', 'postgres', 'rustfs', 'rustfs-init', 'web', 'worker'];
+const EXPECTED_SERVICES = [
+  'api',
+  'caddy',
+  'postgres',
+  'redis',
+  'rustfs',
+  'rustfs-init',
+  'web',
+  'worker',
+];
 // Service DNS names inside the smoke network, plus loopback for URLs the browser would use.
-const INTERNAL_HOSTS = new Set(['localhost', '127.0.0.1', 'postgres', 'rustfs', 'api', 'web']);
+const INTERNAL_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  'postgres',
+  'redis',
+  'rustfs',
+  'api',
+  'web',
+]);
 // The dev placeholders committed in docker-compose.yml. Any other value in a secret-like
 // variable means a real secret reached the smoke config (for example from the shell).
 const ALLOWED_SECRET_VALUES = new Set([
@@ -33,6 +50,7 @@ const ALLOWED_SECRET_VALUES = new Set([
   'dev-anon-key-placeholder',
   'dev-service-role-key-placeholder',
   'dev-supabase-jwt-secret-for-local-testing-only-32-chars',
+  'vynor_redis_dev_secret',
 ]);
 const SECRET_NAME = /SECRET|PASSWORD|TOKEN|KEY/;
 const URL_TOKEN = /[a-z][a-z0-9+.-]*:\/\/[^\s,'"]+/gi;
@@ -202,6 +220,17 @@ export function checkSmokeConfig(
       if (!services[name]?.environment?.[key]) problems.push(`${name}: ${key} must be set`);
     }
   }
+  // WU-04: Redis stays on the smoke network, and its password is the committed placeholder.
+  const redis = services.redis;
+  if (redis?.ports?.length) problems.push('redis: must not publish ports');
+  const command = redis?.command ?? [];
+  const password = command[command.indexOf('--requirepass') + 1];
+  if (!command.includes('--requirepass') || !ALLOWED_SECRET_VALUES.has(password ?? '')) {
+    problems.push('redis: --requirepass must be set to the committed dev placeholder');
+  }
+  if (!services.api?.environment?.REDIS_URL?.startsWith('redis://')) {
+    problems.push('api: REDIS_URL must point at the smoke Redis');
+  }
 
   const missingPorts = [...allowedPorts].filter((port) => !publishedPorts.includes(port));
   if (missingPorts.length > 0 || publishedPorts.length !== new Set(publishedPorts).size) {
@@ -241,6 +270,14 @@ function checkServiceUrl(service: string, token: string): string[] {
   const problems: string[] = [];
   if (!INTERNAL_HOSTS.has(parsed.hostname)) {
     problems.push(`${service}: URL host ${parsed.hostname} is outside the smoke stack`);
+  }
+  if (parsed.password && !ALLOWED_SECRET_VALUES.has(decodeURIComponent(parsed.password))) {
+    problems.push(`${service}: a URL carries a password that is not a committed dev placeholder`);
+  }
+  if (parsed.protocol === 'redis:' || parsed.protocol === 'rediss:') {
+    if (parsed.hostname !== 'redis' || (parsed.port !== '' && parsed.port !== '6379')) {
+      problems.push(`${service}: Redis URL must target redis:6379 inside the smoke network`);
+    }
   }
   if (parsed.protocol === 'postgresql:' || parsed.protocol === 'postgres:') {
     const database = decodeURIComponent(parsed.pathname.replace(/^\//, ''));

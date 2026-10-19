@@ -17,8 +17,9 @@ import { http, startHttpApp, testApiEnv, type HttpApp } from './support/http-app
 
 /**
  * WU-03 / VYN-03-03: the global IdempotencyInterceptor (main.ts) over real HTTP, driven by a
- * probe controller so the handler's timing is under the test's control. The store is the
- * interceptor's in-memory map (per process; DEC-04 moves it to Redis in WU-04).
+ * probe controller so the handler's timing is under the test's control. Since WU-04 the store
+ * is Redis (TEST_REDIS_URL); redis-shared-state.integration.spec.ts covers two API instances
+ * and Redis outages.
  */
 
 const calls: unknown[] = [];
@@ -124,17 +125,21 @@ describe('Idempotency-Key handling over HTTP (WU-03 characterization)', () => {
     expect(calls).toHaveLength(1);
   });
 
-  it('replays the first response even when the payload differs (no payload check)', async () => {
+  it('rejects a reused key with a different payload with 422 (NF-11, fixed in WU-04)', async () => {
     const k = key('conflict');
-    await post('', k, { amount: 1 });
-    const different = await post('', k, { amount: 999 });
-    // Current behaviour, reported as a bug in docs/migration/08 (WU-03): a reused key with a
-    // different payload gets the first response instead of an error, and the new payload is
-    // silently dropped.
-    expect(different.status).toBe(201);
-    expect(different.headers.get('x-idempotent-replay')).toBe('true');
-    expect(different.body).toEqual({ data: { call: 1, body: { amount: 1 } } });
-    expect(calls).toEqual([{ amount: 1 }]);
+    const original = await post('', k, { amount: 1, note: 'first' });
+    const different = await post('', k, { amount: 999, note: 'first' });
+    expect(different.status).toBe(422);
+    expect(different.headers.get('x-idempotent-replay')).toBeNull();
+    expect((different.body as ErrorBody).code).toBe('IDEMPOTENCY_KEY_REUSED');
+    expect(calls).toEqual([{ amount: 1, note: 'first' }]);
+
+    // The same payload with its keys in another order is the same request: it replays.
+    const reordered = await post('', k, { note: 'first', amount: 1 });
+    expect(reordered.status).toBe(201);
+    expect(reordered.headers.get('x-idempotent-replay')).toBe('true');
+    expect(reordered.body).toEqual(original.body);
+    expect(calls).toHaveLength(1);
   });
 
   it('answers 409 IDEMPOTENCY_CONFLICT while the first request is still in flight', async () => {
@@ -193,10 +198,16 @@ describe('Idempotency-Key handling over HTTP (WU-03 characterization)', () => {
     const mine = await post('/authenticated', k, { from: 'first' }, first.token);
     expect(mine.body).toEqual({ data: { call: 1, user: 'Idem First' } });
 
-    // Same workspace, different user: gets the first user's stored response (reported in 08).
-    const sameWorkspace = await post('/authenticated', k, { from: 'colleague' }, colleague.token);
+    // Same workspace, different user, same payload: gets the first user's stored response
+    // (NF-12, reported in 08, still open). With another payload the key counts as reused.
+    const sameWorkspace = await post('/authenticated', k, { from: 'first' }, colleague.token);
     expect(sameWorkspace.headers.get('x-idempotent-replay')).toBe('true');
     expect(sameWorkspace.body).toEqual(mine.body);
+    const reused = await post('/authenticated', k, { from: 'colleague' }, colleague.token);
+    expect([reused.status, (reused.body as ErrorBody).code]).toEqual([
+      422,
+      'IDEMPOTENCY_KEY_REUSED',
+    ]);
 
     // Another workspace and another path each have their own entry.
     const elsewhere = await post('/authenticated', k, { from: 'other' }, otherTenant.token);

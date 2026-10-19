@@ -1,7 +1,10 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
-import { assertSafeE2eDatabaseUrl } from './tests/e2e/support/database-guard';
+import {
+  assertSafeE2eDatabaseUrl,
+  assertSafeE2eRedisUrl,
+} from './tests/e2e/support/database-guard';
 import {
   API_BASE,
   E2E_PORTS,
@@ -14,13 +17,15 @@ import {
 
 /**
  * E2E stack (WU-03): the provider stub, the built API and worker, the production web build and
- * a pinned Chromium all start here, against the disposable database in E2E_DATABASE_URL.
- * See tests/e2e/README.md.
+ * a pinned Chromium all start here, against the disposable database in E2E_DATABASE_URL and
+ * the local Redis in E2E_REDIS_URL. See tests/e2e/README.md.
  */
 
-// Fail before anything starts when the database is not a disposable test database.
+// Fail before anything starts when the database is not a disposable test database, or the
+// API's Redis (WU-04) is not a local one.
 const databaseUrl = process.env.E2E_DATABASE_URL!;
 assertSafeE2eDatabaseUrl(databaseUrl);
+const redisUrl = assertSafeE2eRedisUrl(process.env.E2E_REDIS_URL);
 
 /**
  * Screenshots are rendered by the browser of the official Playwright image (same version as
@@ -108,7 +113,7 @@ export default defineConfig({
       name: 'api',
       command: 'exec node ../api/dist/main.js',
       url: `${API_BASE}/health/live`,
-      env: apiEnv(databaseUrl),
+      env: apiEnv(databaseUrl, redisUrl),
       timeout: 60_000,
       gracefulShutdown: graceful,
     },

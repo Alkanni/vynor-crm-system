@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module.js';
 import { IamModule } from './iam/index.js';
 import { OpenApiModule } from './openapi/openapi.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
+import { RedisModule } from './redis/redis.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { WebchatModule } from './webchat/webchat.module.js';
 import { WebhooksModule } from './webhooks/webhooks.module.js';
@@ -16,6 +17,7 @@ import { WebhooksModule } from './webhooks/webhooks.module.js';
 @Module({
   imports: [
     ConfigModule,
+    RedisModule,
     IamModule,
     HealthModule,
     AuditModule,

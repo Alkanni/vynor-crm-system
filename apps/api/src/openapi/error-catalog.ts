@@ -86,9 +86,9 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
   },
   {
     code: 'IDEMPOTENCY_KEY_REUSED',
-    httpStatus: 409,
+    httpStatus: 422,
     category: 'CONCURRENCY',
-    description: 'An idempotency key was reused with a different request payload or method.',
+    description: 'An idempotency key was reused with a different request payload (query or body).',
     safeClientMessage: 'Idempotency key was previously used with different request parameters.',
     actionableGuidance: 'Generate a new UUIDv7 / unique idempotency key for new mutations.',
   },

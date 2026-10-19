@@ -11,6 +11,7 @@ import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.i
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor.js';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe.js';
 import { getApiEnv, parseCorsAllowedOrigins } from './config/api-env.js';
+import { IdempotencyStore } from './redis/idempotency-store.js';
 
 // Load local .env if present
 loadEnvFileIfPresent();
@@ -33,8 +34,12 @@ app.useGlobalPipes(new ZodValidationPipe());
 // FND-037: Register global RFC-7807 compliant API exception filter
 app.useGlobalFilters(new ApiExceptionFilter());
 
-// FND-037 / FND-040: Register correlation ID and idempotency interceptors
-app.useGlobalInterceptors(new CorrelationIdInterceptor(), new IdempotencyInterceptor());
+// FND-037 / FND-040: Register correlation ID and idempotency interceptors. Idempotency-Key
+// records live in the store RedisModule provides (Redis, shared by every instance; WU-04).
+app.useGlobalInterceptors(
+  new CorrelationIdInterceptor(),
+  new IdempotencyInterceptor(app.get(IdempotencyStore)),
+);
 
 // Configure CORS. The embeddable web chat widget runs on customer sites, so its public
 // endpoints accept any origin (without credentials); everything else is restricted.

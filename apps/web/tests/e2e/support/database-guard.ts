@@ -44,3 +44,34 @@ export function assertSafeE2eDatabaseUrl(rawUrl: string | undefined): string {
   }
   return database;
 }
+
+const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+
+/**
+ * The API under test keeps Idempotency-Key records and web chat rate limits in Redis (WU-04).
+ * The harness writes there through the API, so it only accepts a Redis on this machine (the CI
+ * service container or a disposable local one), never a shared or remote instance.
+ */
+export function assertSafeE2eRedisUrl(rawUrl: string | undefined): string {
+  if (!rawUrl) {
+    throw new UnsafeDatabaseError(
+      'E2E_REDIS_URL is not set. Point it at a disposable local Redis, e.g. ' +
+        'redis://127.0.0.1:56379/0',
+    );
+  }
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new UnsafeDatabaseError('E2E_REDIS_URL is not a valid URL.');
+  }
+  if (url.protocol !== 'redis:') {
+    throw new UnsafeDatabaseError('E2E_REDIS_URL must be a redis:// URL.');
+  }
+  if (!LOOPBACK_HOSTS.includes(url.hostname)) {
+    throw new UnsafeDatabaseError(
+      `Refusing Redis host "${url.hostname}": the E2E harness only uses a local Redis.`,
+    );
+  }
+  return rawUrl;
+}

@@ -4,6 +4,7 @@ import {
   ConfigurationError,
   ApiEnvSchema,
   WorkerEnvSchema,
+  sharedStateStore,
   redactObject,
   maskEmail,
   maskPhone,
@@ -30,6 +31,7 @@ describe('Configuration Validation (FND-017 & FND-TST-007)', () => {
     STORAGE_ACCESS_KEY_ID: 'test-storage-key',
     STORAGE_SECRET_ACCESS_KEY: 'test-storage-secret',
     STORAGE_USE_SSL: 'false',
+    REDIS_URL: 'redis://localhost:6379/0',
   };
 
   const validWorkerEnv = {
@@ -172,6 +174,64 @@ describe('Configuration Validation (FND-017 & FND-TST-007)', () => {
       ]);
     },
   );
+
+  describe('API shared state store (WU-04, DEC-04)', () => {
+    const { REDIS_URL: _redis, ...withoutRedis } = validApiEnv;
+    const issues = (env: Record<string, string>) =>
+      ApiEnvSchema.safeParse(env).error?.issues.map((issue) => issue.path.join('.')) ?? [];
+
+    it('uses Redis unless told otherwise and requires REDIS_URL in every profile', () => {
+      expect(sharedStateStore(ApiEnvSchema.parse(validApiEnv))).toBe('redis');
+      for (const APP_ENV of ['local', 'test', 'staging', 'production']) {
+        const env = { ...withoutRedis, APP_ENV, ENCRYPTION_MASTER_KEY: 'key' };
+        expect(issues(env), APP_ENV).toEqual(['REDIS_URL']);
+        expect(issues({ ...env, SHARED_STATE_STORE: 'redis' }), APP_ENV).toEqual(['REDIS_URL']);
+        expect(issues({ ...env, REDIS_URL: '' }), APP_ENV).toEqual(['REDIS_URL']);
+      }
+    });
+
+    it('allows the per-process store only when a local or test process opts in', () => {
+      for (const [APP_ENV, NODE_ENV] of [
+        ['local', 'development'],
+        ['local', 'test'],
+        ['test', 'test'],
+        ['test', 'development'],
+      ] as [string, string][]) {
+        const env = ApiEnvSchema.parse({
+          ...withoutRedis,
+          APP_ENV,
+          NODE_ENV,
+          SHARED_STATE_STORE: 'memory',
+        });
+        expect(sharedStateStore(env), `${APP_ENV}/${NODE_ENV}`).toBe('memory');
+      }
+      for (const [APP_ENV, NODE_ENV] of [
+        ['staging', 'staging'],
+        ['production', 'production'],
+        // APP_ENV defaults to local, so NODE_ENV alone must also stop it.
+        ['local', 'production'],
+        ['local', 'staging'],
+        ['test', 'production'],
+        ['staging', 'test'],
+      ] as [string, string][]) {
+        const env = {
+          ...validApiEnv,
+          APP_ENV,
+          NODE_ENV,
+          ENCRYPTION_MASTER_KEY: 'key',
+          SHARED_STATE_STORE: 'memory',
+        };
+        expect(issues(env), `${APP_ENV}/${NODE_ENV}`).toEqual(['SHARED_STATE_STORE']);
+      }
+    });
+
+    it('accepts redis:// and rediss:// URLs only', () => {
+      const tls = 'rediss://:secret@redis.internal:6380/1';
+      expect(ApiEnvSchema.parse({ ...validApiEnv, REDIS_URL: tls }).REDIS_URL).toBe(tls);
+      expect(issues({ ...validApiEnv, REDIS_URL: 'http://localhost:6379' })).toEqual(['REDIS_URL']);
+      expect(issues({ ...validApiEnv, REDIS_URL: 'not a url' })).toEqual(['REDIS_URL']);
+    });
+  });
 });
 
 describe('Sensitive Field Redaction (FND-046 & FND-TST-007)', () => {

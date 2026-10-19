@@ -1,7 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import 'reflect-metadata';
 import {
+  Global,
   Module,
+  type Abstract,
   type DynamicModule,
   type MiddlewareConsumer,
   type NestModule,
@@ -27,10 +29,14 @@ import {
 import { ConversationsService } from '../../src/conversations/conversations.service.js';
 import { MediaController } from '../../src/conversations/media.controller.js';
 import { MediaUrlService } from '../../src/conversations/media-url.service.js';
+import { HealthController } from '../../src/health/health.controller.js';
 import { ActorContextService } from '../../src/iam/actor-context.service.js';
 import { AuthGuard } from '../../src/iam/auth.guard.js';
 import { JwtVerifierService } from '../../src/iam/jwt-verifier.service.js';
 import { PermissionGuard } from '../../src/iam/permission.guard.js';
+import { IdempotencyStore } from '../../src/redis/idempotency-store.js';
+import { RateLimitStore } from '../../src/redis/rate-limit-store.js';
+import { RedisHealthIndicator, RedisModule } from '../../src/redis/redis.module.js';
 import { WebchatController } from '../../src/webchat/webchat.controller.js';
 import { WebchatService } from '../../src/webchat/webchat.service.js';
 
@@ -41,7 +47,7 @@ import { WebchatService } from '../../src/webchat/webchat.service.js';
  * Vitest compiles with esbuild, which emits no decorator metadata, so the constructor
  * dependencies Nest would read from `design:paramtypes` are declared here.
  */
-const CONSTRUCTOR_DEPENDENCIES: [Type, Type[]][] = [
+const CONSTRUCTOR_DEPENDENCIES: [Type, (Type | Abstract<unknown>)[]][] = [
   [AuthGuard, [Reflector, JwtVerifierService, ActorContextService]],
   [PermissionGuard, [Reflector, AuditService]],
   [ConversationsController, [ConversationsService]],
@@ -50,19 +56,46 @@ const CONSTRUCTOR_DEPENDENCIES: [Type, Type[]][] = [
   [MediaUrlService, [ChannelRuntimeService]],
   [MediaController, [ChannelRuntimeService, MediaUrlService]],
   [WebchatController, [WebchatService, ChannelRuntimeService]],
-  [WebchatService, [ChannelRuntimeService]],
+  [WebchatService, [ChannelRuntimeService, RateLimitStore]],
+  [HealthController, [RedisHealthIndicator]],
 ];
 for (const [type, dependencies] of CONSTRUCTOR_DEPENDENCIES) {
   Reflect.defineMetadata('design:paramtypes', dependencies, type);
 }
 
-/** API environment for the specs; the database comes from the test runner's own env. */
+/**
+ * Redis for the specs (TEST_REDIS_URL), like the test database a disposable local instance:
+ * CI runs a Redis service container. Specs only write keys with a TTL under `vynor:` and
+ * never flush, but a Redis outside this machine is refused all the same.
+ */
+export function testRedisUrl(): string {
+  const url = process.env.TEST_REDIS_URL;
+  if (!url) {
+    throw new Error(
+      'No test Redis configured. Set TEST_REDIS_URL to a disposable local Redis ' +
+        '(for example redis://127.0.0.1:56379/0) before running the API integration tests.',
+    );
+  }
+  const { hostname } = new URL(url);
+  if (!['127.0.0.1', 'localhost', '[::1]'].includes(hostname)) {
+    throw new Error(`TEST_REDIS_URL must point at a local Redis, got host ${hostname}`);
+  }
+  return url;
+}
+
+/**
+ * API environment for the specs; the database comes from the test runner's own env and the
+ * shared state from TEST_REDIS_URL, as in a deployment.
+ */
 export function testApiEnv(overrides: Record<string, string> = {}): ApiEnv {
   return ApiEnvSchema.parse({
     APP_ENV: 'test',
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://unused',
     DIRECT_URL: 'postgresql://unused',
+    ...('REDIS_URL' in overrides || overrides.SHARED_STATE_STORE === 'memory'
+      ? {}
+      : { REDIS_URL: testRedisUrl() }),
     // A closed port: tokens that fail the local secret are never checked against a real JWKS.
     SUPABASE_URL: 'http://127.0.0.1:9',
     SUPABASE_ANON_KEY: 'anon',
@@ -99,12 +132,7 @@ export async function startHttpApp(options: {
   /** Registers the AuthGuard and PermissionGuard globally, as IamModule does. */
   withIam?: boolean;
 }): Promise<HttpApp> {
-  const providers: Provider[] = [
-    { provide: API_ENV, useValue: options.env },
-    ChannelRuntimeService,
-    AuditService,
-    ...(options.providers ?? []),
-  ];
+  const providers: Provider[] = [ChannelRuntimeService, AuditService, ...(options.providers ?? [])];
   if (options.withIam) {
     providers.push(
       JwtVerifierService,
@@ -114,12 +142,23 @@ export async function startHttpApp(options: {
     );
   }
 
+  // Global like ConfigModule, so RedisModule builds its store from this environment.
+  class TestConfigModule {}
+  Module({ providers: [{ provide: API_ENV, useValue: options.env }], exports: [API_ENV] })(
+    TestConfigModule,
+  );
+  Global()(TestConfigModule);
+
   class CharacterizationModule implements NestModule {
     configure(consumer: MiddlewareConsumer): void {
       consumer.apply(CorrelationIdMiddleware).forRoutes('*');
     }
   }
-  Module({ controllers: options.controllers, providers })(CharacterizationModule);
+  Module({
+    imports: [TestConfigModule, RedisModule],
+    controllers: options.controllers,
+    providers,
+  })(CharacterizationModule);
 
   // Same setup as main.ts.
   const app = await NestFactory.create<NestExpressApplication>(
@@ -131,7 +170,10 @@ export async function startHttpApp(options: {
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ZodValidationPipe());
   app.useGlobalFilters(new ApiExceptionFilter());
-  app.useGlobalInterceptors(new CorrelationIdInterceptor(), new IdempotencyInterceptor());
+  app.useGlobalInterceptors(
+    new CorrelationIdInterceptor(),
+    new IdempotencyInterceptor(app.get(IdempotencyStore)),
+  );
   await app.listen(0, '127.0.0.1');
 
   const baseUrl = `${(await app.getUrl()).replace('[::1]', '127.0.0.1')}/api/v1`;

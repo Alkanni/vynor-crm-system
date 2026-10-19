@@ -149,6 +149,16 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
+      # Shared state store of the API (WU-04): same pinned image as docker-compose.yml.
+      redis:
+        image: docker.io/library/redis:7.4.11-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Code
@@ -188,6 +198,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vynor_test?schema=public
           DIRECT_URL: postgresql://postgres:postgres@localhost:5432/vynor_test?schema=public
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vynor_test?schema=public
+          TEST_REDIS_URL: redis://localhost:6379/0
           SUPABASE_URL: http://localhost:54321
           SUPABASE_ANON_KEY: anon-key-for-test-suites
           SUPABASE_SERVICE_ROLE_KEY: service-role-key-for-test-suites
@@ -201,8 +212,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The harness (apps/web/tests/e2e/README.md) migrates, empties and seeds this database,
-    # starts the provider stub, the built API and worker, the web build and the pinned
-    # Playwright browser container, so no provider is ever called live.
+    # starts the provider stub, the built API (on the Redis service) and worker, the web build
+    # and the pinned Playwright browser container, so no provider is ever called live.
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -217,8 +228,19 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
+      # Shared state store of the API (WU-04): same pinned image as docker-compose.yml.
+      redis:
+        image: docker.io/library/redis:7.4.11-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
     env:
       E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vynor_e2e?schema=public
+      E2E_REDIS_URL: redis://localhost:6379/0
 
     steps:
       - name: Checkout Code

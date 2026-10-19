@@ -27,6 +27,11 @@ services:
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d vynor_test']
 
+  # No ports: the smoke reaches Redis with `compose exec`, as only vynor-network can.
+  redis:
+    container_name: !reset null
+    restart: 'no'
+
   rustfs:
     container_name: !reset null
     restart: 'no'

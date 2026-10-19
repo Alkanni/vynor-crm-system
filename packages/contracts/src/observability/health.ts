@@ -38,6 +38,8 @@ export const ReadinessReportSchema = z.object({
   timestamp: z.string().datetime(),
   checks: z.object({
     database: SubsystemHealthSchema,
+    /** Absent when the API keeps its shared state in process memory (local/test only). */
+    redis: SubsystemHealthSchema.optional(),
   }),
 });
 
@@ -56,6 +58,7 @@ export const SystemHealthReportSchema = z.object({
   timestamp: z.string().datetime(),
   indicators: z.object({
     database: SubsystemHealthSchema,
+    redis: SubsystemHealthSchema.optional(),
     outbox: SubsystemHealthSchema.optional(),
     queue: SubsystemHealthSchema.optional(),
     webhooks: SubsystemHealthSchema.optional(),

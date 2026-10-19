@@ -38,6 +38,8 @@ const env = ApiEnvSchema.parse({
   SUPABASE_JWT_SECRET: 'jwt-secret-for-integration-tests-0123456789',
   STORAGE_ACCESS_KEY_ID: 'key',
   STORAGE_SECRET_ACCESS_KEY: 'secret',
+  // This spec does not use the shared state store.
+  SHARED_STATE_STORE: 'memory',
   ENCRYPTION_MASTER_KEY: randomBytes(32).toString('base64'),
   PUBLIC_WEBHOOK_BASE_URL: 'https://crm.vynor.test',
 });

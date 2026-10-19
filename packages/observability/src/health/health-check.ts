@@ -30,6 +30,34 @@ export async function checkDatabaseHealth(db: {
 }
 
 /**
+ * Check Redis connectivity and round-trip latency (WU-04). A client that is not connected
+ * fails at once instead of waiting for a reconnect.
+ */
+export async function checkRedisHealth(redis: {
+  status: string;
+  ping: () => Promise<unknown>;
+}): Promise<SubsystemHealth> {
+  const start = Date.now();
+  if (redis.status !== 'ready') {
+    return { status: 'DOWN', latencyMs: 0, error: `Redis connection is ${redis.status}` };
+  }
+  try {
+    await redis.ping();
+    const latencyMs = Date.now() - start;
+    return {
+      status: latencyMs > 1000 ? 'DEGRADED' : 'UP',
+      latencyMs,
+    };
+  } catch (err) {
+    return {
+      status: 'DOWN',
+      latencyMs: Date.now() - start,
+      error: err instanceof Error ? err.message : 'Redis ping failed',
+    };
+  }
+}
+
+/**
  * Check Outbox table backlog and dead-letter count (FND-050, AD-006).
  */
 export async function checkOutboxHealth(db: {
@@ -90,16 +118,24 @@ export function buildLivenessReport(service: string): LivenessReport {
 }
 
 /**
- * Construct readiness probe report (FND-049).
+ * Construct readiness probe report (FND-049). Ready only when every checked dependency is UP;
+ * Redis is checked when the service keeps shared state there (WU-04).
  */
-export function buildReadinessReport(service: string, dbHealth: SubsystemHealth): ReadinessReport {
+export function buildReadinessReport(
+  service: string,
+  dbHealth: SubsystemHealth,
+  redisHealth?: SubsystemHealth,
+): ReadinessReport {
+  const checks: ReadinessReport['checks'] = { database: dbHealth };
+  if (redisHealth) {
+    checks.redis = redisHealth;
+  }
+  const ready = Object.values(checks).every((check) => check?.status === 'UP');
   return {
-    status: dbHealth.status === 'UP' ? 'UP' : 'DOWN',
+    status: ready ? 'UP' : 'DOWN',
     service,
     timestamp: new Date().toISOString(),
-    checks: {
-      database: dbHealth,
-    },
+    checks,
   };
 }
 
@@ -111,6 +147,7 @@ export function buildSystemHealthReport(params: {
   environment?: string;
   version?: string;
   database: SubsystemHealth;
+  redis?: SubsystemHealth;
   outbox?: SubsystemHealth;
   queue?: SubsystemHealth;
   webhooks?: SubsystemHealth;
@@ -119,6 +156,7 @@ export function buildSystemHealthReport(params: {
 }): SystemHealthReport {
   const allSubsystems = [
     params.database,
+    params.redis,
     params.outbox,
     params.queue,
     params.webhooks,
@@ -138,6 +176,9 @@ export function buildSystemHealthReport(params: {
     database: params.database,
   };
 
+  if (params.redis) {
+    indicators.redis = params.redis;
+  }
   if (params.outbox) {
     indicators.outbox = params.outbox;
   }

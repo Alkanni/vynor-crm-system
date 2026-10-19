@@ -71,9 +71,11 @@ function serverEnv(databaseUrl: string): Record<string, string> {
   };
 }
 
-export function apiEnv(databaseUrl: string): Record<string, string> {
+export function apiEnv(databaseUrl: string, redisUrl: string): Record<string, string> {
   return {
     ...serverEnv(databaseUrl),
+    // Idempotency-Key records and web chat rate limits (WU-04), as in a deployment.
+    REDIS_URL: redisUrl,
     PORT: String(E2E_PORTS.api),
     APP_URL: API_ORIGIN,
     CORS_ALLOWED_ORIGINS: WEB_ORIGIN,

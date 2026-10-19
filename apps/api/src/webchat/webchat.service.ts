@@ -1,10 +1,11 @@
 import { createHmac, randomBytes } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { WebchatSettings } from '@vynor/contracts';
 import { readConnectionConfig, safeEqual, webchatEventFor } from '@vynor/channel-adapters';
 import { journalProviderEvents, notifyRealtime, prisma } from '@vynor/database';
 import { ChannelRuntimeService } from '../channels/channel-runtime.service.js';
 import { apiError } from '../common/errors/api-error.js';
+import { RateLimitStore } from '../redis/rate-limit-store.js';
 import type {
   WebchatConfig,
   WebchatMessage,
@@ -12,32 +13,43 @@ import type {
   WebchatSessionRequest,
 } from './webchat.schemas.js';
 
-/** Fixed-window limiter per visitor IP and widget, to keep the public endpoints cheap to abuse. */
-class RateLimiter {
-  private readonly hits = new Map<string, { count: number; resetAt: number }>();
-  constructor(
-    private readonly limit: number,
-    private readonly windowMs: number,
-  ) {}
-  allow(key: string): boolean {
-    const now = Date.now();
-    const entry = this.hits.get(key);
-    if (!entry || entry.resetAt < now) {
-      this.hits.set(key, { count: 1, resetAt: now + this.windowMs });
-      if (this.hits.size > 10_000) this.hits.clear();
-      return true;
-    }
-    entry.count += 1;
-    return entry.count <= this.limit;
-  }
-}
+/**
+ * Fixed-window limits per visitor IP and widget, to keep the public endpoints cheap to abuse.
+ * The counters live in the shared store, so every API instance enforces the same window.
+ */
+const SESSION_LIMIT = { scope: 'webchat-session', limit: 20, windowMs: 60_000 };
+const MESSAGE_LIMIT = { scope: 'webchat-message', limit: 30, windowMs: 60_000 };
 
 @Injectable()
 export class WebchatService {
-  private readonly messageLimiter = new RateLimiter(30, 60_000);
-  private readonly sessionLimiter = new RateLimiter(20, 60_000);
+  private readonly logger = new Logger(WebchatService.name);
 
-  constructor(private readonly runtime: ChannelRuntimeService) {}
+  constructor(
+    private readonly runtime: ChannelRuntimeService,
+    private readonly rateLimits: RateLimitStore,
+  ) {}
+
+  /**
+   * True while `identity` is within the limit. Fails closed (DEC-04): when the counters are
+   * unreachable the request is refused with 503 rather than let through unlimited.
+   */
+  private async withinLimit(
+    { scope, limit, windowMs }: typeof SESSION_LIMIT,
+    identity: string,
+  ): Promise<boolean> {
+    try {
+      return await this.rateLimits.hit(scope, identity, limit, windowMs);
+    } catch (err) {
+      this.logger.warn(
+        `Rate limit store unavailable, ${scope} refused: ${err instanceof Error ? err.message : err}`,
+      );
+      throw apiError(
+        503,
+        'SERVICE_UNAVAILABLE',
+        'Chat is temporarily unavailable. Please try again shortly.',
+      );
+    }
+  }
 
   private async findChannel(widgetKey: string) {
     const channel = await prisma.providerAccount.findFirst({
@@ -74,7 +86,7 @@ export class WebchatService {
   }
 
   async session(widgetKey: string, request: WebchatSessionRequest, ip: string) {
-    if (!this.sessionLimiter.allow(`${ip}:${widgetKey}`)) {
+    if (!(await this.withinLimit(SESSION_LIMIT, `${ip}:${widgetKey}`))) {
       throw apiError(429, 'RATE_LIMITED', 'Too many chat sessions. Try again in a minute.');
     }
     const channel = await this.findChannel(widgetKey);
@@ -97,7 +109,7 @@ export class WebchatService {
     ip: string,
     correlationId: string,
   ): Promise<{ accepted: boolean }> {
-    if (!this.messageLimiter.allow(`${ip}:${widgetKey}`)) {
+    if (!(await this.withinLimit(MESSAGE_LIMIT, `${ip}:${widgetKey}`))) {
       throw apiError(
         429,
         'RATE_LIMITED',

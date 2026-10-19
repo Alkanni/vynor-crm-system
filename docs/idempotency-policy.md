@@ -45,34 +45,43 @@ sequenceDiagram
     autonumber
     actor Client
     participant Interceptor as IdempotencyInterceptor
-    participant Cache as Redis / Memory Store
+    participant Store as Redis (shared by every API instance)
     participant Handler as Controller & Service
 
     Client->>Interceptor: POST /api/v1/messages + Idempotency-Key
-    Interceptor->>Cache: Lookup key (workspace + method + path + key)
+    Interceptor->>Store: Atomic claim: record key (workspace + method + path + key), payload fingerprint
 
-    alt Key found with status = 'IN_FLIGHT'
-        Cache-->>Interceptor: In-flight lock active
+    alt Store unreachable
+        Interceptor-->>Client: 503 Service Unavailable (SERVICE_UNAVAILABLE), handler not run
+    else Key held with a different payload fingerprint
+        Interceptor-->>Client: 422 Unprocessable Entity (IDEMPOTENCY_KEY_REUSED)
+    else Key held with status = 'IN_FLIGHT'
         Interceptor-->>Client: 409 Conflict (IDEMPOTENCY_CONFLICT)
-    else Key found with status = 'COMPLETED'
-        Cache-->>Interceptor: Cached status code & response body
-        Interceptor-->>Client: Cached Response + x-idempotent-replay: true
-    else Key not found (New Request)
-        Interceptor->>Cache: Set status = 'IN_FLIGHT' (60s lock timeout)
+    else Key held with status = 'COMPLETED'
+        Store-->>Interceptor: Stored status code & response body
+        Interceptor-->>Client: Stored response + x-idempotent-replay: true
+    else Key free: this request now holds it as 'IN_FLIGHT' (60s)
         Interceptor->>Handler: Execute business logic & mutations
         Handler-->>Interceptor: 201 Created (Domain Response)
-        Interceptor->>Cache: Set status = 'COMPLETED' + Response + TTL (24h)
+        Interceptor->>Store: Set status = 'COMPLETED' + response, TTL 24h (only while this request still holds the key)
         Interceptor-->>Client: 201 Created (Domain Response)
     end
 ```
 
 ### 3.1 States
 
-| State           | TTL / Timeout      | Behavior                                                                                                           |
-| :-------------- | :----------------- | :----------------------------------------------------------------------------------------------------------------- |
-| **`IN_FLIGHT`** | `60 seconds`       | Temporary distributed lock preventing concurrent execution of identical keys. Returns `409 Conflict`.              |
-| **`COMPLETED`** | `24 hours`         | Request executed successfully. Subsequent matching requests receive the identical cached status and response body. |
-| **`FAILED`**    | Immediate eviction | If the handler throws an unhandled error, the key is evicted, permitting safe immediate retry by client.           |
+| State           | TTL / Timeout      | Behavior                                                                                                                        |
+| :-------------- | :----------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| **`IN_FLIGHT`** | `60 seconds`       | Distributed lock across API instances preventing concurrent execution of identical keys. Returns `409 Conflict`.                |
+| **`COMPLETED`** | `24 hours`         | Request executed successfully. Subsequent requests with the same payload receive the identical stored status and response body. |
+| **`FAILED`**    | Immediate eviction | If the handler throws an error, the key is released, permitting safe immediate retry by the client.                             |
+
+### 3.2 Payload check (WU-04, closes NF-11)
+
+The record keeps a SHA-256 fingerprint of the request's query and body, with object keys sorted, so
+key order and whitespace do not matter. A repeat with the same key but another payload is refused
+with `422 Unprocessable Entity` (`IDEMPOTENCY_KEY_REUSED`), as the IETF draft recommends, whether the
+first request is still running or already completed. Clients must use a new key for a new request.
 
 ---
 
@@ -100,9 +109,36 @@ x-idempotent-replay: true
 
 Idempotency keys are partitioned by multi-tenant context to prevent cross-workspace key collisions:
 
-$$\text{StorageKey} = \text{"idemp:"} + \text{workspaceId} + \text{":"} + \text{HTTP\_Method} + \text{":"} + \text{Path} + \text{":"} + \text{IdempotencyKey}$$
+$$\text{StorageKey} = \text{"vynor:idem:"} + \text{workspaceId} + \text{":"} + \text{SHA-256}(\text{HTTP\_Method} + \text{" "} + \text{Path} + \text{" "} + \text{IdempotencyKey})$$
 
 This guarantees that:
 
 1. Two different workspaces using identical UUIDs do not collide.
 2. An idempotency key sent to `POST /api/v1/messages` cannot inadvertently suppress a request to `POST /api/v1/campaigns`.
+3. No client key or identifier from the URL is stored in Redis in clear text.
+
+The scope is the workspace, not the user: a colleague in the same workspace who reuses a key with the
+same payload receives the stored response (NF-12, open in `docs/migration/08-migration-execution-log.md`).
+
+---
+
+## 6. Storage and Failure Modes (WU-04, DEC-04)
+
+Records live in Redis (`REDIS_URL`), shared by every API instance, so a retry that reaches another
+instance is replayed or refused exactly as on the first one. The claim, the completion and the release
+each run as one Redis Lua script; completion and release only act while the request still holds its
+claim, so a request that outlived its 60-second in-flight lock never overwrites a newer one.
+
+| Situation                                     | Behavior                                                                                                             |
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| Redis unreachable when the request arrives    | Fail closed: `503 SERVICE_UNAVAILABLE`, the handler does not run. Readiness (`/api/v1/health/ready`) reports `DOWN`. |
+| Redis lost after the handler ran              | The response is still returned; it is not stored, and repeats get `409` until the in-flight lock expires (60 s).     |
+| Redis lost while releasing a failed request   | The error is returned; the key frees itself when the in-flight lock expires (60 s).                                  |
+| Instance crashes mid-request                  | The in-flight lock expires after 60 s; a retry then runs again.                                                      |
+| Redis full (`maxmemory`, policy `noeviction`) | Writes are refused, so keyed requests fail closed with `503`; no record is ever evicted silently.                    |
+| Request without an `Idempotency-Key`          | Never touches Redis and is served even while Redis is down.                                                          |
+
+Redis runs with AOF (`appendfsync everysec`): a crash can lose up to about one second of records. The
+client fails fast instead of queueing commands while disconnected (2-second command timeout) and
+reconnects in the background. `SHARED_STATE_STORE=memory` keeps records in the process instead; the
+environment schema allows it only for a single local or test process, never in staging or production.

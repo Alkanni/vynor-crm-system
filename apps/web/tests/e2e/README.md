@@ -10,26 +10,35 @@ This is the regression baseline that WU-04/05 (Redis, BullMQ) and WU-06 (Vite) m
 | `tenant-isolation.spec.ts` | Second tenant (`E2E Tenant B`): own Inbox only, 404 for Tenant A's records, 403 for Tenant A's workspace                                                                                                                                                                                     |
 | `screenshots.spec.ts`      | Versioned screenshots of all 20 routes, including `/ai-agent/[agentId]` (known and unknown ID, deep link and reload)                                                                                                                                                                         |
 | `auth-smoke.spec.ts`       | Redirects, login form, preview-mode shell when the API is unreachable                                                                                                                                                                                                                        |
+| `stack-readiness.spec.ts`  | The API under test is ready on PostgreSQL and Redis (WU-04)                                                                                                                                                                                                                                  |
 
 The HTTP characterization specs (`apps/api/tests/*-http.integration.spec.ts`,
 `apps/worker/tests/channel-polling.integration.spec.ts`) run with `pnpm test` on `vynor_test`.
 
 ## Run locally
 
-Prerequisites: Docker, a PostgreSQL with an **empty or disposable** `vynor_e2e` database, and
-free ports 3901 (API), 3905 (web), 3911 (stub) and 3920 (browser).
+Prerequisites: Docker, a PostgreSQL with an **empty or disposable** `vynor_e2e` database, a
+**local, disposable** Redis for the API (WU-04), and free ports 3901 (API), 3905 (web), 3911
+(stub) and 3920 (browser). A throwaway Redis with the image `docker-compose.yml` pins:
+
+```bash
+docker run -d --rm --name vynor-e2e-redis -p 127.0.0.1:56379:6379 --tmpfs /data \
+  docker.io/library/redis:7.4.11-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+```
 
 ```bash
 pnpm install
 pnpm build
 export E2E_DATABASE_URL='postgresql://postgres:postgres@localhost:5434/vynor_e2e?schema=public'
+export E2E_REDIS_URL='redis://127.0.0.1:56379/0'
 pnpm test:e2e
 ```
 
 `pnpm test:e2e` does everything else, in this order (`playwright.config.ts`):
 
 1. **Database guard** (`support/database-guard.ts`): refuses any database other than
-   `vynor_e2e`, `vynor_test` or `vynor_shadow`, before anything starts.
+   `vynor_e2e`, `vynor_test` or `vynor_shadow`, and any Redis that is not on this machine,
+   before anything starts.
 2. **Prepare** (`support/prepare-database.ts`): `prisma migrate deploy`, truncate every table in
    `public` (except `_prisma_migrations`) and `pgboss.job`, run the regular seed, then add the
    fixtures: workspaces `E2E Tenant B` (`tenant-b@vynor.test`) and `E2E Screens`
@@ -38,6 +47,8 @@ pnpm test:e2e
 4. **API** (`apps/api/dist`, port 3901) and **worker** (`apps/worker/dist`) with `NODE_ENV=development`
    (so the outbox dispatcher, queue consumers and realtime relay run) and `APP_ENV=test`
    (dev-session sign-in allowed). All provider base URLs and `SUPABASE_URL` point at the stub.
+   The API keeps Idempotency-Key records and web chat rate limits in `E2E_REDIS_URL`, as a
+   deployment does; the harness does not flush it (every key it causes has a TTL).
 5. **Web**: `next build` with the stack's `NEXT_PUBLIC_*` values, then `next start` on port 3905.
 6. **Browser**: the official Playwright image `mcr.microsoft.com/playwright:v1.63.0-noble`,
    pinned by digest, runs `playwright-core run-server` from this repo's own `playwright-core`
@@ -103,8 +114,9 @@ Then review the PNG diff in the PR. Never update baselines to make an unexplaine
 
 ## CI
 
-The `e2e-golden-path` job in `.github/workflows/ci.yml` uses a `vynor_e2e` PostgreSQL service,
-builds everything except the web app, and runs `pnpm test:e2e` **twice** (the second run
+The `e2e-golden-path` job in `.github/workflows/ci.yml` uses a `vynor_e2e` PostgreSQL service
+and a Redis service (same pinned image as `docker-compose.yml`), builds everything except the
+web app, and runs `pnpm test:e2e` **twice** (the second run
 proves the reset and fixtures are repeatable). The HTML report is always uploaded; traces,
 failure screenshots and screenshot diffs are uploaded when a run fails. Retries are off, so a
 flaky test fails the job instead of hiding.
@@ -117,4 +129,6 @@ together with `@playwright/test`.
 - `… is already used`: a previous run did not stop. Check `ss -ltnp | grep -E ':39(01|05|11|20) '`;
   `docker rm -f vynor-e2e-browser` removes a leftover browser container.
 - `Refusing database …`: `E2E_DATABASE_URL` points at a database the harness must not reset.
+- `E2E_REDIS_URL is not set` / `Refusing Redis host …`: start the throwaway Redis above and
+  export its URL. Do not point it at a Redis another project uses.
 - API or worker exits at start: run `pnpm build` first (the stack runs `dist/`).
