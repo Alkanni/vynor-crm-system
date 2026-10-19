@@ -10,7 +10,7 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter.js';
 import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor.js';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor.js';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe.js';
-import { getApiEnv } from './config/api-env.js';
+import { getApiEnv, parseCorsAllowedOrigins } from './config/api-env.js';
 
 // Load local .env if present
 loadEnvFileIfPresent();
@@ -38,7 +38,7 @@ app.useGlobalInterceptors(new CorrelationIdInterceptor(), new IdempotencyInterce
 
 // Configure CORS. The embeddable web chat widget runs on customer sites, so its public
 // endpoints accept any origin (without credentials); everything else is restricted.
-const allowedOrigins = env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim());
+const allowedOrigins = parseCorsAllowedOrigins(env.CORS_ALLOWED_ORIGINS);
 app.enableCors((req: { url?: string }, callback) => {
   const isWidgetRoute = (req.url ?? '').startsWith('/api/v1/webchat/');
   callback(

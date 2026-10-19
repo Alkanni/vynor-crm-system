@@ -22,8 +22,9 @@ async function pdfText(file: File): Promise<string> {
   // pdf.js parse on the main thread instead of loading a separate worker URL.
   await import('pdfjs-dist/build/pdf.worker.min.mjs');
 
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   try {
+    const doc = await loadingTask.promise;
     const pages: string[] = [];
     for (let n = 1; n <= doc.numPages; n += 1) {
       const page = await doc.getPage(n);
@@ -36,7 +37,9 @@ async function pdfText(file: File): Promise<string> {
     }
     return pages.join('\n\n');
   } finally {
-    await doc.destroy();
+    // pdfjs-dist 6 removed PDFDocumentProxy.destroy(); the loading task owns the document. This
+    // also cleans up when a file fails to load.
+    await loadingTask.destroy();
   }
 }
 

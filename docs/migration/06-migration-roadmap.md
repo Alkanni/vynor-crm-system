@@ -2,7 +2,7 @@
 
 > **Pembaruan rencana eksekusi (17 Oktober 2026):** bagian audit/baseline asli adalah catatan historis pada commit `565e8e4`. Bagian tambahan setelahnya adalah **spesifikasi pelaksanaan yang diusulkan**, bukan bukti bahwa implementasi, keputusan owner, CI, deployment, atau migrasi database baru sudah dilakukan. Baca `agent/00-START-HERE.md` sebelum menugaskan AI Agent.
 
-Status: **USULAN.** Per 2026-10-17 DEC-01..09 sudah diputuskan owner (lihat `agent/01-DECISION-REGISTER.md`) WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`, 2026-10-17). WU-01 `IN_REVIEW` sejak 2026-10-17: tahap 1 dan tahap 2 (NF-08 diselesaikan dengan PGSTY Silo, smoke terisolasi PASS) diterima owner; PR ke `main` menunggu merge owner.
+Status: **USULAN.** Per 2026-10-17 DEC-01..09 sudah diputuskan owner (lihat `agent/01-DECISION-REGISTER.md`) WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`, 2026-10-17). WU-01 `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; NF-08 diselesaikan dengan PGSTY Silo). WU-02 `IN_PROGRESS` sejak 2026-10-17 (VYN-02-01..02 `IN_REVIEW`; PR ke `main` menunggu review dan merge owner).
 
 ## 1. Prinsip eksekusi
 
@@ -332,7 +332,7 @@ Persetujuan terpisah tetap diperlukan saat waktunya tiba untuk: WU-05c (`DROP SC
 
 ## 7. Kanban eksekusi terperinci (revisi 17 Oktober 2026)
 
-**Status eksekusi:** seluruh tiket masih perencanaan; `WAITING_APPROVAL`, `BLOCKED_DEPENDENCY`, dan `DEFERRED_*` tidak berarti pekerjaan sudah berjalan. Semua `DEC-01..09` harus mempunyai hasil eksplisit sebelum WU-00. Keputusan `DEFER` untuk media termasuk keputusan yang sah; tidak perlu menyetujui implementasi WU-09 agar WU-00 dimulai. **Per 2026-10-17:** DEC-01..09 RESOLVED; WU-00 `DONE` (PR #64 di-merge owner, `07e7748`; VYN-00-01 dan VYN-00-02 `DONE`; baseline di `09-regression-test-results.md`); WU-01 `IN_REVIEW` (VYN-01-01..03 `DONE`, diterima owner; PR menunggu merge owner; lihat `08-migration-execution-log.md`); tiket lain belum dimulai.
+**Status eksekusi:** seluruh tiket masih perencanaan; `WAITING_APPROVAL`, `BLOCKED_DEPENDENCY`, dan `DEFERRED_*` tidak berarti pekerjaan sudah berjalan. Semua `DEC-01..09` harus mempunyai hasil eksplisit sebelum WU-00. Keputusan `DEFER` untuk media termasuk keputusan yang sah; tidak perlu menyetujui implementasi WU-09 agar WU-00 dimulai. **Per 2026-10-17:** DEC-01..09 RESOLVED; WU-00 `DONE` (PR #64 di-merge owner, `07e7748`; VYN-00-01 dan VYN-00-02 `DONE`; baseline di `09-regression-test-results.md`); WU-01 `DONE` (VYN-01-01..03 `DONE`; PR #65 di-merge owner, `aa74590`); WU-02 `IN_PROGRESS` (VYN-02-01..02 `IN_REVIEW`; PR menunggu review owner; lihat `08-migration-execution-log.md`); tiket lain belum dimulai.
 
 Tiap tahap 05a/05b/05c dan 06a/06b/06c/06d adalah **batas PR** tersendiri ke `main`, meskipun masih satu keluarga migrasi. AI Agent hanya membuat perubahan sesuai tiket pada WU aktif. `DONE` berarti PR telah direview dan di-merge oleh owner; tidak cukup hanya build PASS di lokal.
 
@@ -341,8 +341,8 @@ Tiap tahap 05a/05b/05c dan 06a/06b/06c/06d adalah **batas PR** tersendiri ke `ma
 | PR/WU  | Jumlah tiket | Dependency WU                       | Status awal        | Output / selesai bila                                                                                                                |
 | ------ | -----------: | ----------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | WU-00  |            2 | DEC-01..09                          | DONE               | Dokumen 01-07 tercatat dalam PR, 08/09 diinisialisasi, kondisi Git aman dan baseline bisa direproduksi.                              |
-| WU-01  |            3 | WU-00                               | IN_REVIEW          | Semua container yang memiliki healthcheck sehat di compose dan infra:verify menangkap path rusak.                                    |
-| WU-02  |            2 | WU-00                               | BLOCKED_DEPENDENCY | Audit tanpa HIGH dan tes PDF/CORS lulus dengan pengalaman web tidak berubah.                                                         |
+| WU-01  |            3 | WU-00                               | DONE               | Semua container yang memiliki healthcheck sehat di compose dan infra:verify menangkap path rusak.                                    |
+| WU-02  |            2 | WU-00                               | IN_PROGRESS        | Audit tanpa HIGH dan tes PDF/CORS lulus dengan pengalaman web tidak berubah.                                                         |
 | WU-03  |            5 | WU-00, WU-01                        | BLOCKED_DEPENDENCY | Golden path dan Channels E2E hijau di CI sebelum ganti queue atau frontend; screenshot baseline tersedia.                            |
 | WU-04  |            3 | WU-03                               | BLOCKED_DEPENDENCY | Golden path tetap hijau, uji dua instance berhasil, Redis siap di test/CI dan non-test diwajibkan.                                   |
 | WU-05a |            3 | WU-03, WU-04                        | BLOCKED_DEPENDENCY | Alur inbound/outbound BullMQ lulus fault injection dan provider stub; pg-boss tidak menerima job baru.                               |

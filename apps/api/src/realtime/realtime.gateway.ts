@@ -19,9 +19,12 @@ import { createLogger, type Logger } from '@vynor/observability';
 import type { Server, Socket } from 'socket.io';
 import { ActorContextService } from '../iam/actor-context.service.js';
 import { JwtVerifierService } from '../iam/jwt-verifier.service.js';
+import { allowRealtimeRequest, realtimeCorsOrigin } from './realtime-origin.js';
 
+// Only the origins in CORS_ALLOWED_ORIGINS (the same list as the REST API) may connect.
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: { origin: realtimeCorsOrigin },
+  allowRequest: allowRealtimeRequest,
   namespace: '/realtime',
 })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {

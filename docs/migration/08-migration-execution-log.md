@@ -223,3 +223,49 @@ Fakta audit historis di `01..07` **tidak** diubah. Delta dicatat di sini.
 
 - **Pemeriksaan sebelum commit:** `git fetch origin`: `origin/main` = merge-base = `07e7748` (memuat WU-00). Setelah itu `pnpm format:check`, `git diff --check`, `infra:verify`, konsistensi JSON ↔ tiket ↔ Kanban, dan pemeriksaan scope (hasilnya di laporan PR).
 - **Status:** WU-01 `IN_REVIEW` (PR). SHA commit, URL PR, dan hasil CI tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge hanya oleh owner.
+
+### Pasca-merge WU-01 — 2026-10-17 (dicatat 2026-10-19)
+
+- **Merge:** PR #65 di-merge owner ke `main` pada 2026-10-17 07:51 UTC sebagai `aa745900d364ca978aa4d63048ad75a4f275ab9b` (squash dari `833be1f` + `303f122`). `git fetch origin`: `origin/main` = `aa74590`.
+- **CI pada commit merge (semua `success`):** CI Quality Gate & Verification (Application Verification Suites, Migration Drift & Schema Invariants, Code Quality, Vitest), Compose Smoke (isolated) (`vynor-wu01-smoke`, `vynor_test`), Container Security, Vulnerability Scan & SBOM (api, web, worker; push dan run terjadwal 2026-10-18). Tidak ada kegagalan material.
+- **Status:** WU-01 `DONE`; VYN-01-01..03 `DONE`.
+
+## WU-02 — 2026-10-17 s.d. 2026-10-19
+
+### Implementasi (VYN-02-01, VYN-02-02)
+
+- **Owner approval:** chat owner "WU-01 DONE — MULAI WU-02" (2026-10-17). Scope hanya VYN-02-01 dan VYN-02-02; tanpa audit ulang WU-00/WU-01, tanpa perluasan scope, tanpa NF-09; tidak boleh pull di checkout utama; PR terpisah ke `main`, tanpa merge.
+- **Branch, base/head SHA:** `fix/wu-02-security-patches` di worktree `.claude/worktrees/wu-02-security-patches`, dibuat dari `origin/main` `aa74590`. Checkout utama tidak diubah (`main` @ `565e8e4`, file untracked tetap).
+- **Baseline audit (sebelum perubahan):** `pnpm audit --prod` = 9 advisory (1 low, 4 moderate, 4 high): `pdfjs-dist` (GHSA-hq66-cqwq-w95j, high), `next` (GHSA-cjq9-62q9-8jv4 high + 4 moderate + 1 low), dan transitif lewat `next`: `sharp` (GHSA-wq5f-xc86-pv6w, high) serta `source-map-js` (GHSA-68fv-2mgg-jv7q, high). Rincian di 09.
+- **VYN-02-01:**
+  - `next` 16.3.6 → 16.3.8 (patch, tetap 16.x sampai WU-06d) dan `pdfjs-dist` ^5.7.284 → ^6.4.299 (patched ≥ 6.2.108). `isEvalSupported:false` tidak diperlukan.
+  - pnpm mempertahankan `sharp@0.35.4` dan `source-map-js@1.2.1` dari lockfile lama karena masih memenuhi rentang. Keduanya dinaikkan secara terarah di lockfile ke 0.35.5 dan 1.2.2, tanpa `overrides`.
+  - Diff lockfile hanya memuat paket-paket itu: `next`/`@next/*`, `pdfjs-dist` dengan optional dependency `@napi-rs/canvas` 0.1.100 → 1.0.11, `sharp`/`@img/sharp-*` dan libvips 1.3.3 → 1.3.4, `source-map-js`, serta link importer `socket.io-client` di `apps/api`.
+  - `extract-file-text.ts`: pdfjs 6 menghapus `PDFDocumentProxy.destroy()` (typing 6.4.299 hanya punya `cleanup()`). Pembersihan sekarang lewat `loadingTask.destroy()`, yang juga membersihkan file yang gagal dimuat.
+  - Test baru `apps/web/tests/unit/extract-file-text.spec.ts` (4 test, fixture PDF dibangun di test).
+- **VYN-02-02:**
+  - `realtime.gateway.ts`: `cors: { origin: '*' }` diganti `cors.origin` + `allowRequest` dari `apps/api/src/realtime/realtime-origin.ts`. Daftar origin dibaca dari `CORS_ALLOWED_ORIGINS` (env API tervalidasi) lewat `parseCorsAllowedOrigins`, helper yang juga dipakai REST di `main.ts`.
+  - Origin asing ditolak sebelum handshake; tanpa Origin tetap wajib JWT.
+  - Test baru `apps/api/tests/realtime-origin.integration.spec.ts` (11 test, server dan client Socket.IO asli, tanpa DB). `socket.io-client` ^4.8.3 ditambahkan sebagai devDependency `apps/api`.
+  - Komentar `CORS_ALLOWED_ORIGINS` di `.env.example` dan `apps/api/.env.example`.
+- **Catatan proses:** sesi implementasi berhenti saat mencoba uji PDF opsional di browser pane, tanpa laporan akhir. Perubahan masih belum di-commit di worktree. Laporan status 2026-10-19 merangkum kondisinya, lalu owner memberi instruksi finalisasi.
+
+### Finalisasi WU-02 — validasi, commit, dan PR (2026-10-19)
+
+- **Owner approval:** chat owner "WU-02 — FINALISASI DAN BUAT PULL REQUEST".
+  - Status: WU-01 `DONE`, WU-02 `IN_PROGRESS`, VYN-02-01..02 sesuai hasil validasi.
+  - Validasi wajib: `format:check`, `lint`, `typecheck`, `build`, web `verify`, `test` hanya di instance test terverifikasi, dan `audit --prod`.
+  - Diizinkan: commit, push, PR ke `main`, menunggu CI.
+  - Dilarang: NF-09, perubahan Docker Compose atau konfigurasi WU-01, memulai WU-03, merge, dan perubahan checkout utama atau database aktif.
+- **Validasi:** semua PASS (tabel di 09).
+  - `format:check` pertama gagal pada `apps/api/tests/realtime-origin.integration.spec.ts`, file WU-02. File itu dirapikan dengan Prettier, lalu PASS.
+  - `lint` dan `typecheck` diulang dengan `--force` (tanpa cache turbo).
+- **Database:** `pnpm test` dengan env file ber-guard (menolak URL selain `localhost:5434/vynor_test`).
+  - `prisma migrate status`: datasource `vynor_test` di `localhost:5434`, 7 migrasi, up to date.
+  - Seed sebelum dan sesudah test.
+  - `pg_stat_database` sebelum/sesudah: `tup_inserted`/`tup_updated`/`tup_deleted` untuk `vynor` dan `vynor_crm` tetap 0; semua tulisan ada di `vynor_test`.
+- **NOT RUN:**
+  - Upload knowledge PDF di browser (opsional menurut owner; keterbatasan dicatat di VYN-02-01).
+  - Golden path E2E (WU-03).
+  - Compose smoke lokal (compose dan konfigurasi WU-01 tidak berubah; job CI `compose-smoke` tetap berjalan pada PR).
+- **Status:** WU-02 `IN_PROGRESS`; VYN-02-01..02 `IN_REVIEW` (acceptance otomatis PASS). SHA commit, URL PR, dan hasil CI tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge hanya oleh owner.
