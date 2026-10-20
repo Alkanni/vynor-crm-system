@@ -161,15 +161,21 @@ services:
       STORAGE_USE_SSL: 'false'
       # Channels: must match the API key to decrypt credentials for replies and polling.
       ENCRYPTION_MASTER_KEY: '${ENCRYPTION_MASTER_KEY:-}'
+      # BullMQ job queues (WU-05a, DEC-02); pg-boss above only drains jobs from before the
+      # cutover. URL-encode the password here if it contains reserved characters.
+      REDIS_URL: 'redis://:${REDIS_PASSWORD:-vynor_redis_dev_secret}@redis:6379/0'
     networks:
       - vynor-network
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       api:
         condition: service_healthy
     healthcheck:
-      # Fails once the worker stops writing heartbeats (blocked event loop, pg-boss down or database lost).
+      # Fails once the worker stops writing heartbeats (blocked event loop, BullMQ's Redis down
+      # or hung, or database lost). A pg-boss drain that cannot start does not fail it (Q-05A-1).
       test: ['CMD-SHELL', 'node apps/worker/dist/healthcheck.js || exit 1']
       interval: 10s
       timeout: 5s
@@ -243,9 +249,10 @@ services:
       start_period: 5s
 
   # 8. Redis for state shared by API instances: Idempotency-Key records and web chat rate
-  # limits (WU-04, DEC-04). AOF with fsync every second; noeviction, so a full Redis refuses
-  # writes and the API fails closed (503) instead of silently losing keys; a password; and no
-  # published port, so only services on vynor-network reach it.
+  # limits (WU-04, DEC-04), and the worker's BullMQ job queues (WU-05a, DEC-02). AOF with fsync
+  # every second; noeviction (which BullMQ requires), so a full Redis refuses writes and the API
+  # fails closed (503) instead of silently losing keys; a password; and no published port, so
+  # only services on vynor-network reach it.
   redis:
     image: *redis_image
     container_name: vynor-redis

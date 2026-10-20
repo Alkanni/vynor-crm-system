@@ -4,13 +4,11 @@ import { createLogger, type Logger } from '@vynor/observability';
 import { PgBoss } from 'pg-boss';
 import { withTimeout } from '../common/with-timeout.js';
 import { WORKER_ENV } from '../config/worker-env.js';
+import { JobQueue } from './job-queue.js';
+import { startRetryDelayMs } from './start-retry.js';
 
 /** A start that has not finished by then counts as failed, so a hung start is retried too. */
 export const PG_BOSS_START_TIMEOUT_MS = 30_000;
-
-/** The first retry of a failed start waits this long; each further failure doubles it. */
-const START_RETRY_BASE_MS = 5_000;
-const START_RETRY_MAX_MS = 60_000;
 
 /** A `work()` call made while pg-boss was not running, replayed once it starts. */
 interface PendingWorker {
@@ -18,8 +16,12 @@ interface PendingWorker {
   register: (boss: PgBoss) => Promise<unknown>;
 }
 
+/**
+ * pg-boss transport. Since WU-05a it only drains jobs enqueued before the cutover to BullMQ
+ * (DrainingJobQueue never sends to it); WU-05b removes it once every environment is drained.
+ */
 @Injectable()
-export class PgBossService implements OnModuleInit, OnModuleDestroy {
+export class PgBossService extends JobQueue implements OnModuleInit, OnModuleDestroy {
   private boss: PgBoss | null = null;
   private readonly logger: Logger;
   private pendingWorkers: PendingWorker[] = [];
@@ -28,12 +30,13 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
   private destroyed = false;
 
   constructor(@Inject(WORKER_ENV) private readonly env: WorkerEnv) {
+    super();
     this.logger = createLogger({ service: 'vynor-worker' });
   }
 
   /** Delay before the next start attempt after `failedStarts` failures in a row. */
   static startRetryDelayMs(failedStarts: number): number {
-    return Math.min(START_RETRY_BASE_MS * 2 ** (failedStarts - 1), START_RETRY_MAX_MS);
+    return startRetryDelayMs(failedStarts);
   }
 
   async onModuleInit(): Promise<void> {
@@ -236,10 +239,19 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
     return true;
   }
 
+  async send(
+    queue: QueueName,
+    payload: Record<string, unknown>,
+    options: { key: string },
+  ): Promise<void> {
+    await this.sendJob(queue, payload, { singletonKey: options.key });
+  }
+
   /**
-   * Enqueue a job with a deterministic singleton key for idempotent dispatch (FND-059).
-   * Resolves to null when a job with the same singleton key already exists. Throws when
-   * pg-boss is not running, so a caller can never mistake a dropped job for an enqueued one.
+   * Enqueue a job with a singleton key (FND-059). Resolves to null when pg-boss reports the key
+   * as already held, which only queues with a singleton-type policy do: the standard-policy
+   * queues created here accept a second job with the same key (NF-15). Throws when pg-boss is
+   * not running, so a caller can never mistake a dropped job for an enqueued one.
    */
   async sendJob(
     queue: QueueName,

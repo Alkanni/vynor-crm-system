@@ -19,7 +19,7 @@ import { isUniqueConstraintViolation, notifyRealtime, prisma, Prisma } from '@vy
 import { createLogger, type Logger } from '@vynor/observability';
 import { ChannelHealthRecorder } from '../channels/channel-health.service.js';
 import { WorkerChannelRuntime } from '../channels/channel-runtime.service.js';
-import { PgBossService } from '../queue/pg-boss.service.js';
+import { JobQueue } from '../queue/job-queue.js';
 
 interface OutboundJob extends Record<string, unknown> {
   context?: { correlationId?: string };
@@ -69,7 +69,7 @@ export class OutboundDispatcherService implements OnApplicationBootstrap, OnAppl
   private reconcileTimer: NodeJS.Timeout | null = null;
 
   constructor(
-    private readonly queue: PgBossService,
+    private readonly queue: JobQueue,
     private readonly runtime: WorkerChannelRuntime,
     private readonly health: ChannelHealthRecorder,
   ) {}

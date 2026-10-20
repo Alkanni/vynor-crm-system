@@ -14,6 +14,7 @@ import {
 import { ChannelHealthRecorder } from '../src/channels/channel-health.service.js';
 import { WorkerChannelRuntime } from '../src/channels/channel-runtime.service.js';
 import { ChannelPollingService } from '../src/polling/channel-polling.service.js';
+import { UNUSED_REDIS_URL } from './support/test-redis.js';
 
 /**
  * WU-03 / VYN-03-03: characterization of IMAP/Telegram polling against the test database: the
@@ -27,6 +28,7 @@ const env = WorkerEnvSchema.parse({
   NODE_ENV: 'test',
   DATABASE_URL: 'postgresql://unused',
   DIRECT_URL: 'postgresql://unused',
+  REDIS_URL: UNUSED_REDIS_URL,
   STORAGE_ACCESS_KEY_ID: 'key',
   STORAGE_SECRET_ACCESS_KEY: 'secret',
 });

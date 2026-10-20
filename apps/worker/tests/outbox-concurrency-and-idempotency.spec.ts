@@ -7,6 +7,7 @@ import {
   type PrismaClient,
 } from '@vynor/database';
 import { QUEUE_NAMES } from '@vynor/contracts';
+import { outboxJobKey } from '../src/outbox/outbox-dispatcher.service.js';
 
 describe('Concurrent Outbox Claiming & Repeated Dispatch Idempotency (FND-TST-006)', () => {
   let prisma: PrismaClient;
@@ -81,15 +82,14 @@ describe('Concurrent Outbox Claiming & Repeated Dispatch Idempotency (FND-TST-00
     }
   });
 
-  it('FND-TST-006: dispatch idempotency derives deterministic singleton keys', () => {
-    const eventId = 'outbox_test_12345';
+  it('FND-TST-006: dispatch idempotency derives deterministic job keys', () => {
+    const eventId = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
 
-    // The singleton key contract established in OutboxDispatcherService
-    const singletonKeyA = `outbox:${eventId}`;
-    const singletonKeyB = `outbox:${eventId}`;
-
-    expect(singletonKeyA).toBe(singletonKeyB);
-    expect(singletonKeyA).toBe('outbox:outbox_test_12345');
+    // The job key contract of OutboxDispatcherService (WU-05a): outbox-<eventId>, no colon,
+    // since BullMQ job IDs cannot contain one.
+    expect(outboxJobKey(eventId)).toBe(outboxJobKey(eventId));
+    expect(outboxJobKey(eventId)).toBe(`outbox-${eventId}`);
+    expect(outboxJobKey(eventId)).not.toContain(':');
 
     // Demonstrates deterministic routing across queues
     const eventTypeToQueue: Record<string, string> = {

@@ -24,3 +24,12 @@ export const BaseServerEnvSchema = z.object({
   SENTRY_DSN: z.string().url().optional(),
 });
 export type BaseServerEnv = z.infer<typeof BaseServerEnvSchema>;
+
+/** A redis:// or rediss:// URL, with the password in it when Redis requires one. */
+export function isRedisUrl(value: string): boolean {
+  try {
+    return ['redis:', 'rediss:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}

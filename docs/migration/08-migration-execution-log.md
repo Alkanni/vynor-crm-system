@@ -355,3 +355,158 @@ Status NF-11: **ditutup** oleh VYN-04-02 (keputusan owner 2026-10-19). NF-10, NF
 - Selama Redis down: request ber-`Idempotency-Key` dan endpoint webchat publik dijawab 503, readiness `DOWN`; request lain tetap dilayani.
 - Lisensi: Redis 7.4 berlisensi RSALv2/SSPLv1 (bukan OSI); 7.2.16 (BSD-3) juga masih dirilis bila owner memerlukan lisensi OSI. Worker belum memakai Redis (mulai WU-05a).
 - **Status:** WU-04 `IN_PROGRESS`; VYN-04-01..03 `IN_REVIEW`. SHA commit, URL PR dan hasil CI tercatat di deskripsi PR dan laporan agent, karena commit tidak dapat memuat SHA-nya sendiri. Merge hanya oleh owner.
+
+### Pasca-merge WU-04 — 2026-10-19
+
+- **Merge:** PR #68 di-merge owner (Alkanni) ke `main` pada 2026-10-19 07:05 UTC (squash) sebagai `b418354eddf11cbe1ddc6a0ce90cf436590888ee`; tree identik dengan head PR `ea5c721` (`4338ae5…`). `git fetch origin`: `origin/main` = `b418354`, parent `69fd238`.
+- **CI:** pada PR 10/10 check hijau (diverifikasi owner). Pada commit merge semua job hijau: CI Quality Gate & Verification (lima job, termasuk `E2E Golden Path, Channels & Screenshot Baseline`), Container Security (api/worker/web), Compose Smoke (isolated).
+- **Redis uji lokal:** atas instruksi owner, `vynor-wu04-test-redis` diverifikasi lebih dulu: image `redis:7.4.11-alpine@sha256:858f009f…`, port `127.0.0.1:56379`, dibuat 2026-10-19 06:08 UTC dengan `--rm`, `/data` di tmpfs, tanpa mount atau volume, tanpa label compose, dan tanpa klien lain yang terhubung. Setelah itu container dihentikan, dan `--rm` ikut menghapusnya. Container Redis lain tidak berubah: `gesit-redis`, `chatwoot-redis-1`, dan `vynor-redis-1` milik `/home/acgix/VYNOR`. Daftar volume Docker juga tidak berubah.
+- **Status:** WU-04 `DONE`; VYN-04-01..03 `DONE` (dicatat dalam PR WU-05a, seperti WU-03 dicatat dalam PR WU-04).
+
+## WU-05a — 2026-10-19
+
+### Persiapan (VYN-05A-01..03; implementasi belum dimulai)
+
+- **Owner approval:** chat owner 2026-10-19 ("WU-04 — CI PASS, FINALISASI"). Isinya: hentikan hanya container uji `vynor-wu04-test-redis`; setelah owner me-merge PR #68, verifikasi `origin/main`, perbarui WU-04 menjadi `DONE`, lalu siapkan WU-05a sesuai roadmap. Worktree tetap terpisah dan pengamanan database tetap berlaku; agent tidak me-merge. DEC-02 sudah RESOLVED (APPROVE REKOMENDASI, 2026-10-17).
+- **Branch, base SHA:** `feat/wu-05a-bullmq-expand` di worktree `.claude/worktrees/wu-05a-bullmq-expand`, dibuat dari `origin/main` `b418354`. Upstream dilepas supaya push tidak jatuh ke `main`, dan checkout utama tidak diubah.
+- **Status:** WU-05a `IN_PROGRESS`, karena branch sudah dibuka (aturan Kanban `READY → IN PROGRESS`). VYN-05A-01 `READY`; VYN-05A-02..03 tetap `BLOCKED_DEPENDENCY` karena dependency internal dan keputusan Q-05A-1. Belum ada kode yang diubah.
+
+#### Inventaris kondisi awal pada `b418354`
+
+- **Transport:** `PgBossService` (`apps/worker/src/queue/pg-boss.service.ts`) memenuhi kontrak NF-02:
+  - start retry 5 s → ×2 → maks 60 s, dengan timeout 30 s;
+  - `work()` ditunda sampai siap;
+  - `sendJob` melempar error bila pg-boss tidak berjalan;
+  - `onModuleDestroy` membatalkan retry yang tertunda.
+
+  `QueueModule` (global) mengekspor kelas konkret ini.
+
+- **Consumer (NF-03):** empat service meng-inject kelas konkret `PgBossService`:
+  - `OutboxDispatcherService`: memanggil `isRunning()` dan `sendJob` dengan `singletonKey` `outbox:<id>`.
+  - `InboundProcessorService`: `work(vynor.webhooks.process)`.
+  - `OutboundDispatcherService`: `work(vynor.messages.outbound)`, dengan `finalAttempt = retryCount >= retryLimit`.
+  - `WorkerHeartbeatService`: memanggil `isRunning()`.
+- **Event outbox:** aplikasi hanya menulis dua tipe event.
+  - `webhook.received` (`packages/database/src/provider-events.ts`) diteruskan ke `vynor.webhooks.process`.
+  - `message.outbound.requested` (`apps/api/src/conversations/conversations.service.ts`) diteruskan ke `vynor.messages.outbound`.
+
+  Enam queue lain di `QUEUE_CONFIGS` tidak punya produser maupun consumer.
+
+- **Retry aktual:**
+  - `createQueue` memakai `retryLimit` dan `retryDelay` dari `QUEUE_CONFIGS` tanpa `retryBackoff`. Jedanya tetap (outbound 5 s, webhooks 2 s), dengan maksimal `retryLimit + 1` = 6 percobaan.
+  - `DEFAULT_JOB_RETRY_POLICY` (eksponensial dengan jitter, `maxAttempts` 5) tidak dipakai worker.
+  - `PG_BOSS_RETENTION_DAYS` divalidasi tetapi tidak diteruskan ke pg-boss, jadi retensi memakai default pg-boss.
+- **Env dan compose:** di worker, `REDIS_URL` opsional dan belum dipakai. `apps/worker/.env.example` menyarankan `redis://localhost:6379`; di mesin ini port tersebut dipakai `gesit-redis`. Service `worker` di compose belum bergantung pada `redis`.
+- **Test yang bergantung pada pg-boss:**
+  - `pg-boss-start-retry.integration.spec.ts` (5 tes);
+  - `worker-heartbeat.integration.spec.ts` (stub `isRunning`);
+  - `outbox-dispatch-failures.integration.spec.ts`;
+  - `channel-message-flow.integration.spec.ts`;
+  - `outbox-concurrency-and-idempotency.spec.ts` (singleton key `outbox:`).
+
+  Di E2E, `playwright.config.ts` menunggu log `pg-boss background queue engine initialized and started`, dan `prepare-database.ts` mengosongkan `pgboss.job`. Keduanya perlu padanan BullMQ (Redis E2E DB 1) tanpa mengubah screenshot baseline.
+
+- **BullMQ:** rilis terbaru `6.3.17` (2026-10-18), lisensi MIT. `ioredis` hanya peer dependency opsional (`>=5`), jadi worker dapat memakai `ioredis` 6.0.0 yang sama dengan API. Usulan: pin versi exact pada rilis yang sudah berumur minimal 7 hari ketika implementasi dimulai. Redis WU-04 sudah memakai `noeviction` (syarat BullMQ). Retensi job harus dibatasi umur dan jumlah agar `maxmemory` 256 MB tidak penuh, karena Redis yang penuh juga membuat idempotency API menjawab 503.
+
+#### Rencana implementasi (usulan; berhenti untuk review owner setelah setiap tiket karena risiko CRITICAL)
+
+1. **VYN-05A-01**
+   - Token transport (antarmuka `isRunning`/`work`/`sendJob`) untuk keempat consumer.
+   - `BullMqQueueService` dengan:
+     - koneksi produser tanpa offline queue;
+     - koneksi Worker dengan `maxRetriesPerRequest: null`;
+     - start retry 5 s → ×2 → maks 60 s dan timeout 30 s pada `waitUntilReady`;
+     - `work()` tertunda yang didaftarkan tepat sekali;
+     - shutdown berurutan: batalkan retry, dispatcher berhenti meng-claim, `worker.close()` berbatas waktu, lalu tutup koneksi.
+   - `jobId` `outbox-<eventId>`. Attempts dan backoff mengikuti Q-05A-2; retensi = `retentionDays` per queue.
+   - `REDIS_URL` wajib di worker.
+   - Test dengan Redis nyata: padanan kelima skenario `pg-boss-start-retry`; id, dedup, retry dan klasifikasi error; `send()` saat Redis terputus.
+2. **VYN-05A-02**
+   - Dispatcher hanya mengirim ke BullMQ. `PgBossService` tetap berjalan sebagai consumer drain dan tidak menerima job baru.
+   - Log backlog `pgboss.job` per queue dan state.
+   - Heartbeat mengikuti Q-05A-1.
+   - Compose, CI, E2E dan compose smoke: worker memakai Redis.
+3. **VYN-05A-03**
+   - Fault injection: crash setelah `add` sebelum `COMPLETED`, crash saat job aktif, Redis mati atau menggantung, dan shutdown.
+   - Beban 1.000 webhook.
+   - Rekonsiliasi untuk outbox `COMPLETED` yang job-nya hilang: desain dan test.
+   - Dokumen risiko at-least-once dan ordering.
+
+#### Keputusan owner yang diperlukan sebelum implementasi (status: **RESOLVED**, lihat bawah)
+
+| ID                                | Pertanyaan                                                                                                                                                                                                                                                              | Opsi                                                                                                                                                                                                                                                                         | Rekomendasi agent (bukan keputusan)                                                                                                                                                                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q-05A-1 (NF-03, input VYN-05A-02) | Kriteria heartbeat selama dual-transport bila start pg-boss drain gagal.                                                                                                                                                                                                | (a) Container `unhealthy`: heartbeat mensyaratkan DB, BullMQ, dan pg-boss drain. (b) Degraded: heartbeat mensyaratkan DB dan BullMQ siap; kegagalan drain dicatat di log sekali per gangguan beserta jumlah backlog, dan start pg-boss terus di-retry di latar.              | (b). Semua pekerjaan baru lewat BullMQ, dan job lama tetap tersimpan di `pgboss.job` sampai drain berhasil. Status `unhealthy` akan menandai worker yang masih bekerja tanpa memulihkan apa pun. Gate WU-05b (`pgboss.job` = 0) tetap mencegah drain yang macet terlewat. |
+| Q-05A-2 (konflik sumber)          | Kebijakan retry BullMQ. Roadmap 06 §WU-05 menargetkan "retry exponential sesuai `DEFAULT_JOB_RETRY_POLICY`", sedangkan VYN-05A-01 meminta jumlah attempt dipertahankan dan VYN-05A-02 meminta hasil yang sama dengan baseline (kode saat ini: jeda tetap, 6 percobaan). | (A) Paritas: jeda tetap per queue dan 6 percobaan. (B) Eksponensial per queue: jeda awal `retryDelaySeconds` ×2 dan tetap 6 percobaan (outbound 5→80 s, total sekitar 155 s). (C) `DEFAULT_JOB_RETRY_POLICY` penuh: 5 percobaan, maks 300 s, jitter; jumlah attempt berubah. | (A) untuk 5a. Dengan begitu 5a murni penggantian transport dan perbandingan dengan baseline WU-03 tetap bersih. Bila owner ingin mengikuti roadmap sekarang, (B) adalah langkah terkecil yang tetap mempertahankan jumlah attempt. (C) bertentangan dengan tiket.         |
+
+Commit, push dan PR WU-05a memerlukan persetujuan owner tersendiri.
+
+#### Keputusan owner (2026-10-19, "WU-05a — KEPUTUSAN OWNER DISETUJUI")
+
+- **Q-05A-1 = (b) DEGRADED.**
+  - Bila pg-boss gagal start untuk menguras job lama, worker tetap menulis heartbeat selama PostgreSQL dan BullMQ sehat.
+  - Kegagalan drain wajib terlihat di log dan status operasional, dan retry startup pg-boss tetap berjalan.
+  - Drain tidak boleh dinyatakan selesai sebelum backlog terverifikasi kosong.
+  - Bila BullMQ atau PostgreSQL tidak siap, heartbeat menjadi stale/unhealthy sesuai acceptance criteria.
+- **Q-05A-2 = (A) FIXED RETRY.**
+  - Jumlah percobaan dan jeda aktual baseline pg-boss dipertahankan: outbound 5 s, webhook 2 s.
+  - Perbedaan semantik pg-boss dan BullMQ tidak boleh mengubah jumlah attempt.
+  - Retry **startup** BullMQ tetap eksponensial sesuai VYN-05A-01.
+  - Retry **pemrosesan job** eksponensial menjadi target lanjutan setelah tahap expand stabil (bukan bagian WU-05a).
+- **Otorisasi:**
+  - Implementasikan VYN-05A-01, -02 dan -03 berurutan, dengan semua tes tiket (termasuk fault injection dan E2E), hanya pada PostgreSQL dan Redis uji yang terisolasi.
+  - Pengamanan outbox, deduplikasi dan drain pg-boss dipertahankan.
+  - Tidak ada perubahan atau migrasi pada database aktif.
+  - Commit, push dan PR diizinkan setelah acceptance criteria lulus; merge tidak diizinkan.
+  - Tidak perlu berhenti per tiket. Agent berhenti hanya bila ada risiko kehilangan/duplikasi job yang belum terkendali, pelanggaran isolasi database, atau perubahan scope yang memerlukan keputusan owner.
+
+### Implementasi dan validasi (VYN-05A-01..03)
+
+- **Branch, base SHA:** `feat/wu-05a-bullmq-expand` di worktree `.claude/worktrees/wu-05a-bullmq-expand`, base `b418354` (upstream dilepas). Checkout utama tidak diubah.
+- **Database dan Redis:** `pnpm test` hanya pada `localhost:5434/vynor_test` (env file ber-guard; migrate deploy + seed sebelum run). Redis yang dipakai adalah container sekali pakai `vynor-wu05a-test-redis` (127.0.0.1:56379, `--rm`, `/data` di tmpfs, image dan kebijakan sama dengan compose). `pnpm test:e2e` hanya pada `vynor_e2e` dengan `E2E_REDIS_URL=redis://127.0.0.1:56379/1`. Port 6379 (`gesit-redis`) dan Redis proyek lain tidak disentuh. `pg_stat_database` untuk `vynor` dan `vynor_crm` tetap 0 insert/update/delete.
+- **VYN-05A-01 (adapter BullMQ):**
+  - Abstraksi `JobQueue` (`apps/worker/src/queue/job-queue.ts`): `isRunning`, `work`, `send(queue, payload, { key })`. Keempat consumer (dispatcher, inbound, outbound, heartbeat) kini meng-inject token ini, bukan kelas konkret `PgBossService` (NF-03).
+  - `BullMqJobQueue` memakai `bullmq` 6.3.13 (dipin exact; rilis 2026-10-12, rilis terbaru yang sudah berumur 7 hari) dan `ioredis` 6.0.0 (versi yang sama dengan API). Prefix key `vynor:bull`.
+  - Kontrak start NF-02 dipertahankan:
+    - start retry 5 s → ×2 → maks 60 s, dengan timeout 30 s; percobaan yang gagal atau menggantung menutup koneksinya sendiri;
+    - `work()` yang tertunda didaftarkan tepat sekali, satu consumer per queue;
+    - shutdown membatalkan retry, lalu `worker.close()` berbatas 15 s, lalu menutup koneksi; percobaan yang masih berjalan menutup koneksinya sendiri.
+  - Koneksi produser tanpa offline queue dan dengan command timeout 2 s, sehingga `send()` gagal seketika saat Redis mati atau menggantung. PING setiap 5 s membuat `isRunning()` = `false` selama Redis tidak menjawab. Semua queue diinisialisasi saat start, karena queue yang baru dibuat saat outage akan menunggu, bukan gagal (ditemukan oleh test).
+  - Job ID `outbox-<eventId>` (`outboxJobKey`); key dengan `:` ditolak sebelum dikirim.
+  - Retry sesuai Q-05A-2: `attempts = retryLimit + 1` (6) dan `backoff: fixed` dengan `retryDelaySeconds` (outbound 5 s, webhook 2 s). Handler menerima `retryCount = attemptsMade`, jadi `finalAttempt` outbound tidak berubah.
+  - Retensi job selesai/gagal 7 hari (sama dengan default penghapusan pg-boss), dibatasi maksimal 10.000 per queue per state agar `maxmemory` 256 MB dengan `noeviction` tidak penuh.
+  - Stalled job: lock 30 s, `maxStalledCount = retryLimit`.
+  - Env: `REDIS_URL` wajib di worker untuk semua profil, karena job queue tidak punya fallback per proses.
+- **VYN-05A-02 (dual transport):**
+  - `DrainingJobQueue` (binding `JobQueue` di `QueueModule`): `send` → BullMQ saja; `work` → handler yang sama di BullMQ dan di `PgBossService` (drain). Kegagalan registrasi drain hanya dicatat di log.
+  - Heartbeat mengikuti Q-05A-1 (DEGRADED): syaratnya DB ping dan BullMQ berjalan; pg-boss tidak termasuk.
+  - `PgBossDrainMonitor` (read-only, setiap 60 s):
+    - menghitung job pg-boss `created`/`retry`/`active` per queue dan backlog BullMQ (`waiting`/`active`/`delayed`/`failed`), dan mencatatnya ke log bila berubah;
+    - mencatat `pg-boss drain DEGRADED` saat pg-boss tidak berjalan (diulang setiap 5 menit);
+    - mencatat `pg-boss drain complete` hanya bila hitungan berhasil dan hasilnya 0; hitungan yang gagal dicatat sebagai `drain status unknown`.
+  - Dispatcher: event yang sudah di-claim tetapi belum dikirim dikembalikan ke `PENDING` tanpa menambah attempt saat queue berhenti di tengah batch atau saat shutdown. Sebelumnya event ini menunggu lease kedaluwarsa (+1 attempt).
+  - Compose: worker mendapat `REDIS_URL` ke service `redis` dan `depends_on: redis (service_healthy)`.
+  - Smoke: guard mewajibkan `REDIS_URL` worker ke Redis smoke. `check_redis` membuktikan heartbeat worker menjadi stale saat Redis di-SIGKILL dan segar kembali tanpa restart; log `BullMQ job queue ready` diperiksa.
+  - `infra:verify`: cek Redis kini mencakup worker (URL, password, `depends_on`), ditambah dua uji mutasi guard.
+  - E2E:
+    - worker menerima `REDIS_URL` dan stack menunggu log `BullMQ job queue ready`;
+    - `prepare-database.ts` menghapus key `vynor:bull:*` di Redis E2E (dengan guard lokal); untuk itu `ioredis` ditambahkan sebagai dev dependency `apps/web`;
+    - golden path memeriksa job BullMQ `outbox-<id>` selesai dan bahwa `pgboss.job` tidak punya job untuk event itu, menggantikan pemeriksaan job pg-boss. Ini perubahan transport yang disengaja; asersi domain tidak diubah dan baseline screenshot tidak diubah.
+- **VYN-05A-03 (fault injection dan rekonsiliasi):**
+  - `OutboxReconciliationService` (read-only, setiap 5 menit) mendeteksi event `COMPLETED` (10 menit s.d. 24 jam) yang pekerjaannya masih tertunda (kondisi 07 §4.1) dan job-nya tidak ada di BullMQ. Event seperti itu dicatat sebagai alert `error` dengan klasifikasi `replay: safe` (inbound) atau `review` (outbound). Data tidak diubah otomatis di environment mana pun.
+  - Runbook ada di `docs/background-jobs-and-queues.md` §7. Risiko at-least-once, ordering dan pengiriman ke provider yang tidak exactly-once dijelaskan di §8; matriks kesetaraan pg-boss ↔ BullMQ ada di §9; ADR baru AD-015.
+- **Test baru dan yang diubah:** detail di 09. Test pg-boss lama tetap hijau tanpa perubahan perilaku; satu-satunya perubahan adalah variabel `REDIS_URL` yang kini wajib di env test.
+
+### Temuan baru (NEW FINDING) dari WU-05a
+
+| ID    | Temuan                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Tindak lanjut                                                                                                                                             |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NF-15 | `singletonKey: outbox:<id>` pada pg-boss **tidak pernah mendeduplikasi**. Queue dibuat dengan policy `standard`, dan pg-boss 12 hanya memasang unique index singleton untuk policy `short`/`singleton`/`stately`/`exclusive` (atau `singletonSeconds`). Dibuktikan dengan test pada pg-boss nyata: dua `sendJob` dengan key yang sama → dua job. Pada baseline, re-dispatch setelah crash menghasilkan job ganda dan hanya ditahan oleh idempotensi handler. | Diatasi oleh WU-05a: job ID BullMQ mendeduplikasi selama job masih disimpan. Komentar `sendJob` dikoreksi. Tidak ada perubahan pada pg-boss (drain).      |
+| NF-16 | `docs/background-jobs-and-queues.md` menyatakan max attempts 5, retensi 14/7 hari dan backoff eksponensial ber-jitter. Perilaku aktual pg-boss: 6 percobaan (`retryLimit` 5 + percobaan pertama), jeda tetap (`retryBackoff` tidak di-set), dan penghapusan default 7 hari. `QUEUE_CONFIGS.retentionDays`, `PG_BOSS_RETENTION_DAYS` dan `DEFAULT_JOB_RETRY_POLICY` tidak dipakai worker.                                                                     | Perilaku aktual dipertahankan (Q-05A-2) dan dokumen dikoreksi. Retry eksponensial dan penyelarasan retensi menjadi target lanjutan setelah expand stabil. |
+
+### Catatan rollout WU-05a
+
+- Setiap environment worker wajib `REDIS_URL` ke Redis dengan `noeviction` (compose: service `redis` yang sama dengan API). Tanpa itu worker berhenti saat start. Ini juga berlaku untuk `.env` developer dan run lokal.
+- Redis menjadi dependency keras worker. Selama Redis mati atau menggantung, outbox tetap `PENDING`, tidak ada heartbeat (container `unhealthy`), dan semuanya pulih tanpa restart setelah Redis menjawab lagi.
+- Selama drain, pantau log `pgboss_drain` per environment. Gate WU-05b (GATE-CUTOVER) tetap memerlukan query `pgboss.job` = 0 per environment (07 §8.3).
+- Rollback: revert PR, lalu event `COMPLETED` sejak cutover yang pekerjaannya masih tertunda dikembalikan ke `PENDING` dengan query 07 §4.1 (sandbox saja, atau dengan persetujuan owner).

@@ -2,7 +2,7 @@ import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/com
 import { prisma } from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
 import { withTimeout } from '../common/with-timeout.js';
-import { PgBossService } from '../queue/pg-boss.service.js';
+import { JobQueue } from '../queue/job-queue.js';
 import {
   clearHeartbeat,
   HEARTBEAT_FILE,
@@ -14,10 +14,11 @@ import {
 export const DB_PING_TIMEOUT_MS = 5_000;
 
 /**
- * Writes the heartbeat that the container health check reads, but only while pg-boss is running
- * and the database answers. A blocked event loop stops the timer, and a stopped pg-boss or a lost
- * database stops the writes, so in each case the heartbeat goes stale and the container turns
- * unhealthy.
+ * Writes the heartbeat that the container health check reads, but only while the job queue
+ * runs and the database answers. A blocked event loop stops the timer, and a job queue that
+ * cannot take jobs (BullMQ's Redis down or hung) or a lost database stops the writes, so in
+ * each case the heartbeat goes stale and the container turns unhealthy. A pg-boss drain that
+ * cannot start does not stop it (owner decision Q-05A-1); PgBossDrainMonitor reports it.
  */
 @Injectable()
 export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
@@ -26,7 +27,7 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
   /** Last reported state, so only changes are logged instead of every beat. */
   private healthy: boolean | null = null;
 
-  constructor(private readonly queue: PgBossService) {
+  constructor(private readonly queue: JobQueue) {
     this.logger = createLogger({ service: 'vynor-worker' });
   }
 
@@ -50,11 +51,12 @@ export class WorkerHeartbeatService implements OnModuleInit, OnModuleDestroy {
     await clearHeartbeat();
   }
 
-  /** Writes a heartbeat if pg-boss is running and the database answers a ping in time. */
+  /** Writes a heartbeat if the job queue runs and the database answers a ping in time. */
   async beat(file = HEARTBEAT_FILE): Promise<boolean> {
     try {
-      // Without pg-boss (e.g. while a failed start is being retried) this worker can do no work.
-      if (!this.queue.isRunning()) throw new Error('pg-boss is not running');
+      // Without its job queue (e.g. while a failed start is being retried, or Redis does not
+      // answer) this worker can do no new work.
+      if (!this.queue.isRunning()) throw new Error('job queue is not running');
       await withTimeout(
         prisma.$queryRaw`SELECT 1`,
         DB_PING_TIMEOUT_MS,

@@ -19,6 +19,7 @@ const env = WorkerEnvSchema.parse({
   DATABASE_URL: databaseUrl,
   DIRECT_URL: databaseUrl,
   PG_BOSS_SCHEMA: SCHEMA,
+  REDIS_URL: 'redis://127.0.0.1:9/0', // required since WU-05a; pg-boss never uses it
   STORAGE_ACCESS_KEY_ID: 'key',
   STORAGE_SECRET_ACCESS_KEY: 'secret',
 });

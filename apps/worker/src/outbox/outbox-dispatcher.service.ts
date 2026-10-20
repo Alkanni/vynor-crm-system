@@ -8,9 +8,9 @@ import {
 } from '@vynor/database';
 import { createLogger, type Logger } from '@vynor/observability';
 import { randomUUID } from 'node:crypto';
-import { PgBossService } from '../queue/pg-boss.service.js';
+import { JobQueue } from '../queue/job-queue.js';
 
-/** How often pending outbox rows are claimed and handed to pg-boss. */
+/** How often pending outbox rows are claimed and handed to the job queue. */
 const POLL_INTERVAL_MS = 1_000;
 /** How often leases left behind by crashed workers are reclaimed. */
 const LEASE_RECOVERY_INTERVAL_MS = 30_000;
@@ -22,7 +22,7 @@ const MAX_DISPATCH_ATTEMPTS = 5;
 const SHUTDOWN_WAIT_STEP_MS = 100;
 const SHUTDOWN_WAIT_STEPS = 30;
 
-/** Outbox event type prefix → pg-boss queue that handles it. */
+/** Outbox event type prefix → job queue that handles it. */
 const QUEUE_BY_EVENT_PREFIX: ReadonlyArray<readonly [prefix: string, queue: QueueName]> = [
   ['message.', QUEUE_NAMES.MESSAGES_OUTBOUND],
   ['webhook.', QUEUE_NAMES.WEBHOOKS_PROCESS],
@@ -31,6 +31,15 @@ const QUEUE_BY_EVENT_PREFIX: ReadonlyArray<readonly [prefix: string, queue: Queu
   ['ai.', QUEUE_NAMES.AI_GENERATE],
   ['audit.', QUEUE_NAMES.AUDIT_EXPORT],
 ];
+
+/**
+ * Job key of an outbox event (FND-059): the same event always gets the same key, so a
+ * re-dispatch after a crash finds the job it already enqueued. `outbox-` rather than `outbox:`,
+ * since BullMQ job IDs cannot contain a colon.
+ */
+export function outboxJobKey(eventId: string): string {
+  return `outbox-${eventId}`;
+}
 
 /** Queue for an outbox event type, chosen by its (case-insensitive) domain prefix. */
 export function queueForEventType(eventType: string): QueueName | null {
@@ -50,7 +59,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
   /** Logs the queue outage once per outage instead of on every 1 s poll. */
   private queueDownReported = false;
 
-  constructor(private readonly queueService: PgBossService) {
+  constructor(private readonly queueService: JobQueue) {
     this.logger = createLogger({ service: 'vynor-worker' });
   }
 
@@ -106,12 +115,12 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       return 0;
     }
 
-    // Without pg-boss the events stay PENDING; claiming them would only burn their attempts.
+    // Without the job queue the events stay PENDING; claiming them would only burn attempts.
     if (!this.queueService.isRunning()) {
       if (!this.queueDownReported) {
         this.logger.warn(
           { correlationId: 'outbox_queue_unavailable', workerId: this.workerId },
-          'pg-boss is not running; outbox events stay PENDING until it is',
+          'The job queue is not running; outbox events stay PENDING until it is',
         );
         this.queueDownReported = true;
       }
@@ -144,9 +153,13 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
         `Claimed ${claimedEvents.length} pending outbox events for dispatch`,
       );
 
-      // 2. Dispatch each event into pg-boss with deduplication key (FND-059)
-      for (const event of claimedEvents) {
-        if (this.isShuttingDown) break;
+      // 2. Dispatch each event to the job queue under its deterministic key (FND-059)
+      for (const [index, event] of claimedEvents.entries()) {
+        // Events not handed over yet go back to PENDING without using an attempt.
+        if (this.isShuttingDown || !this.queueService.isRunning()) {
+          await this.releaseUnattempted(claimedEvents.slice(index));
+          break;
+        }
 
         const correlationId = event.correlationId || `evt_${event.id}`;
         const queueName = this.queueFor(event, correlationId);
@@ -165,15 +178,11 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
             payload: event.payload as Record<string, unknown>,
           });
 
-          // Idempotent dispatch via singleton key (FND-059). Throws unless pg-boss took the job
-          // or already holds it, so the row is only completed once the job really exists.
-          await this.queueService.sendJob(
-            queueName,
-            envelope as unknown as Record<string, unknown>,
-            {
-              singletonKey: `outbox:${event.id}`,
-            },
-          );
+          // Throws unless the queue took the job or already holds one under this key, so the
+          // row is only completed once the job really exists.
+          await this.queueService.send(queueName, envelope as unknown as Record<string, unknown>, {
+            key: outboxJobKey(event.id),
+          });
 
           // Mark outbox row as COMPLETED
           await prisma.outboxEvent.update({
@@ -196,7 +205,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
               eventId: event.id,
               eventType: event.eventType,
             },
-            'Failed to dispatch outbox event to pg-boss',
+            'Failed to dispatch outbox event to the job queue',
           );
 
           const isExhausted = event.retryCount + 1 >= MAX_DISPATCH_ATTEMPTS;
@@ -226,6 +235,24 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     }
 
     return dispatchedCount;
+  }
+
+  /** Returns claimed events that were never handed to the queue to PENDING, attempts unchanged. */
+  private async releaseUnattempted(events: OutboxEvent[]): Promise<void> {
+    const { count } = await prisma.outboxEvent.updateMany({
+      where: {
+        id: { in: events.map((event) => event.id) },
+        status: 'PROCESSING',
+        claimedBy: this.workerId,
+      },
+      data: { status: 'PENDING', claimedBy: null, claimedAt: null, claimLeaseExpiresAt: null },
+    });
+    if (count > 0) {
+      this.logger.info(
+        { correlationId: 'outbox_release', workerId: this.workerId, count },
+        'Released claimed outbox events that were not dispatched; they stay PENDING',
+      );
+    }
   }
 
   /** Unrouted event types still go to the outbound queue (as before), but visibly. */

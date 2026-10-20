@@ -231,43 +231,57 @@ check('compose images are pinned to a version tag; storage and Redis also to a d
   assert.equal(defaultServices().redis?.image, REDIS_IMAGE, `redis must use ${REDIS_IMAGE}`);
 });
 
-check('Redis persists (AOF everysec), never evicts, needs a password and stays private', () => {
-  const services = defaultServices();
-  const redis = services.redis;
-  const command = redis?.command ?? [];
-  const flag = (name: string) => command[command.indexOf(name) + 1];
-  assert.equal(command[0], 'redis-server', 'redis must run redis-server');
-  assert.equal(flag('--appendonly'), 'yes', 'redis must enable the AOF');
-  assert.equal(flag('--appendfsync'), 'everysec', 'redis must fsync the AOF every second');
-  assert.equal(flag('--maxmemory-policy'), 'noeviction', 'redis must never evict keys');
-  assert.match(flag('--maxmemory') ?? '', /^\d+[kmg]b$/i, 'redis must set maxmemory');
-  assert.ok(command.includes('--requirepass') && flag('--requirepass'), 'redis needs a password');
-  assert.ok(!redis?.ports?.length, 'redis must not publish ports (vynor-network only)');
-  assert.ok(
-    redis?.volumes?.some(
-      (m) => m.type === 'volume' && m.source === 'redis_data' && m.target === '/data',
-    ),
-    'redis must keep /data on the redis_data volume',
-  );
-  const probe = redis?.healthcheck?.test?.join(' ') ?? '';
-  assert.match(probe, /redis-cli .*-a "\$\$REDIS_PASSWORD" ping/, 'redis probe must authenticate');
+check(
+  'Redis persists (AOF everysec), never evicts, needs a password, stays private, serves api and worker',
+  () => {
+    const services = defaultServices();
+    const redis = services.redis;
+    const command = redis?.command ?? [];
+    const flag = (name: string) => command[command.indexOf(name) + 1];
+    assert.equal(command[0], 'redis-server', 'redis must run redis-server');
+    assert.equal(flag('--appendonly'), 'yes', 'redis must enable the AOF');
+    assert.equal(flag('--appendfsync'), 'everysec', 'redis must fsync the AOF every second');
+    assert.equal(flag('--maxmemory-policy'), 'noeviction', 'redis must never evict keys');
+    assert.match(flag('--maxmemory') ?? '', /^\d+[kmg]b$/i, 'redis must set maxmemory');
+    assert.ok(command.includes('--requirepass') && flag('--requirepass'), 'redis needs a password');
+    assert.ok(!redis?.ports?.length, 'redis must not publish ports (vynor-network only)');
+    assert.ok(
+      redis?.volumes?.some(
+        (m) => m.type === 'volume' && m.source === 'redis_data' && m.target === '/data',
+      ),
+      'redis must keep /data on the redis_data volume',
+    );
+    const probe = redis?.healthcheck?.test?.join(' ') ?? '';
+    assert.match(
+      probe,
+      /redis-cli .*-a "\$\$REDIS_PASSWORD" ping/,
+      'redis probe must authenticate',
+    );
 
-  const api = services.api as (typeof services)['api'] & {
-    depends_on?: Record<string, { condition?: string }>;
-  };
-  const url = new URL(api?.environment?.REDIS_URL ?? 'invalid:');
-  assert.equal(
-    `${url.protocol}//${url.host}`,
-    'redis://redis:6379',
-    'api must use the redis service',
-  );
-  assert.equal(
-    decodeURIComponent(url.password),
-    flag('--requirepass'),
-    'api must use its password',
-  );
-  assert.equal(api?.depends_on?.redis?.condition, 'service_healthy', 'api must wait for redis');
-});
+    // The API's shared state (WU-04) and the worker's BullMQ queues (WU-05a) both live there.
+    for (const name of ['api', 'worker'] as const) {
+      const service = services[name] as (typeof services)['api'] & {
+        depends_on?: Record<string, { condition?: string }>;
+      };
+      const url = new URL(service?.environment?.REDIS_URL ?? 'invalid:');
+      assert.equal(
+        `${url.protocol}//${url.host}`,
+        'redis://redis:6379',
+        `${name} must use the redis service`,
+      );
+      assert.equal(
+        decodeURIComponent(url.password),
+        flag('--requirepass'),
+        `${name} must use its password`,
+      );
+      assert.equal(
+        service?.depends_on?.redis?.condition,
+        'service_healthy',
+        `${name} must wait for redis`,
+      );
+    }
+  },
+);
 
 check('rustfs-init provisions both buckets idempotently with mcli and fails on errors', () => {
   const script = defaultServices()['rustfs-init']?.entrypoint?.join(' ') ?? '';
@@ -400,6 +414,10 @@ check('compose smoke guard rejects configs and URLs that reach live resources', 
     'Redis outside the stack': (c) =>
       (c.services.api.environment.REDIS_URL =
         'redis://:vynor_redis_dev_secret@cache.example.com:6379/0'),
+    'worker Redis outside the stack': (c) =>
+      (c.services.worker.environment.REDIS_URL =
+        'redis://:vynor_redis_dev_secret@cache.example.com:6379/0'),
+    'worker without Redis': (c) => delete c.services.worker.environment.REDIS_URL,
   };
   for (const [label, mutate] of Object.entries(mutations)) {
     const config = structuredClone(base) as unknown as Mutable;

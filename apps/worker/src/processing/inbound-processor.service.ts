@@ -8,7 +8,7 @@ import {
   ConversationIngestService,
   ReceiptNotYetMatchableError,
 } from '../conversations/conversation-ingest.service.js';
-import { PgBossService } from '../queue/pg-boss.service.js';
+import { JobQueue } from '../queue/job-queue.js';
 
 interface ProviderEventJob extends Record<string, unknown> {
   context?: { correlationId?: string };
@@ -27,7 +27,7 @@ export class InboundProcessorService implements OnApplicationBootstrap {
   private readonly logger: Logger = createLogger({ service: 'vynor-worker' });
 
   constructor(
-    private readonly queue: PgBossService,
+    private readonly queue: JobQueue,
     private readonly runtime: WorkerChannelRuntime,
     private readonly ingest: ConversationIngestService,
   ) {}

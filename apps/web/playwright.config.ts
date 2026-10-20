@@ -22,7 +22,7 @@ import {
  */
 
 // Fail before anything starts when the database is not a disposable test database, or the
-// API's Redis (WU-04) is not a local one.
+// Redis of the API (WU-04) and the worker's BullMQ queues (WU-05a) is not a local one.
 const databaseUrl = process.env.E2E_DATABASE_URL!;
 assertSafeE2eDatabaseUrl(databaseUrl);
 const redisUrl = assertSafeE2eRedisUrl(process.env.E2E_REDIS_URL);
@@ -104,7 +104,7 @@ export default defineConfig({
       command:
         'tsx tests/e2e/support/prepare-database.ts && exec tsx tests/e2e/support/graph-stub.ts',
       url: `${STUB_ORIGIN}/__stub/health`,
-      env: { E2E_DATABASE_URL: databaseUrl },
+      env: { E2E_DATABASE_URL: databaseUrl, E2E_REDIS_URL: redisUrl },
       timeout: 180_000,
       stdout: 'pipe',
       gracefulShutdown: graceful,
@@ -120,8 +120,9 @@ export default defineConfig({
     {
       name: 'worker',
       command: 'exec node ../worker/dist/main.js',
-      wait: { stdout: /pg-boss background queue engine initialized and started/ },
-      env: workerEnv(databaseUrl),
+      // The worker enqueues and consumes jobs once BullMQ is up (WU-05a); pg-boss only drains.
+      wait: { stdout: /BullMQ job queue ready/ },
+      env: workerEnv(databaseUrl, redisUrl),
       timeout: 60_000,
       gracefulShutdown: graceful,
     },
