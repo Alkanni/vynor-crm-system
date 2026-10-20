@@ -1,6 +1,6 @@
 # VYNOR CRM — Kanban Migrasi Berbasis Vertical Slice
 
-> **Status per 19 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; VYN-01-01..03 `DONE`); WU-02 `DONE` (PR #66 di-merge owner sebagai `f21f012`, 2026-10-19; VYN-02-01..02 `DONE`); WU-03 `DONE` (PR #67 di-merge owner sebagai `69fd238`, 2026-10-19; VYN-03-01..05 `DONE`); WU-04 `IN_PROGRESS` (VYN-04-01..03 `IN_REVIEW`; PR dari branch `feat/wu-04-redis-shared-state` menunggu review dan merge owner); WU lain masih perencanaan.
+> **Status per 19 Oktober 2026:** DEC-01..09 diputuskan owner (lihat `01-DECISION-REGISTER.md`); WU-00 `DONE` (PR #64 di-merge owner sebagai `07e7748`); WU-01 `DONE` (PR #65 di-merge owner sebagai `aa74590`, 2026-10-17; VYN-01-01..03 `DONE`); WU-02 `DONE` (PR #66 di-merge owner sebagai `f21f012`, 2026-10-19; VYN-02-01..02 `DONE`); WU-03 `DONE` (PR #67 di-merge owner sebagai `69fd238`, 2026-10-19; VYN-03-01..05 `DONE`); WU-04 `DONE` (PR #68 di-merge owner sebagai `b418354`, 2026-10-19; VYN-04-01..03 `DONE`); WU-05a `IN_PROGRESS` (VYN-05A-01..03 `IN_REVIEW`; PR dari branch `feat/wu-05a-bullmq-expand` menunggu review dan merge owner); WU lain masih perencanaan.
 > **Sumber:** `../01`–`../07` audit/migration yang sudah diperbarui; commit audit `565e8e4`, baseline historis 176 test. Jangan menganggap audit commit sama dengan `origin/main` terbaru.
 
 ## Sasaran dan batas
@@ -13,13 +13,13 @@ Migrasikan perubahan stack minimum secara aman tanpa mengganti arsitektur modula
 
 ### 1A. Swimlane x status (snapshot awal)
 
-| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS**                               | **IN REVIEW** | **DONE**                                                                                                                                         | **DEFERRED** |
-| ----------------------- | ------------------------------------- | --------- | --------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
-| Keputusan & fondasi     | —                                     | —         | —                                             | —             | WU-00 (PR #64, 2026-10-17); WU-01 (PR #65, 2026-10-17); WU-02 (PR #66, 2026-10-19); WU-03 (PR #67, 2026-10-19); DEC-01..09 (RESOLVED 2026-10-17) | —            |
-| State & antrean         | WU-05a; WU-05b                        | —         | WU-04 (risiko HIGH; PR menunggu review owner) | —             | —                                                                                                                                                | WU-05c       |
-| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —                                             | —             | —                                                                                                                                                | —            |
-| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —                                             | —             | —                                                                                                                                                | —            |
-| Reliability & penutupan | WU-10; WU-11                          | —         | —                                             | —             | —                                                                                                                                                | WU-09        |
+| Swimlane                | **BLOCKED** (approval / dependencies) | **READY** | **IN PROGRESS**                                    | **IN REVIEW** | **DONE**                                                                                                                                         | **DEFERRED** |
+| ----------------------- | ------------------------------------- | --------- | -------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| Keputusan & fondasi     | —                                     | —         | —                                                  | —             | WU-00 (PR #64, 2026-10-17); WU-01 (PR #65, 2026-10-17); WU-02 (PR #66, 2026-10-19); WU-03 (PR #67, 2026-10-19); DEC-01..09 (RESOLVED 2026-10-17) | —            |
+| State & antrean         | WU-05b                                | —         | WU-05a (risiko CRITICAL; PR menunggu review owner) | —             | WU-04 (PR #68, 2026-10-19)                                                                                                                       | WU-05c       |
+| Frontend                | WU-06a; WU-06b; WU-06c; WU-06d        | —         | —                                                  | —             | —                                                                                                                                                | —            |
+| Kontrak & autentikasi   | WU-07; WU-08                          | —         | —                                                  | —             | —                                                                                                                                                | —            |
+| Reliability & penutupan | WU-10; WU-11                          | —         | —                                                  | —             | —                                                                                                                                                | WU-09        |
 
 **Aturan pergerakan:** `BLOCKED → READY` setelah dependency + approval; `READY → IN PROGRESS` ketika branch PR dibuka; `IN PROGRESS → IN REVIEW` setelah DoD dan test; `IN REVIEW → DONE` hanya sesudah owner merge/sign-off. Jangan menandai `DONE` saat AI baru membuat commit. **WIP limit disarankan:** maksimum satu WU berisiko HIGH/CRITICAL dalam implementasi pada satu waktu; pekerjaan docs/test independen boleh paralel setelah WU-03.
 
@@ -30,7 +30,7 @@ Migrasikan perubahan stack minimum secara aman tanpa mengganti arsitektur modula
 | **MENUNGGU KEPUTUSAN (human)** | Gate 9 keputusan DEC-01 s.d. DEC-09 — **selesai 2026-10-17**                                                                                                                                                                                                                                                                          | Owner menetapkan scope, queue, router, Redis, auth, defer list, media, compose, alur PR                    |
 | **SIAP DIAMBIL SETELAH GATE**  | **WU-00**: baseline/branch/docs — **DONE 2026-10-17 (PR #64 di-merge owner)**                                                                                                                                                                                                                                                         | DEC-01 s.d. DEC-09 approved dan dokumen untracked aman                                                     |
 | **BACKLOG — PRIORITAS P0**     | WU-01 health Docker — **DONE 2026-10-17 (PR #65 di-merge owner)**; WU-02 CVE & CORS — **DONE 2026-10-19 (PR #66 di-merge owner)**; WU-03 characterization E2E — **DONE 2026-10-19 (PR #67 di-merge owner)**                                                                                                                           | WU-00 merged; WU-03 setelah WU-01 (WU-02 boleh paralel)                                                    |
-| **BACKLOG — PRIORITAS P1**     | WU-04 Redis — **IN PROGRESS (PR)** → WU-05a BullMQ expand → WU-05b contract                                                                                                                                                                                                                                                           | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                                        |
+| **BACKLOG — PRIORITAS P1**     | WU-04 Redis — **DONE 2026-10-19 (PR #68 di-merge owner)** → WU-05a BullMQ expand — **IN PROGRESS (PR)** → WU-05b contract                                                                                                                                                                                                             | WU-03 golden path hijau; DEC-02/04 dan cutover gate                                                        |
 | **BACKLOG — PRIORITAS P1**     | WU-06a nav → 06b Vite router → 06c Caddy static → 06d hapus Next                                                                                                                                                                                                                                                                      | WU-03 hijau, DEC-03; auth Supabase live sebelum 06d production                                             |
 | **BACKLOG — INDEPENDEN**       | WU-07 OpenAPI; WU-08 OIDC                                                                                                                                                                                                                                                                                                             | Boleh paralel setelah WU-03 (jaga konflik env/contracts)                                                   |
 | **BACKLOG — AKHIR**            | WU-10 observability → WU-11 cleanup/report                                                                                                                                                                                                                                                                                            | 10 setelah 05b, 11 setelah 05b/06d/07/08/10                                                                |
@@ -38,7 +38,7 @@ Migrasikan perubahan stack minimum secara aman tanpa mengganti arsitektur modula
 | **BACKLOG — BUG TERBUKA**      | NF-09: `@vynor/storage` `stat`/`get`/`delete` tanpa header `x-amz-content-sha256` (403 di storage keluarga MinIO; laten)                                                                                                                                                                                                              | Di luar WU-01 (keputusan owner 2026-10-17); butuh tiket terpisah dan persetujuan owner                     |
 | **BACKLOG — BUG TERBUKA**      | Dari WU-03: NF-10 (audit unassign mencatat assignee lama), NF-12 (scope Idempotency-Key per workspace, bukan user), NF-13 (body error media bukan envelope standar). Dari WU-04: NF-14 (kode error idempotency/readiness di katalog dan OpenAPI tidak sama dengan respons). NF-11 ditutup oleh VYN-04-02 (keputusan owner 2026-10-19) | Di luar scope migrasi (instruksi owner 2026-10-19: tetap backlog); tiket terpisah dengan persetujuan owner |
 
-**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-19 WU-00, WU-01, WU-02 dan WU-03 `DONE` (PR #64, #65, #66 dan #67 di-merge owner); WU-04 `IN_PROGRESS` (PR menunggu review dan merge owner).
+**Arti status:** `WAITING_APPROVAL` = hanya owner boleh membuka gerbang; `IN_REVIEW` = hasil tiket menunggu review owner (disetujui owner sebagai status Kanban, 2026-10-17); `BLOCKED_DEPENDENCY` = belum boleh dieksekusi; `DEFERRED_OPTIONAL`/`DEFERRED_APPROVAL` = di luar migrasi default. Per 2026-10-19 WU-00, WU-01, WU-02, WU-03 dan WU-04 `DONE` (PR #64, #65, #66, #67 dan #68 di-merge owner); WU-05a `IN_PROGRESS` (PR menunggu review dan merge owner).
 
 ## 2. Peta dependensi dan potensi paralel
 
@@ -553,7 +553,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-04 — Redis untuk state lintas instance
 
-**Status:** `IN_PROGRESS` (PR ke `main` menunggu review owner; VYN-04-01..03 `IN_REVIEW`) · **Risiko:** HIGH · **Depends:** WU-03 (`DONE`) · **Gates:** DEC-04 (RESOLVED)
+**Status:** `DONE` (PR #68 di-merge owner sebagai `b418354`, 2026-10-19; VYN-04-01..03 `DONE`) · **Risiko:** HIGH · **Depends:** WU-03 (`DONE`) · **Gates:** DEC-04 (RESOLVED)
 
 **Vertical slice:** Request dua API -> idempotency/rate limit konsisten -> fail closed saat Redis down
 
@@ -662,7 +662,7 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 ### WU-05a — BullMQ expand + drain pg-boss
 
-**Status:** `BLOCKED_DEPENDENCY` · **Risiko:** CRITICAL · **Depends:** WU-03, WU-04 · **Gates:** DEC-02
+**Status:** `IN_PROGRESS` (PR ke `main` menunggu review owner; VYN-05A-01..03 `IN_REVIEW`; keputusan owner Q-05A-1/2 di `../08-migration-execution-log.md`) · **Risiko:** CRITICAL · **Depends:** WU-03 (`DONE`), WU-04 (`DONE`) · **Gates:** DEC-02 (RESOLVED)
 
 **Vertical slice:** Webhook -> Postgres outbox -> BullMQ -> worker -> inbox/reply; job lama pg-boss selesai
 
@@ -686,15 +686,15 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Buat QueueService BullMQ tanpa mengubah outbox_events di PostgreSQL.
-- [ ] Gunakan jobId deterministik tanpa karakter colon, contohnya outbox-<eventId>; jangan mengandalkan dedup setelah removeOnComplete.
-- [ ] Pertahankan jumlah attempt, klasifikasi retryable vs permanent, retensi dan graceful shutdown; atur Queue producer fail-fast dan Worker reconnect.
-- [ ] Startup retry: boot hanya menunggu percobaan inisialisasi pertama; bila Redis belum siap, worker tetap boot dengan `isRunning()` = `false` dan mencoba ulang di latar dengan backoff setara (5 s, ×2, maks 60 s) sampai berhasil atau shutdown; setiap kegagalan dicatat dengan nomor percobaan.
-- [ ] Timeout: inisialisasi yang menggantung (mis. `waitUntilReady`) dianggap gagal setelah batas setara `PG_BOSS_START_TIMEOUT_MS` (30 s); koneksi atau instance yang ditinggalkan ditutup tanpa menahan boot atau shutdown.
-- [ ] Producer fail-fast: koneksi `Queue` produser tanpa offline queue sehingga `send()` melempar saat Redis terputus; dispatcher tidak meng-claim outbox saat `isRunning()` = `false`, dan outbox `COMPLETED` hanya setelah BullMQ menerima job.
-- [ ] Deferred handler registration: `work()` yang dipanggil sebelum siap disimpan dan didaftarkan tepat sekali setelah siap (mengembalikan `false` saat ditunda), tanpa consumer ganda setelah reconnect.
-- [ ] Dependency injection: perkenalkan token/abstraksi transport untuk keempat consumer agar implementasi pg-boss dan BullMQ dapat ditukar tanpa mengubah perilaku consumer.
-- [ ] Graceful shutdown: `onModuleDestroy` membatalkan retry tertunda, menghentikan claim dispatcher lebih dulu, menunggu job aktif (`worker.close()`) dengan batas waktu, lalu menutup koneksi; percobaan inisialisasi yang masih berjalan menutup instance-nya sendiri.
+- [x] Buat QueueService BullMQ tanpa mengubah outbox_events di PostgreSQL.
+- [x] Gunakan jobId deterministik tanpa karakter colon, contohnya outbox-<eventId>; jangan mengandalkan dedup setelah removeOnComplete.
+- [x] Pertahankan jumlah attempt, klasifikasi retryable vs permanent, retensi dan graceful shutdown; atur Queue producer fail-fast dan Worker reconnect.
+- [x] Startup retry: boot hanya menunggu percobaan inisialisasi pertama; bila Redis belum siap, worker tetap boot dengan `isRunning()` = `false` dan mencoba ulang di latar dengan backoff setara (5 s, ×2, maks 60 s) sampai berhasil atau shutdown; setiap kegagalan dicatat dengan nomor percobaan.
+- [x] Timeout: inisialisasi yang menggantung (mis. `waitUntilReady`) dianggap gagal setelah batas setara `PG_BOSS_START_TIMEOUT_MS` (30 s); koneksi atau instance yang ditinggalkan ditutup tanpa menahan boot atau shutdown.
+- [x] Producer fail-fast: koneksi `Queue` produser tanpa offline queue sehingga `send()` melempar saat Redis terputus; dispatcher tidak meng-claim outbox saat `isRunning()` = `false`, dan outbox `COMPLETED` hanya setelah BullMQ menerima job.
+- [x] Deferred handler registration: `work()` yang dipanggil sebelum siap disimpan dan didaftarkan tepat sekali setelah siap (mengembalikan `false` saat ditunda), tanpa consumer ganda setelah reconnect.
+- [x] Dependency injection: perkenalkan token/abstraksi transport untuk keempat consumer agar implementasi pg-boss dan BullMQ dapat ditukar tanpa mengubah perilaku consumer.
+- [x] Graceful shutdown: `onModuleDestroy` membatalkan retry tertunda, menghentikan claim dispatcher lebih dulu, menunggu job aktif (`worker.close()`) dengan batas waktu, lalu menutup koneksi; percobaan inisialisasi yang masih berjalan menutup instance-nya sendiri.
 
 **OUTPUT / DELIVERABLE**
 
@@ -704,12 +704,12 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Test dengan Redis nyata membuktikan id aman, dedup saat job masih ada, retry dan error classification.
-- [ ] Tidak ada perubahan skema public atau model domain.
-- [ ] Test BullMQ dengan Redis nyata atau proxy terkontrol mencakup padanan kelima skenario `pg-boss-start-retry`: jadwal backoff, Redis tidak tersedia saat boot lalu pulih, inisialisasi menggantung → timeout dan retry, handler tertunda terdaftar tepat sekali, shutdown saat retry tertunda atau berjalan.
-- [ ] `send()` melempar saat Redis terputus tanpa job tertahan di offline queue; selama `isRunning()` = `false` outbox tetap `PENDING` tanpa menambah `retryCount`.
-- [ ] Keempat consumer memakai token transport; seluruh test pg-boss yang ada tetap hijau di 5a.
-- [ ] Graceful shutdown menunggu job aktif dan tidak meninggalkan koneksi Redis atau proses yang terbuka.
+- [x] Test dengan Redis nyata membuktikan id aman, dedup saat job masih ada, retry dan error classification.
+- [x] Tidak ada perubahan skema public atau model domain.
+- [x] Test BullMQ dengan Redis nyata atau proxy terkontrol mencakup padanan kelima skenario `pg-boss-start-retry`: jadwal backoff, Redis tidak tersedia saat boot lalu pulih, inisialisasi menggantung → timeout dan retry, handler tertunda terdaftar tepat sekali, shutdown saat retry tertunda atau berjalan.
+- [x] `send()` melempar saat Redis terputus tanpa job tertahan di offline queue; selama `isRunning()` = `false` outbox tetap `PENDING` tanpa menambah `retryCount`.
+- [x] Keempat consumer memakai token transport; seluruh test pg-boss yang ada tetap hijau di 5a.
+- [x] Graceful shutdown menunggu job aktif dan tidak meninggalkan koneksi Redis atau proses yang terbuka.
 
 **BUKTI VERIFIKASI**
 
@@ -730,10 +730,10 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Arahkan enqueue baru Postgres outbox -> BullMQ; tetap jalankan consumer pg-boss hanya untuk job lama.
-- [ ] Pasang mekanisme observasi backlog old/new, tidak memasang dua consumer untuk event sama tanpa guard domain.
-- [ ] Uji inbound/outbound/receipt/assignment lewat API+worker+stub; dapatkan bukti tidak ada kehilangan atau duplikasi entity domain.
-- [ ] Worker heartbeat dual-transport: tulis heartbeat hanya bila DB ping dan BullMQ siap; terapkan perlakuan kegagalan start pg-boss drain sesuai keputusan owner (unhealthy, atau degraded yang tercatat di log).
+- [x] Arahkan enqueue baru Postgres outbox -> BullMQ; tetap jalankan consumer pg-boss hanya untuk job lama.
+- [x] Pasang mekanisme observasi backlog old/new, tidak memasang dua consumer untuk event sama tanpa guard domain.
+- [x] Uji inbound/outbound/receipt/assignment lewat API+worker+stub; dapatkan bukti tidak ada kehilangan atau duplikasi entity domain.
+- [x] Worker heartbeat dual-transport: tulis heartbeat hanya bila DB ping dan BullMQ siap; terapkan perlakuan kegagalan start pg-boss drain sesuai keputusan owner (unhealthy, atau degraded yang tercatat di log).
 
 **OUTPUT / DELIVERABLE**
 
@@ -742,9 +742,9 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] pg-boss tidak lagi menerima job baru setelah cutover 5a.
-- [ ] Inbound dan outbound BullMQ menghasilkan status/domain yang sama dengan baseline.
-- [ ] Heartbeat dan healthcheck container mengikuti kriteria yang diputuskan owner; diuji untuk BullMQ tidak siap dan pg-boss drain gagal start.
+- [x] pg-boss tidak lagi menerima job baru setelah cutover 5a.
+- [x] Inbound dan outbound BullMQ menghasilkan status/domain yang sama dengan baseline.
+- [x] Heartbeat dan healthcheck container mengikuti kriteria yang diputuskan owner; diuji untuk BullMQ tidak siap dan pg-boss drain gagal start.
 
 **BUKTI VERIFIKASI**
 
@@ -764,10 +764,10 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **TUGAS / AKSI**
 
-- [ ] Simulasikan crash setelah BullMQ add tetapi sebelum outbox COMPLETED; crash worker saat active job; Redis outage/reconnect; shutdown graceful.
-- [ ] Uji 1.000 webhook menjadi 1.000 pesan tanpa duplikasi DB; cek status monoton, ordering domain per conversation dan retry.
-- [ ] Periksa failure window Redis persistence: bila outbox COMPLETED tetapi job hilang, desain & uji rekonsiliasi/alert + runbook tanpa otomatis menyentuh production.
-- [ ] Uji Redis mati saat boot dan koneksi menggantung pada worker yang sudah berjalan: heartbeat menjadi stale (container `unhealthy`) lalu pulih tanpa restart, dan dispatcher tidak meng-claim selama tidak siap.
+- [x] Simulasikan crash setelah BullMQ add tetapi sebelum outbox COMPLETED; crash worker saat active job; Redis outage/reconnect; shutdown graceful.
+- [x] Uji 1.000 webhook menjadi 1.000 pesan tanpa duplikasi DB; cek status monoton, ordering domain per conversation dan retry.
+- [x] Periksa failure window Redis persistence: bila outbox COMPLETED tetapi job hilang, desain & uji rekonsiliasi/alert + runbook tanpa otomatis menyentuh production.
+- [x] Uji Redis mati saat boot dan koneksi menggantung pada worker yang sudah berjalan: heartbeat menjadi stale (container `unhealthy`) lalu pulih tanpa restart, dan dispatcher tidak meng-claim selama tidak siap.
 
 **OUTPUT / DELIVERABLE**
 
@@ -776,10 +776,10 @@ Gunakan setiap tiket sebagai unit tugas. Semua input adalah referensi yang HARUS
 
 **ACCEPTANCE CRITERIA**
 
-- [ ] Tidak ada kehilangan domain event pada fault cases yang diuji.
-- [ ] Pengiriman ke provider eksternal tidak diklaim exactly-once bila provider tidak mendukung idempotency; risiko dijelaskan.
-- [ ] Golden path E2E dan worker heartbeats tetap lulus.
-- [ ] Selama Redis/BullMQ tidak siap tidak ada heartbeat baru dan tidak ada outbox `COMPLETED` tanpa job yang diterima; keduanya normal kembali setelah pulih.
+- [x] Tidak ada kehilangan domain event pada fault cases yang diuji.
+- [x] Pengiriman ke provider eksternal tidak diklaim exactly-once bila provider tidak mendukung idempotency; risiko dijelaskan.
+- [x] Golden path E2E dan worker heartbeats tetap lulus.
+- [x] Selama Redis/BullMQ tidak siap tidak ada heartbeat baru dan tidak ada outbox `COMPLETED` tanpa job yang diterima; keduanya normal kembali setelah pulih.
 
 **BUKTI VERIFIKASI**
 

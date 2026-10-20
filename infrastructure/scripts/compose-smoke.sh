@@ -284,11 +284,21 @@ record() {
   printf '%-58s %s\n' "$1" "$2" | tee -a "$ARTIFACT_DIR/checks.txt" >&2
 }
 
+worker_heartbeat_fresh() {
+  compose exec -T worker node apps/worker/dist/healthcheck.js >/dev/null 2>&1
+}
+
+worker_heartbeat_stale() {
+  ! worker_heartbeat_fresh
+}
+
 # VYN-04-01: Redis runs with the configured persistence and memory policy, needs its password,
 # the API is ready only while Redis answers, and a key written before Redis is killed (no
 # shutdown save) is back after the restart, which only the AOF can provide.
+# VYN-05A-03: while Redis is gone the worker's heartbeat goes stale (BullMQ cannot take jobs),
+# and it turns fresh again once Redis is back, without a worker restart.
 check_redis() {
-  local failed=0 setting want got ready token id
+  local failed=0 setting want got ready token id worker
   for setting in appendonly:yes appendfsync:everysec maxmemory-policy:noeviction maxmemory:268435456; do
     want="${setting#*:}"
     got="$(redis_cli CONFIG GET "${setting%%:*}" | sed -n 2p | tr -d '\r')"
@@ -326,6 +336,13 @@ check_redis() {
     record 'redis killed (SIGKILL): API /health/ready' "$(api_ready_status || true) (want 503)"
     failed=1
   fi
+  # The heartbeat is stale once three beats (30 s) were skipped.
+  if wait_until 60 worker_heartbeat_stale; then
+    record 'redis killed (SIGKILL): worker heartbeat' 'stale (health check fails)'
+  else
+    record 'redis killed (SIGKILL): worker heartbeat' 'still fresh (want stale)'
+    failed=1
+  fi
   compose start redis
   if ! wait_until 60 container_healthy "$id"; then
     record 'redis restarted: health' 'NOT healthy within 60 s'
@@ -341,6 +358,15 @@ check_redis() {
     record 'redis back: API /health/ready (reconnected)' "$(api_ready_status || true) (want 200)"
     failed=1
   fi
+  worker="$(container_of worker)"
+  if wait_until 60 worker_heartbeat_fresh && wait_until 60 container_healthy "$worker"; then
+    record 'redis back: worker heartbeat and health (reconnected)' \
+      "fresh, healthy, restarts=$(docker container inspect --format '{{.RestartCount}}' "$worker")"
+  else
+    record 'redis back: worker heartbeat and health (reconnected)' 'NOT fresh/healthy within 60 s'
+    failed=1
+  fi
+  [[ "$(docker container inspect --format '{{.RestartCount}}' "$worker")" == 0 ]] || failed=1
   ((failed == 0))
 }
 
@@ -385,6 +411,13 @@ cmd_check() {
   expect_status 200 'Caddy HTTPS /health/live (rewrite to /api/v1)' "${tls[@]}" "$base/health/live" || failed=1
   expect_status 200 'Caddy HTTPS / (web)' "${tls[@]}" "$base/" || failed=1
 
+  # WU-05a: the worker runs its job queues on BullMQ in the smoke Redis.
+  if compose logs worker 2>/dev/null | grep -q 'BullMQ job queue ready'; then
+    record 'worker log: BullMQ job queue ready' 'yes'
+  else
+    record 'worker log: BullMQ job queue ready' 'MISSING'
+    failed=1
+  fi
   if compose exec -T worker node apps/worker/dist/healthcheck.js; then
     # shellcheck disable=SC2016 # expanded inside the worker container
     heartbeat="$(compose exec -T worker sh -c 'cat "${TMPDIR:-/tmp}/vynor-worker.heartbeat"')"

@@ -3,14 +3,14 @@
 Playwright tests that run the real stack, with every external provider replaced by a local stub.
 This is the regression baseline that WU-04/05 (Redis, BullMQ) and WU-06 (Vite) must keep green.
 
-| Spec                       | What it pins down                                                                                                                                                                                                                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `golden-path.spec.ts`      | dev-session login → signed WhatsApp webhook → provider journal → outbox → pg-boss → worker → Inbox (realtime); webhook replay without duplicates; reply → stub → SENT → DELIVERED → READ (never backwards); transient retry; permanent failure + Retry; claim/resolve/reopen with audit rows |
-| `channels.spec.ts`         | Connecting WhatsApp Business through the Channels page (verified against the stub, credentials sealed), Test connection                                                                                                                                                                      |
-| `tenant-isolation.spec.ts` | Second tenant (`E2E Tenant B`): own Inbox only, 404 for Tenant A's records, 403 for Tenant A's workspace                                                                                                                                                                                     |
-| `screenshots.spec.ts`      | Versioned screenshots of all 20 routes, including `/ai-agent/[agentId]` (known and unknown ID, deep link and reload)                                                                                                                                                                         |
-| `auth-smoke.spec.ts`       | Redirects, login form, preview-mode shell when the API is unreachable                                                                                                                                                                                                                        |
-| `stack-readiness.spec.ts`  | The API under test is ready on PostgreSQL and Redis (WU-04)                                                                                                                                                                                                                                  |
+| Spec                       | What it pins down                                                                                                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `golden-path.spec.ts`      | dev-session login → signed WhatsApp webhook → provider journal → outbox → BullMQ → worker → Inbox (realtime); webhook replay without duplicates; reply → stub → SENT → DELIVERED → READ (never backwards); transient retry; permanent failure + Retry; claim/resolve/reopen with audit rows |
+| `channels.spec.ts`         | Connecting WhatsApp Business through the Channels page (verified against the stub, credentials sealed), Test connection                                                                                                                                                                     |
+| `tenant-isolation.spec.ts` | Second tenant (`E2E Tenant B`): own Inbox only, 404 for Tenant A's records, 403 for Tenant A's workspace                                                                                                                                                                                    |
+| `screenshots.spec.ts`      | Versioned screenshots of all 20 routes, including `/ai-agent/[agentId]` (known and unknown ID, deep link and reload)                                                                                                                                                                        |
+| `auth-smoke.spec.ts`       | Redirects, login form, preview-mode shell when the API is unreachable                                                                                                                                                                                                                       |
+| `stack-readiness.spec.ts`  | The API under test is ready on PostgreSQL and Redis (WU-04)                                                                                                                                                                                                                                 |
 
 The HTTP characterization specs (`apps/api/tests/*-http.integration.spec.ts`,
 `apps/worker/tests/channel-polling.integration.spec.ts`) run with `pnpm test` on `vynor_test`.
@@ -18,7 +18,7 @@ The HTTP characterization specs (`apps/api/tests/*-http.integration.spec.ts`,
 ## Run locally
 
 Prerequisites: Docker, a PostgreSQL with an **empty or disposable** `vynor_e2e` database, a
-**local, disposable** Redis for the API (WU-04), and free ports 3901 (API), 3905 (web), 3911
+**local, disposable** Redis for the API (WU-04) and the worker's BullMQ queues (WU-05a), and free ports 3901 (API), 3905 (web), 3911
 (stub) and 3920 (browser). A throwaway Redis with the image `docker-compose.yml` pins:
 
 ```bash
@@ -40,15 +40,17 @@ pnpm test:e2e
    `vynor_e2e`, `vynor_test` or `vynor_shadow`, and any Redis that is not on this machine,
    before anything starts.
 2. **Prepare** (`support/prepare-database.ts`): `prisma migrate deploy`, truncate every table in
-   `public` (except `_prisma_migrations`) and `pgboss.job`, run the regular seed, then add the
-   fixtures: workspaces `E2E Tenant B` (`tenant-b@vynor.test`) and `E2E Screens`
+   `public` (except `_prisma_migrations`) and `pgboss.job`, delete the BullMQ keys
+   (`vynor:bull:*`) in `E2E_REDIS_URL`, run the regular seed, then add the fixtures: workspaces `E2E Tenant B` (`tenant-b@vynor.test`) and `E2E Screens`
    (`screens@vynor.test`), each with a SUPER_ADMIN. Two consecutive runs start from the same state.
 3. **Provider stub** (`support/graph-stub.ts`, port 3911).
 4. **API** (`apps/api/dist`, port 3901) and **worker** (`apps/worker/dist`) with `NODE_ENV=development`
    (so the outbox dispatcher, queue consumers and realtime relay run) and `APP_ENV=test`
    (dev-session sign-in allowed). All provider base URLs and `SUPABASE_URL` point at the stub.
    The API keeps Idempotency-Key records and web chat rate limits in `E2E_REDIS_URL`, as a
-   deployment does; the harness does not flush it (every key it causes has a TTL).
+   deployment does; the harness does not flush those (every key it causes has a TTL). The
+   worker runs its job queues on BullMQ in the same Redis (WU-05a); the stack waits for its
+   `BullMQ job queue ready` log line. pg-boss still starts, but only drains old jobs.
 5. **Web**: `next build` with the stack's `NEXT_PUBLIC_*` values, then `next start` on port 3905.
 6. **Browser**: the official Playwright image `mcr.microsoft.com/playwright:v1.63.0-noble`,
    pinned by digest, runs `playwright-core run-server` from this repo's own `playwright-core`

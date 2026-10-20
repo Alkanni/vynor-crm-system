@@ -20,6 +20,8 @@
     "@vynor/database": "workspace:*",
     "@vynor/observability": "workspace:*",
     "@vynor/shared": "workspace:*",
+    "bullmq": "6.3.13",
+    "ioredis": "^6.0.0",
     "pg-boss": "^12.33.6",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"

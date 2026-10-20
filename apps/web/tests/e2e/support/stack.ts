@@ -1,10 +1,12 @@
 /**
  * Helpers the E2E specs share: the provider stub's control API, the real VYNOR API (as a
- * signed-in user) and read access to the E2E database for journal/outbox/queue assertions.
+ * signed-in user) and read access to the E2E database and Redis for journal/outbox/queue
+ * assertions.
  */
 import { expect, type Page, type TestInfo } from '@playwright/test';
 import { createDatabaseClient, type PrismaClient } from '@vynor/database';
-import { assertSafeE2eDatabaseUrl } from './database-guard';
+import { Redis } from 'ioredis';
+import { assertSafeE2eDatabaseUrl, assertSafeE2eRedisUrl } from './database-guard';
 import { API_BASE, STUB_ORIGIN, STUB_WABA_ID, WEB_ORIGIN } from './e2e-env';
 import type { ProviderCall, SendOutcome, WebhookDelivery } from './graph-stub';
 
@@ -194,7 +196,25 @@ export function e2eDatabase(): PrismaClient {
   return db;
 }
 
+let redis: Redis | null = null;
+
+/** The E2E Redis, where the worker keeps its BullMQ queues (WU-05a). Read-only use. */
+function e2eRedis(): Redis {
+  redis ??= new Redis(assertSafeE2eRedisUrl(process.env.E2E_REDIS_URL));
+  return redis;
+}
+
+/**
+ * Whether the worker's BullMQ queue finished a job: BullMQ keeps finished jobs in the queue's
+ * `completed` sorted set (key prefix BULLMQ_PREFIX of apps/worker).
+ */
+export async function bullmqJobCompleted(queue: string, jobId: string): Promise<boolean> {
+  return (await e2eRedis().zscore(`vynor:bull:${queue}:completed`, jobId)) !== null;
+}
+
 export async function closeE2eDatabase(): Promise<void> {
   await db?.$disconnect();
   db = null;
+  await redis?.quit();
+  redis = null;
 }

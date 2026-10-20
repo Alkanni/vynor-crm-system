@@ -15,7 +15,8 @@ import { ChannelHealthRecorder } from '../src/channels/channel-health.service.js
 import { ConversationIngestService } from '../src/conversations/conversation-ingest.service.js';
 import { InboundProcessorService } from '../src/processing/inbound-processor.service.js';
 import { OutboundDispatcherService } from '../src/processing/outbound-dispatcher.service.js';
-import type { PgBossService } from '../src/queue/pg-boss.service.js';
+import type { JobQueue } from '../src/queue/job-queue.js';
+import { UNUSED_REDIS_URL } from './support/test-redis.js';
 
 /**
  * Issue #37: journaled WhatsApp events become contacts, conversations and messages; agent
@@ -101,13 +102,14 @@ describe('Channel message flow through the worker (issue #37)', () => {
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://unused',
     DIRECT_URL: 'postgresql://unused',
+    REDIS_URL: UNUSED_REDIS_URL,
     STORAGE_ACCESS_KEY_ID: 'key',
     STORAGE_SECRET_ACCESS_KEY: 'secret',
     ENCRYPTION_MASTER_KEY: randomBytes(32).toString('base64'),
     META_GRAPH_API_BASE_URL: GRAPH,
   });
   const runtime = new WorkerChannelRuntime(env);
-  const queue = {} as PgBossService; // only used when the Nest app boots
+  const queue = {} as JobQueue; // only used when the Nest app boots
   const processor = new InboundProcessorService(queue, runtime, new ConversationIngestService());
   const dispatcher = new OutboundDispatcherService(queue, runtime, new ChannelHealthRecorder());
 

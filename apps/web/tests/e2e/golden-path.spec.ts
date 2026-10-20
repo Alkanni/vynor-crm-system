@@ -3,6 +3,7 @@ import { expect, test } from './support/local-only';
 import { E2E_USERS, STUB_PHONES } from './support/e2e-env';
 import {
   attachProviderTrace,
+  bullmqJobCompleted,
   closeE2eDatabase,
   connectWhatsAppChannel,
   devSessionToken,
@@ -13,9 +14,9 @@ import {
 } from './support/stack';
 
 /**
- * WU-03 golden path (VYN-03-04) on the current stack (pg-boss, Next.js), with the WhatsApp
- * Cloud API replaced by the provider stub:
- * dev-session login → signed webhook → provider journal → outbox → pg-boss → worker → Inbox,
+ * WU-03 golden path (VYN-03-04) on the current stack (BullMQ since WU-05a, Next.js), with the
+ * WhatsApp Cloud API replaced by the provider stub:
+ * dev-session login → signed webhook → provider journal → outbox → BullMQ → worker → Inbox,
  * webhook replay without duplicates, agent reply → stub → SENT/DELIVERED/READ, transient retry,
  * permanent failure + Retry, and claim/resolve/reopen with audit entries.
  */
@@ -88,7 +89,7 @@ async function outboundMessage(text: string) {
   });
 }
 
-test('a signed webhook reaches the Inbox through journal, outbox, pg-boss and the worker', async ({
+test('a signed webhook reaches the Inbox through journal, outbox, BullMQ and the worker', async ({
   page,
 }) => {
   await signInWithDevSession(page, '/inbox');
@@ -114,18 +115,18 @@ test('a signed webhook reaches the Inbox through journal, outbox, pg-boss and th
   const outbox = await db.outboxEvent.findFirstOrThrow({
     where: { eventType: 'webhook.received', payload: { equals: { providerEventId: journal.id } } },
   });
-  // The worker claims the outbox row, pg-boss runs the job, the journal entry is processed.
+  // The worker claims the outbox row, BullMQ runs the job, the journal entry is processed.
   await expect
     .poll(async () => (await db.outboxEvent.findUnique({ where: { id: outbox.id } }))?.status)
     .toBe('COMPLETED');
   await expect
-    .poll(async () => {
-      const [job] = await db.$queryRaw<{ state: string }[]>`
-        SELECT state::text FROM pgboss.job WHERE singleton_key = ${`outbox:${outbox.id}`}
-      `;
-      return job?.state;
-    })
-    .toBe('completed');
+    .poll(() => bullmqJobCompleted('vynor.webhooks.process', `outbox-${outbox.id}`))
+    .toBe(true);
+  // WU-05a: pg-boss only drains jobs from before the cutover and gets no new one.
+  const [pgBoss] = await db.$queryRaw<{ jobs: bigint }[]>`
+    SELECT count(*) AS jobs FROM pgboss.job WHERE data->>'jobId' = ${outbox.id}
+  `;
+  expect(Number(pgBoss?.jobs)).toBe(0);
   await expect
     .poll(async () => (await db.providerEvent.findUnique({ where: { id: journal.id } }))?.status)
     .toBe('PROCESSED');
@@ -219,7 +220,7 @@ test('a transient provider failure is retried by the queue and then succeeds', a
   await stub.queueOutcomes(CUSTOMER.phone, ['transient']);
 
   await reply(page, text);
-  // pg-boss retries the send after its retry delay (5 s for the outbound queue).
+  // BullMQ retries the send after the queue's fixed retry delay (5 s for outbound, as pg-boss did).
   await expect(bubble(timeline, text).getByLabel('Sent')).toBeVisible({ timeout: 45_000 });
   expect(await sendOutcomesSince(since)).toEqual(['transient', 'success']);
 

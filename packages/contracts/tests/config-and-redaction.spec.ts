@@ -44,6 +44,7 @@ describe('Configuration Validation (FND-017 & FND-TST-007)', () => {
     STORAGE_ACCESS_KEY_ID: 'test-storage-key',
     STORAGE_SECRET_ACCESS_KEY: 'test-storage-secret',
     STORAGE_USE_SSL: 'false',
+    REDIS_URL: 'redis://localhost:6379/0',
   };
 
   it('validates a complete, valid API environment configuration and applies defaults', () => {
@@ -230,6 +231,29 @@ describe('Configuration Validation (FND-017 & FND-TST-007)', () => {
       expect(ApiEnvSchema.parse({ ...validApiEnv, REDIS_URL: tls }).REDIS_URL).toBe(tls);
       expect(issues({ ...validApiEnv, REDIS_URL: 'http://localhost:6379' })).toEqual(['REDIS_URL']);
       expect(issues({ ...validApiEnv, REDIS_URL: 'not a url' })).toEqual(['REDIS_URL']);
+    });
+  });
+
+  describe('worker job queue Redis (WU-05a, DEC-02)', () => {
+    const { REDIS_URL: _redis, ...withoutRedis } = validWorkerEnv;
+    const issues = (env: Record<string, string>) =>
+      WorkerEnvSchema.safeParse(env).error?.issues.map((issue) => issue.path.join('.')) ?? [];
+
+    it('requires REDIS_URL in every profile, since BullMQ has no in-process fallback', () => {
+      for (const APP_ENV of ['local', 'test', 'staging', 'production']) {
+        const env = { ...withoutRedis, APP_ENV, ENCRYPTION_MASTER_KEY: 'key' };
+        expect(issues(env), APP_ENV).toEqual(['REDIS_URL']);
+        expect(issues({ ...env, REDIS_URL: '' }), APP_ENV).toEqual(['REDIS_URL']);
+      }
+    });
+
+    it('accepts redis:// and rediss:// URLs only', () => {
+      const tls = 'rediss://:secret@redis.internal:6380/1';
+      expect(WorkerEnvSchema.parse({ ...validWorkerEnv, REDIS_URL: tls }).REDIS_URL).toBe(tls);
+      expect(issues({ ...validWorkerEnv, REDIS_URL: 'http://localhost:6379' })).toEqual([
+        'REDIS_URL',
+      ]);
+      expect(issues({ ...validWorkerEnv, REDIS_URL: 'not a url' })).toEqual(['REDIS_URL']);
     });
   });
 });

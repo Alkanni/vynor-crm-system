@@ -10,16 +10,17 @@ import {
   DB_PING_TIMEOUT_MS,
   WorkerHeartbeatService,
 } from '../src/health/worker-heartbeat.service.js';
-import type { PgBossService } from '../src/queue/pg-boss.service.js';
+import type { JobQueue } from '../src/queue/job-queue.js';
 
 /**
  * The container health check must fail when the worker's event loop stops, it loses the
- * database or pg-boss is not running, instead of always passing. The service pings the test
- * database (DATABASE_URL); pg-boss is a stub.
+ * database or its job queue is not running, instead of always passing. The service pings the
+ * test database (DATABASE_URL); the job queue is a stub (bullmq-job-queue specs cover when the
+ * real one reports running, pg-boss-drain specs the DEGRADED drain).
  */
 
-function queueStub(running: boolean): PgBossService {
-  return { isRunning: () => running } as unknown as PgBossService;
+function queueStub(running: boolean): JobQueue {
+  return { isRunning: () => running } as unknown as JobQueue;
 }
 
 const HEALTHCHECK_SCRIPT = fileURLToPath(new URL('../src/healthcheck.ts', import.meta.url));
@@ -88,7 +89,7 @@ describe('WorkerHeartbeatService.beat', () => {
     await expect(isHeartbeatFresh(file)).resolves.toBe(false);
   });
 
-  it('writes no heartbeat while pg-boss is not running, even though the database answers', async () => {
+  it('writes no heartbeat while the job queue is not running, even though the database answers', async () => {
     const withoutQueue = new WorkerHeartbeatService(queueStub(false));
 
     await expect(withoutQueue.beat(file)).resolves.toBe(false);

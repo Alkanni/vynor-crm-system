@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The transport part (pg-boss) is superseded by [AD-015](0015-bullmq-job-transport.md) since WU-05a; scheduling stays in `apps/worker`.
 
 ## Context
 

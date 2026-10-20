@@ -228,8 +228,11 @@ export function checkSmokeConfig(
   if (!command.includes('--requirepass') || !ALLOWED_SECRET_VALUES.has(password ?? '')) {
     problems.push('redis: --requirepass must be set to the committed dev placeholder');
   }
-  if (!services.api?.environment?.REDIS_URL?.startsWith('redis://')) {
-    problems.push('api: REDIS_URL must point at the smoke Redis');
+  // The API's shared state (WU-04) and the worker's BullMQ queues (WU-05a).
+  for (const name of ['api', 'worker']) {
+    if (!services[name]?.environment?.REDIS_URL?.startsWith('redis://')) {
+      problems.push(`${name}: REDIS_URL must point at the smoke Redis`);
+    }
   }
 
   const missingPorts = [...allowedPorts].filter((port) => !publishedPorts.includes(port));

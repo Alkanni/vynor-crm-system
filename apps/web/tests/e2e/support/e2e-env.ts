@@ -88,8 +88,13 @@ export function apiEnv(databaseUrl: string, redisUrl: string): Record<string, st
   };
 }
 
-export function workerEnv(databaseUrl: string): Record<string, string> {
-  return { ...serverEnv(databaseUrl), CHANNEL_POLLING_ENABLED: 'false' };
+export function workerEnv(databaseUrl: string, redisUrl: string): Record<string, string> {
+  return {
+    ...serverEnv(databaseUrl),
+    // BullMQ job queues (WU-05a), next to the API's keys in the same local Redis.
+    REDIS_URL: redisUrl,
+    CHANNEL_POLLING_ENABLED: 'false',
+  };
 }
 
 /** NEXT_PUBLIC_* values are inlined at build time, so the web app is built with these. */

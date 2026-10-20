@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { blankAsUnset, ChannelRuntimeEnvSchema, refineEncryptionKeyRequired } from './channels.js';
-import { BaseServerEnvSchema } from './common.js';
+import { BaseServerEnvSchema, isRedisUrl } from './common.js';
 import { StorageEnvSchema } from './storage.js';
 
 export const ApiEnvSchema = BaseServerEnvSchema.extend({
@@ -57,14 +57,6 @@ export const ApiEnvSchema = BaseServerEnvSchema.extend({
 export type ApiEnv = z.infer<typeof ApiEnvSchema>;
 
 export type SharedStateStore = 'redis' | 'memory';
-
-function isRedisUrl(value: string): boolean {
-  try {
-    return ['redis:', 'rediss:'].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
-}
 
 interface SharedStateEnv {
   NODE_ENV: string;
